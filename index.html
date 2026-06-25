@@ -195,6 +195,9 @@ body{display:block;padding:0;align-items:stretch;background:#05080f}
 .field{width:100%;background:rgba(18,26,41,.92);border:1px solid var(--line);border-radius:13px;padding:15px 14px;color:var(--text);font-family:var(--font);font-size:15px;margin-bottom:11px;outline:none}
 .field::placeholder{color:var(--muted2)} .field:focus{border-color:var(--blue-l)}
 #s-login .msg{font-size:13px;margin-top:10px;text-align:center;min-height:16px} #s-login .msg.err{color:#ff6b6b} #s-login .msg.ok{color:var(--ok)}
+.ev-lab{display:block;font-size:13px;color:var(--muted);margin:16px 2px 6px;font-weight:600}
+select.field{appearance:none;-webkit-appearance:none}
+.msg{font-size:13px;margin-top:10px;text-align:center;min-height:16px} .msg.err{color:#ff6b6b} .msg.ok{color:var(--ok)}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -222,6 +225,27 @@ body{display:block;padding:0;align-items:stretch;background:#05080f}
     </div>
   </div>
 </section>
+<section class="screen" id="s-entrevista">
+        <div class="pad pad-top">
+          <div class="section-t">Cuéntanos sobre ti</div>
+          <h2 style="font-size:23px;font-weight:800;margin-bottom:4px">Entrevista inicial</h2>
+          <p style="color:var(--muted);font-size:13.5px;margin-bottom:8px">Solo se hace una vez. Sirve para personalizar tu entrenamiento.</p>
+          <label class="ev-lab">Posición en la pista</label>
+          <select class="field" id="iv-posicion"><option value="">Elige…</option><option>Base</option><option>Escolta</option><option>Alero</option><option>Ala-pívot</option><option>Pívot</option></select>
+          <label class="ev-lab">¿Compites en partidos?</label>
+          <select class="field" id="iv-compite"><option value="si">Sí</option><option value="no">No</option></select>
+          <label class="ev-lab">Tu condición física ahora</label>
+          <select class="field" id="iv-condicion"><option value="">Elige…</option><option value="baja">Baja</option><option value="media">Media</option><option value="alta">Alta</option></select>
+          <label class="ev-lab">¿Qué quieres mejorar más?</label>
+          <select class="field" id="iv-objetivo"><option value="">Elige…</option><option>Saltar más alto</option><option>Más fuerza</option><option>Más resistencia</option><option>Velocidad y agilidad</option><option>Técnica</option></select>
+          <label class="ev-lab">¿Dónde entrenas normalmente?</label>
+          <select class="field" id="iv-entorno"><option value="sin_material">Sin material (en casa)</option><option value="kit_minimo">Kit mínimo (balón, banda…)</option><option value="gimnasio">Gimnasio</option></select>
+          <label class="ev-lab">¿Alguna lesión o molestia? (opcional)</label>
+          <input class="field" id="iv-lesiones" placeholder="Ej. molestia en la rodilla">
+          <button class="btn btn-primary" id="iv-guardar" style="margin-top:10px">Guardar y empezar</button>
+          <p class="msg" id="iv-msg"></p>
+        </div>
+      </section>
 <section class="screen" id="s-hoy">
         <div class="pad pad-top">
           <div class="top">
@@ -388,12 +412,12 @@ body{display:block;padding:0;align-items:stretch;background:#05080f}
 const SUPABASE_URL="https://kbrvaawngeuuewplcwyn.supabase.co";
 const SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticnZhYXduZ2V1dWV3cGxjd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTA0MjIsImV4cCI6MjA5Nzg2NjQyMn0.9ys4m2OicbMq3cFyf0a2IA_eh3VspPJ3pYgjNkMO6WA";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
-const screens={login:'s-login',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil'};
+const screens={login:'s-login',entrevista:'s-entrevista',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil'};
 function go(name){
   Object.values(screens).forEach(function(id){var el=document.getElementById(id); if(el) el.classList.remove('active');});
   var t=document.getElementById(screens[name]); if(t) t.classList.add('active');
   var nav=document.getElementById('nav');
-  nav.classList.toggle('hidden', name==='login'||name==='sesion');
+  nav.classList.toggle('hidden', name==='login'||name==='sesion'||name==='entrevista');
   nav.querySelectorAll('button').forEach(function(b){b.classList.toggle('on', b.dataset.go===name);});
   if(name==='sesion'){ cargarSesion(); }
 }
@@ -415,7 +439,10 @@ async function loadProfileAndEnter(){
   document.querySelectorAll('#u-ini,#u-ini2').forEach(function(el){el.textContent=ini;});
   var roles={admin:'Administrador',entrenador:'Entrenador',jugador:'Jugador'};
   var rolEl=document.getElementById('u-rol'); if(rolEl) rolEl.textContent=roles[role]||role;
-  setMsg(''); go('hoy');
+  setMsg('');
+  var dj=await sb.from('datos_jugador').select('entrevista_completada').eq('id',user.id).maybeSingle();
+  if(!dj.data || !dj.data.entrevista_completada){ go('entrevista'); return; }
+  go('hoy');
 }
 function showSetPass(){ go('login'); document.getElementById('loginForm').hidden=true; document.getElementById('setPassForm').hidden=false; setMsg('Crea tu contraseña para activar tu cuenta.',true); }
 
@@ -458,10 +485,27 @@ document.addEventListener('click', async function(e){
   var chip=e.target.closest('.chip');
   if(chip){ chip.parentElement.querySelectorAll('.chip').forEach(function(c){c.classList.remove('on');}); chip.classList.add('on'); }
 });
+var _iv=document.getElementById('iv-guardar');
+if(_iv){ _iv.addEventListener('click', async function(){
+  var u=await sb.auth.getUser(); var user=u.data&&u.data.user; if(!user) return;
+  var m=document.getElementById('iv-msg');
+  var row={ id:user.id,
+    posicion:document.getElementById('iv-posicion').value||null,
+    compite:document.getElementById('iv-compite').value==='si',
+    condicion_fisica:document.getElementById('iv-condicion').value||null,
+    objetivo_principal:document.getElementById('iv-objetivo').value||null,
+    entorno_habitual:document.getElementById('iv-entorno').value,
+    material:[],
+    lesiones:document.getElementById('iv-lesiones').value||null,
+    entrevista_completada:true };
+  m.textContent='Guardando…'; m.className='msg ok';
+  var r=await sb.from('datos_jugador').upsert(row);
+  if(r.error){ m.textContent='No se pudo guardar: '+r.error.message; m.className='msg err'; return; }
+  go('hoy');
+}); }
 var sesionEjercicios=[], sesionIdx=0;
 async function cargarSesion(){
   if(sesionEjercicios.length){ renderEjercicio(); return; }
-  document.getElementById('se-steplabel').textContent='Cargando tu sesión…';
   var q=await sb.from('ejercicios').select('nombre,descripcion,instrucciones,imagen_url,musculos_primarios,series_def,reps_def,descanso_seg_def,pilar').eq('activo',true).contains('entornos',['sin_material']).limit(8);
   if(q.error||!q.data||!q.data.length){ document.getElementById('se-steplabel').textContent='No se pudieron cargar los ejercicios.'; return; }
   sesionEjercicios=q.data; sesionIdx=0; renderEjercicio();
@@ -483,7 +527,8 @@ function renderEjercicio(){
   document.getElementById('se-descanso').innerHTML=(ej.descanso_seg_def||60)+' <small>seg</small>';
   document.getElementById('se-musculo').textContent=mus.split(',')[0];
   var txt=(ej.instrucciones||ej.descripcion||'Sin descripción.');
-  document.getElementById('se-howto').innerHTML='<b>Cómo se hace:</b> '+txt.replace(/\n/g,'<br>');
+  document.getElementById('se-howto').innerHTML='<b>Cómo se hace:</b> '+txt.replace(/
+/g,'<br>');
   document.getElementById('se-prev').style.visibility=sesionIdx>0?'visible':'hidden';
   document.getElementById('se-next').textContent=(sesionIdx<n-1)?'Siguiente →':'Terminar ✓';
 }
