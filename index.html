@@ -478,8 +478,8 @@ if(_olv){ _olv.addEventListener('click', async function(){
   var email=document.getElementById('email').value.trim();
   if(!email){ setMsg('Escribe tu correo arriba primero.'); return; }
   setMsg('Enviando enlace…',true);
-  var r=await sb.auth.resetPasswordForEmail(email, {redirectTo:'https://jomarelpalo.github.io/anmar-app/'});
-  if(r.error){ setMsg('No se pudo enviar. Inténtalo otra vez.'); return; }
+  var r=await sb.auth.resetPasswordForEmail(email, {redirectTo:location.origin+location.pathname+'?v='+Date.now()});
+  if(r.error){ var em=(r.error.message||'').toLowerCase(); setMsg(em.indexOf('rate')>-1?'Has pedido varios enlaces seguidos. Espera unos minutos e inténtalo otra vez.':'No se pudo enviar. Inténtalo otra vez.'); return; }
   setMsg('Enlace enviado a tu correo. Revisa también spam.',true);
 }); }
 document.getElementById('setPassForm').addEventListener('submit', async function(e){
@@ -545,8 +545,7 @@ function renderEjercicio(){
   document.getElementById('se-descanso').innerHTML=(ej.descanso_seg_def||60)+' <small>seg</small>';
   document.getElementById('se-musculo').textContent=mus.split(',')[0];
   var txt=(ej.instrucciones||ej.descripcion||'Sin descripción.');
-  document.getElementById('se-howto').innerHTML='<b>Cómo se hace:</b> '+txt.replace(/
-/g,'<br>');
+  document.getElementById('se-howto').innerHTML='<b>Cómo se hace:</b> '+txt.split(String.fromCharCode(10)).join('<br>');
   document.getElementById('se-prev').style.visibility=sesionIdx>0?'visible':'hidden';
   document.getElementById('se-next').textContent=(sesionIdx<n-1)?'Siguiente →':'Terminar ✓';
 }
