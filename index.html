@@ -200,6 +200,20 @@ select.field{appearance:none;-webkit-appearance:none}
 .msg{font-size:13px;margin-top:10px;text-align:center;min-height:16px} .msg.err{color:#ff6b6b} .msg.ok{color:var(--ok)}
 [hidden]{display:none!important}
 </style>
+<style>
+.ex-img{background-color:#fff!important;background-size:contain!important;background-repeat:no-repeat!important;background-position:center!important;cursor:zoom-in;position:relative}
+.ex-img::after{content:'ampliar';position:absolute;right:8px;bottom:8px;background:rgba(10,17,25,.8);color:#dfe8f4;font-size:10px;padding:3px 8px;border-radius:12px;pointer-events:none}
+.metric.rest{cursor:pointer;position:relative}
+.metric.rest::after{content:'tocar';position:absolute;right:9px;top:7px;font-size:9px;color:#5fa0e6}
+.ovl{position:absolute;inset:0;z-index:60;background:rgba(3,6,12,.93);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:18px}
+.ovl.open{display:flex}
+.ovl .x{position:absolute;top:14px;right:14px;width:40px;height:40px;border-radius:50%;background:#1a2740;color:#e7eef7;border:none;font-size:22px;line-height:1;cursor:pointer}
+.ovl .imgbox{background:#fff;border-radius:16px;padding:14px;max-width:94%;display:flex;align-items:center;justify-content:center}
+.ovl .imgbox img{max-width:100%;max-height:62vh;display:block}
+.rt-btns{display:flex;gap:10px}
+.rt-btns button{background:#d6a743;color:#3a2a06;border:none;border-radius:11px;padding:12px 22px;font-size:15px;font-weight:700;cursor:pointer}
+.rt-btns .sec{background:#16213a;color:#cdd8e8}
+</style>
 </head>
 <body>
 <div class="appwrap">
@@ -297,7 +311,7 @@ select.field{appearance:none;-webkit-appearance:none}
           <div class="grid2">
             <div class="metric"><div class="k">SERIES</div><div class="v" id="se-series">—</div></div>
             <div class="metric"><div class="k">REPETICIONES</div><div class="v" id="se-reps">—</div></div>
-            <div class="metric"><div class="k">DESCANSO</div><div class="v" id="se-descanso">—</div></div>
+            <div class="metric rest" id="m-descanso"><div class="k">DESCANSO</div><div class="v" id="se-descanso">—</div></div>
             <div class="metric"><div class="k">MÚSCULO</div><div class="v" id="se-musculo" style="font-size:14px">—</div></div>
           </div>
           <div class="howto" id="se-howto">—</div>
@@ -407,6 +421,7 @@ select.field{appearance:none;-webkit-appearance:none}
         <button data-go="calendario"><span class="i">📅</span>Calendario</button>
         <button data-go="perfil"><span class="i">👤</span>Perfil</button>
       </nav>
+<div class="ovl" id="ov-img"><button class="x" id="im-close" aria-label="Cerrar">&times;</button><div class="imgbox"><img id="im-big" src="" alt="Ejercicio"></div></div><div class="ovl" id="ov-rest"><button class="x" id="rt-close" aria-label="Cerrar">&times;</button><div style="font-size:11px;letter-spacing:.08em;color:#7d8da6">DESCANSO</div><div style="position:relative;width:170px;height:170px"><svg width="170" height="170" viewBox="0 0 120 120" style="transform:rotate(-90deg)"><circle cx="60" cy="60" r="52" fill="none" stroke="#16213a" stroke-width="9"></circle><circle id="rt-ring" cx="60" cy="60" r="52" fill="none" stroke="#3a86d8" stroke-width="9" stroke-linecap="round" stroke-dasharray="326.726" stroke-dashoffset="0"></circle></svg><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><div id="rt-time" style="font-size:36px;font-weight:800;color:#e7eef7">1:00</div><div id="rt-sub" style="font-size:11px;color:#7d8da6">listo</div></div></div><div class="rt-btns"><button id="rt-main">Iniciar</button><button class="sec" id="rt-reset">Reiniciar</button></div></div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -542,7 +557,7 @@ function renderEjercicio(){
   else { img.style.backgroundImage='none'; document.getElementById('se-ph').style.display='flex'; }
   document.getElementById('se-series').textContent=ej.series_def||4;
   document.getElementById('se-reps').textContent=ej.reps_def||12;
-  document.getElementById('se-descanso').innerHTML=(ej.descanso_seg_def||60)+' <small>seg</small>';
+  window.__rest=ej.descanso_seg_def||60; window.__img=ej.imagen_url||''; document.getElementById('se-descanso').innerHTML=window.__rest+' <small>seg</small>';
   document.getElementById('se-musculo').textContent=mus.split(',')[0];
   var txt=(ej.instrucciones||ej.descripcion||'Sin descripción.');
   document.getElementById('se-howto').innerHTML='<b>Cómo se hace:</b> '+txt.split(String.fromCharCode(10)).join('<br>');
@@ -553,6 +568,32 @@ document.addEventListener('click',function(e){
   if(e.target&&e.target.id==='se-next'){ if(sesionIdx<sesionEjercicios.length-1){ sesionIdx++; renderEjercicio(); } else { go('hoy'); } }
   if(e.target&&e.target.id==='se-prev'){ if(sesionIdx>0){ sesionIdx--; renderEjercicio(); } }
 });
+
+var __ac=null;
+function __ensure(){try{__ac=__ac||new (window.AudioContext||window.webkitAudioContext)();if(__ac.state==='suspended')__ac.resume();}catch(e){}}
+function __tone(freq,dur,type,vol){ if(!__ac)return; var o=__ac.createOscillator(),g=__ac.createGain();o.connect(g);g.connect(__ac.destination);o.type=type||'sine';o.frequency.value=freq;var t=__ac.currentTime;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||0.4,t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.start(t);o.stop(t+dur+0.02); }
+function __count(){ __tone(1245,0.32,'triangle',0.45); }
+function __siren(){ __ensure(); if(!__ac)return; var t=__ac.currentTime,dur=1.45; var o=__ac.createOscillator(),g=__ac.createGain(),lfo=__ac.createOscillator(),lg=__ac.createGain(); o.type='sawtooth';o.frequency.value=1050; lfo.type='sine';lfo.frequency.value=7;lg.gain.value=180;lfo.connect(lg);lg.connect(o.frequency); o.connect(g);g.connect(__ac.destination); g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.42,t+0.05);g.gain.setValueAtTime(0.42,t+dur-0.25);g.gain.exponentialRampToValueAtTime(0.0001,t+dur); o.start(t);lfo.start(t);o.stop(t+dur);lfo.stop(t+dur); if(navigator.vibrate)navigator.vibrate([1400]); }
+var __C=326.726,__tot=60,__rem=60,__run=false,__raf=null,__end=0,__last=999,__ring,__tEl,__sub,__main;
+function __fmt(s){s=Math.max(0,Math.ceil(s));var m=Math.floor(s/60),ss=s%60;return m+':'+String(ss).padStart(2,'0');}
+function __draw(){var p=Math.max(0,__rem/__tot);__ring.style.strokeDashoffset=(__C*(1-p)).toFixed(1);__tEl.textContent=__fmt(__rem);}
+function __finish(){__run=false;__rem=0;__draw();__ring.style.stroke='#39b178';__tEl.style.color='#39b178';__sub.textContent='\u00a1a por la siguiente serie!';__sub.style.color='#39b178';__main.textContent='Iniciar';__siren();}
+function __tick(){__rem=(__end-Date.now())/1000;if(__rem<=0){__finish();return;}var sec=Math.ceil(__rem);if(sec<=5&&sec>=1&&sec!==__last){__last=sec;__count();}__draw();__raf=requestAnimationFrame(__tick);}
+function __start(){__ensure();__ring.style.stroke='#3a86d8';__tEl.style.color='#e7eef7';__sub.style.color='#7d8da6';__sub.textContent='descansa\u2026';__run=true;__last=(__rem>5?999:Math.ceil(__rem)+1);__end=Date.now()+__rem*1000;__main.textContent='Pausar';__raf=requestAnimationFrame(__tick);}
+function __pause(){__run=false;cancelAnimationFrame(__raf);__main.textContent='Reanudar';__sub.textContent='en pausa';}
+function __rreset(t){cancelAnimationFrame(__raf);__run=false;__tot=t||60;__rem=__tot;__last=999;__ring.style.stroke='#3a86d8';__tEl.style.color='#e7eef7';__sub.style.color='#7d8da6';__sub.textContent='listo';__main.textContent='Iniciar';__draw();}
+(function(){
+  __ring=document.getElementById('rt-ring');__tEl=document.getElementById('rt-time');__sub=document.getElementById('rt-sub');__main=document.getElementById('rt-main');
+  var img=document.getElementById('se-img');
+  if(img){ img.addEventListener('click',function(){ var u=window.__img||''; if(!u)return; document.getElementById('im-big').src=u; document.getElementById('ov-img').classList.add('open'); }); }
+  var imc=document.getElementById('im-close'); if(imc){ imc.addEventListener('click',function(){ document.getElementById('ov-img').classList.remove('open'); }); }
+  var ovi=document.getElementById('ov-img'); if(ovi){ ovi.addEventListener('click',function(e){ if(e.target===ovi) ovi.classList.remove('open'); }); }
+  var md=document.getElementById('m-descanso'); if(md){ md.addEventListener('click',function(){ __rreset(window.__rest||60); document.getElementById('ov-rest').classList.add('open'); }); }
+  if(__main){ __main.addEventListener('click',function(){ __run?__pause():__start(); }); }
+  var rr=document.getElementById('rt-reset'); if(rr){ rr.addEventListener('click',function(){ __rreset(window.__rest||60); }); }
+  var rc=document.getElementById('rt-close'); if(rc){ rc.addEventListener('click',function(){ cancelAnimationFrame(__raf); __run=false; document.getElementById('ov-rest').classList.remove('open'); }); }
+})();
+
 (function(){
   var cal=document.getElementById('cal'); if(!cal) return;
   var training=[1,3,5,8,10,12,17,19,22,24,29], matches=[6,13,27], today=24;
