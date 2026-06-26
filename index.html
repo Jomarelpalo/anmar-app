@@ -216,6 +216,7 @@ select.field{appearance:none;-webkit-appearance:none}
         <input class="field" type="password" id="password" placeholder="Contraseña" autocomplete="current-password" required>
         <button class="btn btn-primary" id="loginBtn" type="submit">Entrar</button>
       </form>
+      <button type="button" id="olvide" style="background:none;border:none;color:#cdd8e8;font-size:13px;margin-top:13px;cursor:pointer;text-decoration:underline;width:100%">¿Olvidaste tu contraseña?</button>
       <form id="setPassForm" hidden>
         <input class="field" type="password" id="newpass" placeholder="Crea tu contraseña (mín. 8, letras y números)" autocomplete="new-password" required>
         <button class="btn btn-primary" type="submit">Guardar y entrar</button>
@@ -448,11 +449,19 @@ function showSetPass(){ go('login'); document.getElementById('loginForm').hidden
 
 var hash=new URLSearchParams(location.hash.replace(/^#/,''));
 var flowType=hash.get('type');
-var isInvite=flowType==='invite'||flowType==='recovery'||flowType==='signup';
-sb.auth.onAuthStateChange(function(event,session){ if(isInvite&&session){ showSetPass(); } });
+var hashErr=hash.get('error_description')||hash.get('error');
+var recoveryFlow=(flowType==='invite'||flowType==='recovery'||flowType==='signup');
+sb.auth.onAuthStateChange(function(event,session){
+  if(event==='PASSWORD_RECOVERY'){ showSetPass(); return; }
+  if(recoveryFlow&&session){ showSetPass(); return; }
+});
 (async function(){
+  if(hashErr){ history.replaceState(null,'',location.pathname); go('login'); setMsg('El enlace ha caducado o ya se usó. Pulsa "¿Olvidaste tu contraseña?" para pedir uno nuevo.'); return; }
+  if(recoveryFlow){
+    for(var i=0;i<25;i++){ var s=(await sb.auth.getSession()).data.session; if(s){ showSetPass(); return; } await new Promise(function(r){setTimeout(r,150);}); }
+    go('login'); setMsg('No se pudo abrir el enlace. Pide uno nuevo con "¿Olvidaste tu contraseña?".'); return;
+  }
   var r=await sb.auth.getSession(); var session=r.data&&r.data.session;
-  if(isInvite&&session){ showSetPass(); return; }
   if(session){ loadProfileAndEnter(); return; }
   go('login');
 })();
@@ -464,6 +473,15 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
   if(r.error){ setMsg(traducir(r.error.message)); return; }
   loadProfileAndEnter();
 });
+var _olv=document.getElementById('olvide');
+if(_olv){ _olv.addEventListener('click', async function(){
+  var email=document.getElementById('email').value.trim();
+  if(!email){ setMsg('Escribe tu correo arriba primero.'); return; }
+  setMsg('Enviando enlace…',true);
+  var r=await sb.auth.resetPasswordForEmail(email, {redirectTo:'https://jomarelpalo.github.io/anmar-app/'});
+  if(r.error){ setMsg('No se pudo enviar. Inténtalo otra vez.'); return; }
+  setMsg('Enlace enviado a tu correo. Revisa también spam.',true);
+}); }
 document.getElementById('setPassForm').addEventListener('submit', async function(e){
   e.preventDefault(); var pass=document.getElementById('newpass').value;
   if(pass.length<8||!/[a-zA-Z]/.test(pass)||!/[0-9]/.test(pass)){ setMsg('Mínimo 8 caracteres, con letras y números.'); return; }
