@@ -310,8 +310,8 @@ select.field{appearance:none;-webkit-appearance:none}
           <h2 id="se-nombre">—</h2>
           <div class="ex-img" id="se-img"><div class="ph" id="se-ph">🏀</div></div>
           <div class="grid2">
-            <div class="metric"><div class="k">SERIES</div><div class="v" id="se-series">—</div></div>
-            <div class="metric"><div class="k">REPETICIONES</div><div class="v" id="se-reps">—</div></div>
+            <div class="metric"><div class="k" id="se-series-k">SERIES</div><div class="v" id="se-series">—</div></div>
+            <div class="metric"><div class="k" id="se-reps-k">REPETICIONES</div><div class="v" id="se-reps">—</div></div>
             <div class="metric rest" id="m-descanso"><div class="k">DESCANSO</div><div class="v" id="se-descanso">—</div></div>
             <div class="metric"><div class="k">MÚSCULO</div><div class="v" id="se-musculo" style="font-size:14px">—</div></div>
           </div>
@@ -538,7 +538,7 @@ if(_iv){ _iv.addEventListener('click', async function(){
   go('hoy');
 }); }
 var sesionEjercicios=[], sesionIdx=0;
-var SEL='nombre,descripcion,instrucciones,imagen_url,musculos_primarios,series_def,reps_def,descanso_seg_def,pilar,categoria_origen';
+var SEL='nombre,descripcion,instrucciones,imagen_url,musculos_primarios,series_def,reps_def,descanso_seg_def,pilar,categoria_origen,tempo';
 async function cargarSesion(){
   if(sesionEjercicios.length){ renderEjercicio(); return; }
   document.getElementById('se-steplabel').textContent='Preparando tu sesion...';
@@ -592,8 +592,8 @@ function renderEjercicio(){
   var __ser=ej.series_def||4, __rep=ej.reps_def||12, __des=ej.descanso_seg_def||60;
   var __esFase=(ej.pilar==='calentamiento'||ej.pilar==='recuperacion');
   if(!__esFase){ if(__cond==='baja'){ __ser=Math.max(2,__ser-1); __des=__des+15; } else if(__cond==='alta'){ __ser=__ser+1; __des=Math.max(30,__des-15); } }
-  document.getElementById('se-series').textContent=__ser;
-  document.getElementById('se-reps').textContent=__rep;
+  if(__esFase){ document.getElementById('se-series-k').textContent='RONDAS'; document.getElementById('se-series').textContent='1'; document.getElementById('se-reps-k').textContent='DURACIÓN'; document.getElementById('se-reps').textContent=ej.tempo||'—'; document.getElementById('se-reps').style.fontSize='14px'; }
+  else { document.getElementById('se-series-k').textContent='SERIES'; document.getElementById('se-series').textContent=__ser; document.getElementById('se-reps-k').textContent='REPETICIONES'; document.getElementById('se-reps').textContent=__rep; document.getElementById('se-reps').style.fontSize=''; }
   window.__rest=__des; window.__img=ej.imagen_url||''; document.getElementById('se-descanso').innerHTML=window.__rest+' <small>seg</small>';
   document.getElementById('se-musculo').textContent=mus.split(',')[0];
   var txt=(ej.instrucciones||ej.descripcion||'Sin descripción.');
