@@ -282,7 +282,7 @@ select.field{appearance:none;-webkit-appearance:none}
           </div>
 
           <div class="section-t">¿Dónde entrenas hoy?</div>
-          <div class="chips">
+          <div class="chips" id="chips-ent">
             <div class="chip on"><span class="ico">🤸</span>Sin material</div>
             <div class="chip"><span class="ico">🎒</span>Kit mínimo</div>
             <div class="chip"><span class="ico">🏋️</span>Gimnasio</div>
@@ -300,7 +300,7 @@ select.field{appearance:none;-webkit-appearance:none}
       <!-- SESION -->
       
 <section class="screen" id="s-sesion">
-        <div class="sess-head">
+        <div class="sess-head"><button id="se-inicio" style="background:none;border:none;color:#5fa0e6;font-size:13px;cursor:pointer;padding:0 0 8px;font-family:var(--font)">‹ Inicio</button>
           <div class="steplabel" id="se-steplabel">Cargando sesión…</div>
           <div class="stepbar" id="se-stepbar"></div>
         </div>
@@ -544,7 +544,7 @@ async function cargarSesion(){
   var dj={};
   try{ var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null;
     if(uid){ var d=await sb.from('datos_jugador').select('objetivo_principal,condicion_fisica,entorno_habitual,lesiones').eq('id',uid).maybeSingle(); if(d.data) dj=d.data; } }catch(e){}
-  var ent=dj.entorno_habitual||'sin_material'; if(ent==='kit_minimo') ent='sin_material';
+  var ent=window.__entornoSel||dj.entorno_habitual||'sin_material'; if(ent==='kit_minimo') ent='sin_material';
   window.__perfil=dj;
   var obj=(dj.objetivo_principal||'').toLowerCase(), cats;
   if(obj.indexOf('salt')>-1) cats=['Legs','Calves','Abs','Cardio'];
@@ -616,6 +616,23 @@ function __rreset(t){cancelAnimationFrame(__raf);__run=false;__tot=t||60;__rem=_
   if(__main){ __main.addEventListener('click',function(){ __run?__pause():__start(); }); }
   var rr=document.getElementById('rt-reset'); if(rr){ rr.addEventListener('click',function(){ __rreset(window.__rest||60); }); }
   var rc=document.getElementById('rt-close'); if(rc){ rc.addEventListener('click',function(){ cancelAnimationFrame(__raf); __run=false; document.getElementById('ov-rest').classList.remove('open'); }); }
+})();
+window.__entornoSel='sin_material';
+(function(){
+  var chips=document.getElementById('chips-ent');
+  var ents=['sin_material','kit_minimo','gimnasio'];
+  if(chips){
+    var av=document.getElementById('kit-aviso');
+    if(!av){ av=document.createElement('div'); av.id='kit-aviso'; av.style.cssText='display:none;font-size:12.5px;line-height:1.5;color:#cdd8e8;background:#101b2e;border-radius:10px;padding:9px 11px;margin-top:8px'; if(chips.parentNode) chips.parentNode.insertBefore(av, chips.nextSibling); }
+    var list=chips.querySelectorAll('.chip');
+    Array.prototype.forEach.call(list,function(c,idx){ c.addEventListener('click',function(){
+      Array.prototype.forEach.call(list,function(x){x.classList.remove('on');}); c.classList.add('on');
+      window.__entornoSel=ents[idx]||'sin_material'; sesionEjercicios=[];
+      if(window.__entornoSel==='kit_minimo'){ av.style.display='block'; av.innerHTML='<b>Kit recomendado:</b> balon, banda elastica y esterilla. Si te falta algo, puedes adaptarlo.'; }
+      else { av.style.display='none'; }
+    }); });
+  }
+  var bi=document.getElementById('se-inicio'); if(bi){ bi.addEventListener('click',function(){ go('hoy'); }); }
 })();
 
 (function(){
