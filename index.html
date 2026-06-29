@@ -304,6 +304,7 @@ select.field{appearance:none;-webkit-appearance:none}
           <div class="steplabel" id="se-steplabel">Cargando sesión…</div>
           <div class="stepbar" id="se-stepbar"></div>
         </div>
+        <div id="se-fase" style="display:none;border-radius:12px;padding:11px 14px;margin-bottom:12px;font-weight:700;font-size:15px;line-height:1.35"></div>
         <div class="ex-card">
           <div class="ex-tag" id="se-tag">Ejercicio</div>
           <h2 id="se-nombre">—</h2>
@@ -573,6 +574,12 @@ function renderEjercicio(){
   var ej=sesionEjercicios[sesionIdx]; if(!ej) return;
   var n=sesionEjercicios.length;
   var __fase=(ej.pilar==='calentamiento'?'Calentamiento':(ej.pilar==='recuperacion'?'Estiramientos':'Entrenamiento')); document.getElementById('se-steplabel').textContent=__fase+' · '+(sesionIdx+1)+' de '+n;
+  var __fb=document.getElementById('se-fase');
+  if(__fb){
+    if(ej.pilar==='calentamiento'){ __fb.style.display='block'; __fb.style.background='#3a2a06'; __fb.style.color='#f3c969'; __fb.innerHTML='FASE DE CALENTAMIENTO<br><span style="font-weight:400;font-size:12px">Prepara músculos y articulaciones. Es clave para evitar lesiones: no te lo saltes.</span>'; }
+    else if(ej.pilar==='recuperacion'){ __fb.style.display='block'; __fb.style.background='#06302a'; __fb.style.color='#69d6b1'; __fb.innerHTML='FASE DE ESTIRAMIENTOS<br><span style="font-weight:400;font-size:12px">Vuelta a la calma: mejora la flexibilidad y ayuda a prevenir lesiones.</span>'; }
+    else { __fb.style.display='block'; __fb.style.background='#0c2138'; __fb.style.color='#7fb6f2'; __fb.innerHTML='ENTRENAMIENTO<br><span style="font-weight:400;font-size:12px">Bloque principal de tu sesión de hoy.</span>'; }
+  }
   var bar=''; for(var i=0;i<n;i++){ bar+='<i class="'+(i<sesionIdx?'done':(i===sesionIdx?'now':''))+'"></i>'; }
   document.getElementById('se-stepbar').innerHTML=bar;
   var mus=(ej.musculos_primarios&&ej.musculos_primarios.length)?ej.musculos_primarios.join(', '):'General';
