@@ -562,12 +562,17 @@ async function cargarSesion(){
   order.sort(function(a,b){ var ia=cats.indexOf(a),ib=cats.indexOf(b); ia=ia<0?99:ia; ib=ib<0?99:ib; return ia-ib; });
   var pick=[], i=0;
   while(pick.length<8){ var added=false; for(var k=0;k<order.length&&pick.length<8;k++){ var arr=byCat[order[k]]; if(arr&&arr[i]){ pick.push(arr[i]); added=true; } } if(!added) break; i++; }
-  sesionEjercicios=pick.slice(0,8); sesionIdx=0; renderEjercicio();
+  var principal=pick.slice(0,6);
+  var qc=await sb.from('ejercicios').select(SEL).eq('activo',true).eq('pilar','calentamiento').contains('entornos',[ent]).limit(20);
+  var cal=(qc.data||[]).slice(0,4);
+  var qs=await sb.from('ejercicios').select(SEL).eq('activo',true).eq('pilar','recuperacion').contains('entornos',[ent]).limit(20);
+  var est=(qs.data||[]).slice(0,4);
+  sesionEjercicios=cal.concat(principal).concat(est); sesionIdx=0; renderEjercicio();
 }
 function renderEjercicio(){
   var ej=sesionEjercicios[sesionIdx]; if(!ej) return;
   var n=sesionEjercicios.length;
-  document.getElementById('se-steplabel').textContent='Ejercicio '+(sesionIdx+1)+' de '+n+' · '+(ej.pilar||'');
+  var __fase=(ej.pilar==='calentamiento'?'Calentamiento':(ej.pilar==='recuperacion'?'Estiramientos':'Entrenamiento')); document.getElementById('se-steplabel').textContent=__fase+' · '+(sesionIdx+1)+' de '+n;
   var bar=''; for(var i=0;i<n;i++){ bar+='<i class="'+(i<sesionIdx?'done':(i===sesionIdx?'now':''))+'"></i>'; }
   document.getElementById('se-stepbar').innerHTML=bar;
   var mus=(ej.musculos_primarios&&ej.musculos_primarios.length)?ej.musculos_primarios.join(', '):'General';
@@ -578,7 +583,8 @@ function renderEjercicio(){
   else { img.style.backgroundImage='none'; img.classList.remove('has-img'); document.getElementById('se-ph').style.display='flex'; }
   var __cond=(window.__perfil&&window.__perfil.condicion_fisica)||'media';
   var __ser=ej.series_def||4, __rep=ej.reps_def||12, __des=ej.descanso_seg_def||60;
-  if(__cond==='baja'){ __ser=Math.max(2,__ser-1); __des=__des+15; } else if(__cond==='alta'){ __ser=__ser+1; __des=Math.max(30,__des-15); }
+  var __esFase=(ej.pilar==='calentamiento'||ej.pilar==='recuperacion');
+  if(!__esFase){ if(__cond==='baja'){ __ser=Math.max(2,__ser-1); __des=__des+15; } else if(__cond==='alta'){ __ser=__ser+1; __des=Math.max(30,__des-15); } }
   document.getElementById('se-series').textContent=__ser;
   document.getElementById('se-reps').textContent=__rep;
   window.__rest=__des; window.__img=ej.imagen_url||''; document.getElementById('se-descanso').innerHTML=window.__rest+' <small>seg</small>';
