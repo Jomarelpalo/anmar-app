@@ -290,8 +290,8 @@ select.field{appearance:none;-webkit-appearance:none}
 
           <div class="section-t">Tu semana</div>
           <div class="stats">
-            <div class="stat"><div class="n o">5</div><div class="l">días de racha</div></div>
-            <div class="stat"><div class="n b">3/4</div><div class="l">sesiones</div></div>
+            <div class="stat"><div class="n o" id="st-racha">0</div><div class="l">días de racha</div></div>
+            <div class="stat"><div class="n b" id="st-sem">0</div><div class="l">sesiones</div></div>
             <div class="stat"><div class="n">Sáb</div><div class="l">próximo partido</div></div>
           </div>
         </div>
@@ -436,7 +436,7 @@ function go(name){
   var nav=document.getElementById('nav');
   nav.classList.toggle('hidden', name==='login'||name==='sesion'||name==='entrevista');
   nav.querySelectorAll('button').forEach(function(b){b.classList.toggle('on', b.dataset.go===name);});
-  if(name==='sesion'){ cargarSesion(); }
+  if(name==='sesion'){ cargarSesion(); } if(name==='hoy'){ cargarSemana(); }
 }
 var msg=document.getElementById('msg');
 function setMsg(t,ok){ if(!msg)return; msg.textContent=t||''; msg.className='msg '+(ok?'ok':'err'); }
@@ -541,7 +541,7 @@ var sesionEjercicios=[], sesionIdx=0;
 var SEL='nombre,descripcion,instrucciones,imagen_url,musculos_primarios,series_def,reps_def,descanso_seg_def,pilar,categoria_origen,tempo';
 async function cargarSesion(){
   if(sesionEjercicios.length){ renderEjercicio(); return; }
-  document.getElementById('se-steplabel').textContent='Preparando tu sesion...';
+  document.getElementById('se-steplabel').textContent='Preparando tu sesion...'; window.__sesionGuardada=false;
   var dj={};
   try{ var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null;
     if(uid){ var d=await sb.from('datos_jugador').select('objetivo_principal,condicion_fisica,entorno_habitual,lesiones').eq('id',uid).maybeSingle(); if(d.data) dj=d.data; } }catch(e){}
@@ -602,7 +602,7 @@ function renderEjercicio(){
   document.getElementById('se-next').textContent=(sesionIdx<n-1)?'Siguiente →':'Terminar ✓';
 }
 document.addEventListener('click',function(e){
-  if(e.target&&e.target.id==='se-next'){ if(sesionIdx<sesionEjercicios.length-1){ sesionIdx++; renderEjercicio(); } else { go('hoy'); } }
+  if(e.target&&e.target.id==='se-next'){ if(sesionIdx<sesionEjercicios.length-1){ sesionIdx++; renderEjercicio(); } else { registrarSesion(); go('hoy'); } }
   if(e.target&&e.target.id==='se-prev'){ if(sesionIdx>0){ sesionIdx--; renderEjercicio(); } }
 });
 
@@ -630,6 +630,27 @@ function __rreset(t){cancelAnimationFrame(__raf);__run=false;__tot=t||60;__rem=_
   var rr=document.getElementById('rt-reset'); if(rr){ rr.addEventListener('click',function(){ __rreset(window.__rest||60); }); }
   var rc=document.getElementById('rt-close'); if(rc){ rc.addEventListener('click',function(){ cancelAnimationFrame(__raf); __run=false; document.getElementById('ov-rest').classList.remove('open'); }); }
 })();
+async function registrarSesion(){
+  try{ if(window.__sesionGuardada) return; window.__sesionGuardada=true;
+    var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null; if(!uid) return;
+    var pilares=[]; (sesionEjercicios||[]).forEach(function(x){ if(x.pilar&&pilares.indexOf(x.pilar)<0)pilares.push(x.pilar); });
+    await sb.from('sesiones').insert({jugador_id:uid, titulo:'Sesion de entrenamiento', pilares:pilares, entorno:(window.__entornoSel||'sin_material'), estado:'completada', duracion_min:Math.max(10,Math.round((sesionEjercicios||[]).length*4))});
+  }catch(e){}
+}
+function __kfecha(d){ var m=d.getMonth()+1, day=d.getDate(); return d.getFullYear()+'-'+(m<10?'0'+m:m)+'-'+(day<10?'0'+day:day); }
+async function cargarSemana(){
+  try{ var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null; if(!uid) return;
+    var r=await sb.from('sesiones').select('fecha').eq('jugador_id',uid).eq('estado','completada').order('fecha',{ascending:false}).limit(120);
+    var ds=(r.data||[]).map(function(x){return x.fecha;}); var set={}; ds.forEach(function(f){ set[f]=1; });
+    var now=new Date(); var dow=(now.getDay()+6)%7; var lunes=new Date(now); lunes.setDate(now.getDate()-dow); lunes.setHours(0,0,0,0);
+    var nSem=ds.filter(function(f){ return new Date(f+'T00:00:00')>=lunes; }).length;
+    var racha=0, cur=new Date(); cur.setHours(0,0,0,0);
+    if(!set[__kfecha(cur)]) cur.setDate(cur.getDate()-1);
+    while(set[__kfecha(cur)]){ racha++; cur.setDate(cur.getDate()-1); }
+    var er=document.getElementById('st-racha'); if(er) er.textContent=racha;
+    var es=document.getElementById('st-sem'); if(es) es.textContent=nSem;
+  }catch(e){}
+}
 window.__entornoSel='sin_material';
 (function(){
   var chips=document.getElementById('chips-ent');
