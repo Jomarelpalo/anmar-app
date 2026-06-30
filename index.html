@@ -325,42 +325,9 @@ select.field{appearance:none;-webkit-appearance:none}
 <section class="screen" id="s-progreso">
         <div class="pad pad-top">
           <div class="top"><div class="hello">Tu evolución<b>Progreso</b></div><div class="avatar">A</div></div>
-
-          <div class="card">
-            <div class="ex-tag" style="color:var(--muted)">SALTO VERTICAL (cm)</div>
-            <div class="bars">
-              <div class="b" style="height:46%"><span>Feb</span></div>
-              <div class="b" style="height:54%"><span>Mar</span></div>
-              <div class="b" style="height:60%"><span>Abr</span></div>
-              <div class="b" style="height:66%"><span>May</span></div>
-              <div class="b last" style="height:82%"><span>Jun</span></div>
-            </div>
-            <div class="legend">De 38 cm a <b style="color:var(--orange)">47 cm</b> en 5 meses · +9 cm 🔥</div>
-          </div>
-
-          <div class="section-t">Tests físicos</div>
-          <div class="card">
-            <div class="test">
-              <div class="ic">🦅</div>
-              <div class="tx"><div class="nm">Salto vertical</div><div class="sub">Explosividad</div></div>
-              <div class="val"><div class="big">47 cm</div><div class="up">▲ +3</div></div>
-            </div>
-            <div class="test">
-              <div class="ic">⚡</div>
-              <div class="tx"><div class="nm">Velocidad 20 m</div><div class="sub">Aceleración</div></div>
-              <div class="val"><div class="big">3.4 s</div><div class="up">▲ -0.2</div></div>
-            </div>
-            <div class="test">
-              <div class="ic">🔁</div>
-              <div class="tx"><div class="nm">Agilidad (T-test)</div><div class="sub">Cambios de dirección</div></div>
-              <div class="val"><div class="big">10.1 s</div><div class="up">▲ -0.4</div></div>
-            </div>
-            <div class="test" style="border:none;margin-bottom:0">
-              <div class="ic">🫁</div>
-              <div class="tx"><div class="nm">Resistencia</div><div class="sub">Test de ida y vuelta</div></div>
-              <div class="val"><div class="big">Nivel 7</div><div class="up">▲ +1</div></div>
-            </div>
-          </div>
+          <button id="pr-add" style="width:100%;margin:14px 0;background:#16213a;color:#cdd8e8;border:none;border-radius:11px;padding:12px;font-size:14px;cursor:pointer;font-family:var(--font)">+ Añadir medición</button>
+          <div class="section-t">Tus tests físicos</div>
+          <div class="card" id="pr-cont"></div>
         </div>
       </section>
 
@@ -408,7 +375,7 @@ select.field{appearance:none;-webkit-appearance:none}
         <button data-go="calendario"><span class="i">📅</span>Calendario</button>
         <button data-go="perfil"><span class="i">👤</span>Perfil</button>
       </nav>
-<div class="ovl" id="ov-img"><button class="x" id="im-close" aria-label="Cerrar">&times;</button><div class="imgbox"><img id="im-big" src="" alt="Ejercicio"></div></div><div class="ovl" id="ov-rest"><button class="x" id="rt-close" aria-label="Cerrar">&times;</button><div style="font-size:11px;letter-spacing:.08em;color:#7d8da6">DESCANSO</div><div style="position:relative;width:170px;height:170px"><svg width="170" height="170" viewBox="0 0 120 120" style="transform:rotate(-90deg)"><circle cx="60" cy="60" r="52" fill="none" stroke="#16213a" stroke-width="9"></circle><circle id="rt-ring" cx="60" cy="60" r="52" fill="none" stroke="#3a86d8" stroke-width="9" stroke-linecap="round" stroke-dasharray="326.726" stroke-dashoffset="0"></circle></svg><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><div id="rt-time" style="font-size:36px;font-weight:800;color:#e7eef7">1:00</div><div id="rt-sub" style="font-size:11px;color:#7d8da6">listo</div></div></div><div class="rt-btns"><button id="rt-main">Iniciar</button><button class="sec" id="rt-reset">Reiniciar</button></div></div><div class="ovl" id="ov-dia"><button class="x" id="dia-close" aria-label="Cerrar">&times;</button><div style="width:100%;max-width:330px"><div id="dia-titulo" style="font-size:18px;font-weight:700;margin-bottom:12px;color:#e7eef7"></div><div id="dia-cont" style="margin-bottom:12px"></div><button id="dia-add" style="width:100%;background:#16213a;color:#cdd8e8;border:none;border-radius:11px;padding:11px;font-size:14px;cursor:pointer;font-family:var(--font)">+ Añadir evento</button><div id="dia-form" style="display:none;margin-top:12px"><input id="ev-titulo" class="field" placeholder="Título (ej. Partido vs CB Costa)"><select id="ev-tipo" class="field"><option value="entrenamiento">Entrenamiento</option><option value="partido">Partido</option><option value="descanso">Descanso</option><option value="otro">Otro</option></select><input id="ev-hora" class="field" type="time"><input id="ev-lugar" class="field" placeholder="Lugar (opcional)"><button id="ev-guardar" style="width:100%;background:#d6a743;color:#3a2a06;border:none;border-radius:11px;padding:12px;font-weight:700;cursor:pointer;font-family:var(--font)">Guardar evento</button><p id="ev-msg" style="font-size:12px;color:#f3c969;text-align:center;margin-top:8px"></p></div></div></div>
+<div class="ovl" id="ov-img"><button class="x" id="im-close" aria-label="Cerrar">&times;</button><div class="imgbox"><img id="im-big" src="" alt="Ejercicio"></div></div><div class="ovl" id="ov-rest"><button class="x" id="rt-close" aria-label="Cerrar">&times;</button><div style="font-size:11px;letter-spacing:.08em;color:#7d8da6">DESCANSO</div><div style="position:relative;width:170px;height:170px"><svg width="170" height="170" viewBox="0 0 120 120" style="transform:rotate(-90deg)"><circle cx="60" cy="60" r="52" fill="none" stroke="#16213a" stroke-width="9"></circle><circle id="rt-ring" cx="60" cy="60" r="52" fill="none" stroke="#3a86d8" stroke-width="9" stroke-linecap="round" stroke-dasharray="326.726" stroke-dashoffset="0"></circle></svg><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><div id="rt-time" style="font-size:36px;font-weight:800;color:#e7eef7">1:00</div><div id="rt-sub" style="font-size:11px;color:#7d8da6">listo</div></div></div><div class="rt-btns"><button id="rt-main">Iniciar</button><button class="sec" id="rt-reset">Reiniciar</button></div></div><div class="ovl" id="ov-dia"><button class="x" id="dia-close" aria-label="Cerrar">&times;</button><div style="width:100%;max-width:330px"><div id="dia-titulo" style="font-size:18px;font-weight:700;margin-bottom:12px;color:#e7eef7"></div><div id="dia-cont" style="margin-bottom:12px"></div><button id="dia-add" style="width:100%;background:#16213a;color:#cdd8e8;border:none;border-radius:11px;padding:11px;font-size:14px;cursor:pointer;font-family:var(--font)">+ Añadir evento</button><div id="dia-form" style="display:none;margin-top:12px"><input id="ev-titulo" class="field" placeholder="Título (ej. Partido vs CB Costa)"><select id="ev-tipo" class="field"><option value="entrenamiento">Entrenamiento</option><option value="partido">Partido</option><option value="descanso">Descanso</option><option value="otro">Otro</option></select><input id="ev-hora" class="field" type="time"><input id="ev-lugar" class="field" placeholder="Lugar (opcional)"><button id="ev-guardar" style="width:100%;background:#d6a743;color:#3a2a06;border:none;border-radius:11px;padding:12px;font-weight:700;cursor:pointer;font-family:var(--font)">Guardar evento</button><p id="ev-msg" style="font-size:12px;color:#f3c969;text-align:center;margin-top:8px"></p></div></div><div class="ovl" id="ov-test"><button class="x" id="test-close" aria-label="Cerrar">&times;</button><div style="width:100%;max-width:330px"><div style="font-size:18px;font-weight:700;margin-bottom:12px;color:#e7eef7">Nueva medición</div><select id="t-tipo" class="field"><option value="salto_vertical">Salto vertical (cm)</option><option value="velocidad_20m">Velocidad 20 m (s)</option><option value="agilidad">Agilidad T-test (s)</option><option value="resistencia">Resistencia (nivel)</option><option value="otro">Otro</option></select><input id="t-valor" class="field" type="number" step="0.01" placeholder="Valor (ej. 47)"><input id="t-fecha" class="field" type="date"><button id="t-guardar" style="width:100%;background:#d6a743;color:#3a2a06;border:none;border-radius:11px;padding:12px;font-weight:700;cursor:pointer;font-family:var(--font)">Guardar medición</button><p id="t-msg" style="font-size:12px;color:#f3c969;text-align:center;margin-top:8px"></p></div></div></div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -422,7 +389,7 @@ function go(name){
   var nav=document.getElementById('nav');
   nav.classList.toggle('hidden', name==='login'||name==='sesion'||name==='entrevista');
   nav.querySelectorAll('button').forEach(function(b){b.classList.toggle('on', b.dataset.go===name);});
-  if(name==='sesion'){ cargarSesion(); } if(name==='hoy'){ cargarSemana(); } if(name==='calendario'){ cargarCalendario(); }
+  if(name==='sesion'){ cargarSesion(); } if(name==='hoy'){ cargarSemana(); } if(name==='calendario'){ cargarCalendario(); } if(name==='progreso'){ cargarProgreso(); }
 }
 var msg=document.getElementById('msg');
 function setMsg(t,ok){ if(!msg)return; msg.textContent=t||''; msg.className='msg '+(ok?'ok':'err'); }
@@ -701,6 +668,34 @@ async function guardarEvento(){
     msg.textContent=''; abrirDia(f); cargarCalendario();
   }catch(e){ msg.textContent='Error al guardar.'; }
 }
+var TTIPOS={salto_vertical:{n:'Salto vertical',u:'cm',ic:'\ud83e\udd85',mas:true},velocidad_20m:{n:'Velocidad 20 m',u:'s',ic:'\u26a1',mas:false},agilidad:{n:'Agilidad',u:'s',ic:'\ud83d\udd01',mas:false},resistencia:{n:'Resistencia',u:'nivel',ic:'\ud83e\udec1',mas:true},otro:{n:'Otro',u:'',ic:'\ud83d\udcca',mas:true}};
+async function cargarProgreso(){
+  var cont=document.getElementById('pr-cont'); if(!cont) return; cont.innerHTML='Cargando…';
+  try{ var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null; if(!uid){cont.innerHTML='';return;}
+    var r=await sb.from('tests_progreso').select('tipo,valor,unidad,fecha').eq('jugador_id',uid).order('fecha',{ascending:false}).limit(100);
+    var rows=r.data||[], byT={}; rows.forEach(function(x){ if(!byT[x.tipo])byT[x.tipo]=[]; byT[x.tipo].push(x); });
+    var keys=Object.keys(byT);
+    if(!keys.length){ cont.innerHTML='<div style="color:#7d8da6;font-size:13px;padding:6px 2px">Aún no has registrado mediciones. Pulsa el botón de arriba para añadir la primera.</div>'; return; }
+    var h='';
+    keys.forEach(function(t){ var arr=byT[t], meta=TTIPOS[t]||{n:t,u:'',ic:'\ud83d\udcca',mas:true}, ult=arr[0], ant=arr[1], delta='';
+      if(ant){ var d=Math.round((ult.valor-ant.valor)*100)/100, mejora=meta.mas?d>0:d<0, col=(d===0?'#7d8da6':(mejora?'#39b178':'#ff6b6b')), fl=(d>0?'▲':(d<0?'▼':'=')); delta='<div class="up" style="color:'+col+'">'+fl+' '+(d>0?'+':'')+d+'</div>'; }
+      h+='<div class="test"><div class="ic">'+meta.ic+'</div><div class="tx"><div class="nm">'+meta.n+'</div><div class="sub">'+ult.fecha+'</div></div><div class="val"><div class="big">'+ult.valor+' '+(ult.unidad||meta.u)+'</div>'+delta+'</div></div>';
+    });
+    cont.innerHTML=h;
+  }catch(e){ cont.innerHTML=''; }
+}
+async function guardarTest(){
+  var msg=document.getElementById('t-msg'), val=document.getElementById('t-valor').value;
+  if(val===''||isNaN(parseFloat(val))){ msg.textContent='Escribe un valor numérico.'; return; }
+  msg.textContent='Guardando…';
+  try{ var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null; if(!uid){msg.textContent='No hay sesión iniciada.';return;}
+    var tipo=document.getElementById('t-tipo').value, meta=TTIPOS[tipo]||{u:''}, fecha=document.getElementById('t-fecha').value||null;
+    var row={jugador_id:uid, tipo:tipo, valor:parseFloat(val), unidad:meta.u||null}; if(fecha) row.fecha=fecha;
+    var r=await sb.from('tests_progreso').insert(row);
+    if(r.error){ msg.textContent='No se pudo guardar.'; return; }
+    document.getElementById('t-valor').value=''; msg.textContent=''; document.getElementById('ov-test').classList.remove('open'); cargarProgreso();
+  }catch(e){ msg.textContent='Error al guardar.'; }
+}
 window.__entornoSel='sin_material';
 (function(){
   var chips=document.getElementById('chips-ent');
@@ -722,6 +717,10 @@ window.__entornoSel='sin_material';
   var ovd2=document.getElementById('ov-dia'); if(ovd2){ ovd2.addEventListener('click',function(e){ if(e.target===ovd2) ovd2.classList.remove('open'); }); }
   var da=document.getElementById('dia-add'); if(da){ da.addEventListener('click',function(){ var ff=document.getElementById('dia-form'); ff.style.display=(ff.style.display==='none'?'block':'none'); }); }
   var eg=document.getElementById('ev-guardar'); if(eg){ eg.addEventListener('click',guardarEvento); }
+  var pa=document.getElementById('pr-add'); if(pa){ pa.addEventListener('click',function(){ var tf=document.getElementById('t-fecha'); if(tf&&!tf.value) tf.value=__kfecha(new Date()); document.getElementById('ov-test').classList.add('open'); }); }
+  var tc=document.getElementById('test-close'); if(tc){ tc.addEventListener('click',function(){ document.getElementById('ov-test').classList.remove('open'); }); }
+  var ovt2=document.getElementById('ov-test'); if(ovt2){ ovt2.addEventListener('click',function(e){ if(e.target===ovt2) ovt2.classList.remove('open'); }); }
+  var tg=document.getElementById('t-guardar'); if(tg){ tg.addEventListener('click',guardarTest); }
 })();
 
 (function(){
