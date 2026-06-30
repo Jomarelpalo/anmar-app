@@ -376,21 +376,7 @@ select.field{appearance:none;-webkit-appearance:none}
           <div class="grid-cal" id="cal"></div>
 
           <div class="section-t">Próximos eventos</div>
-          <div class="ev">
-            <div class="bar o"></div>
-            <div class="d"><div class="dd">25</div><div class="mm">Jue</div></div>
-            <div class="info"><div class="t">Entrenamiento · Técnica</div><div class="s">17:30 · Sin material</div></div>
-          </div>
-          <div class="ev">
-            <div class="bar b"></div>
-            <div class="d"><div class="dd">27</div><div class="mm">Sáb</div></div>
-            <div class="info"><div class="t">Partido vs. CB Costa</div><div class="s">11:00 · Pabellón municipal</div></div>
-          </div>
-          <div class="ev">
-            <div class="bar o"></div>
-            <div class="d"><div class="dd">29</div><div class="mm">Lun</div></div>
-            <div class="info"><div class="t">Entrenamiento · Fuerza</div><div class="s">18:00 · Kit mínimo</div></div>
-          </div>
+          <div id="cal-eventos"></div>
         </div>
       </section>
 
@@ -671,6 +657,15 @@ async function cargarCalendario(){
     html+='<div data-f="'+ds+'" style="cursor:pointer;'+st+'">'+d+'</div>';
   }
   cont.innerHTML=html;
+  var evc=document.getElementById('cal-eventos');
+  if(evc){ evc.innerHTML='';
+    try{ var u2=await sb.auth.getUser(); var uid2=u2.data&&u2.data.user?u2.data.user.id:null;
+      if(uid2){ var er=await sb.from('eventos').select('tipo,titulo,fecha,hora,lugar').eq('jugador_id',uid2).gte('fecha',todayStr).order('fecha').limit(10);
+        var evs=er.data||[]; var dnm=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+        if(!evs.length){ evc.innerHTML='<div style="color:#7d8da6;font-size:13px;padding:4px 2px">No tienes eventos próximos. Toca un día del calendario para añadir uno.</div>'; }
+        else { var h2=''; evs.forEach(function(x){ var pp=x.fecha.split('-'); var dt=new Date(pp[0],pp[1]-1,pp[2]); var bar=(x.tipo==='partido')?'b':'o'; h2+='<div class="ev"><div class="bar '+bar+'"></div><div class="d"><div class="dd">'+parseInt(pp[2],10)+'</div><div class="mm">'+dnm[dt.getDay()]+'</div></div><div class="info"><div class="t">'+x.titulo+'</div><div class="s">'+(x.hora?String(x.hora).slice(0,5)+' · ':'')+x.tipo+(x.lugar?' · '+x.lugar:'')+'</div></div></div>'; }); evc.innerHTML=h2; }
+      } }catch(e){}
+  }
 }
 window.__diaSel=null;
 async function abrirDia(f){
