@@ -369,7 +369,7 @@ select.field{appearance:none;-webkit-appearance:none}
 <section class="screen" id="s-calendario">
         <div class="pad pad-top">
           <div class="calhead">
-            <h2>Junio 2026</h2>
+            <h2 id="cal-mes">Junio 2026</h2>
             <div class="nav"><button>‹</button><button>›</button></div>
           </div>
           <div class="dow"><span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
@@ -436,7 +436,7 @@ function go(name){
   var nav=document.getElementById('nav');
   nav.classList.toggle('hidden', name==='login'||name==='sesion'||name==='entrevista');
   nav.querySelectorAll('button').forEach(function(b){b.classList.toggle('on', b.dataset.go===name);});
-  if(name==='sesion'){ cargarSesion(); } if(name==='hoy'){ cargarSemana(); }
+  if(name==='sesion'){ cargarSesion(); } if(name==='hoy'){ cargarSemana(); } if(name==='calendario'){ cargarCalendario(); }
 }
 var msg=document.getElementById('msg');
 function setMsg(t,ok){ if(!msg)return; msg.textContent=t||''; msg.className='msg '+(ok?'ok':'err'); }
@@ -650,6 +650,27 @@ async function cargarSemana(){
     var er=document.getElementById('st-racha'); if(er) er.textContent=racha;
     var es=document.getElementById('st-sem'); if(es) es.textContent=nSem;
   }catch(e){}
+}
+async function cargarCalendario(){
+  var cont=document.getElementById('cal'); if(!cont) return;
+  var now=new Date(), y=now.getFullYear(), m=now.getMonth();
+  var meses=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var mh=document.getElementById('cal-mes'); if(mh) mh.textContent=meses[m]+' '+y;
+  var set={};
+  try{ var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null;
+    if(uid){ var first=y+'-'+(m+1<10?'0':'')+(m+1)+'-01';
+      var r=await sb.from('sesiones').select('fecha').eq('jugador_id',uid).eq('estado','completada').gte('fecha',first).limit(60);
+      (r.data||[]).forEach(function(x){ set[x.fecha]=1; }); } }catch(e){}
+  var startDow=(new Date(y,m,1).getDay()+6)%7, daysIn=new Date(y,m+1,0).getDate(), todayStr=__kfecha(now), html='', i;
+  for(i=0;i<startDow;i++) html+='<div></div>';
+  for(var d=1;d<=daysIn;d++){
+    var ds=y+'-'+(m+1<10?'0':'')+(m+1)+'-'+(d<10?'0':'')+d;
+    var st='aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:13px;border-radius:8px;';
+    if(set[ds]) st+='background:#123a24;color:#7fe0a8;font-weight:700;'; else st+='color:#cdd8e8;';
+    if(ds===todayStr) st+='border:1.5px solid #5fa0e6;';
+    html+='<div style="'+st+'">'+d+'</div>';
+  }
+  cont.innerHTML=html;
 }
 window.__entornoSel='sin_material';
 (function(){
