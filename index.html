@@ -422,7 +422,7 @@ select.field{appearance:none;-webkit-appearance:none}
         <button data-go="calendario"><span class="i">📅</span>Calendario</button>
         <button data-go="perfil"><span class="i">👤</span>Perfil</button>
       </nav>
-<div class="ovl" id="ov-img"><button class="x" id="im-close" aria-label="Cerrar">&times;</button><div class="imgbox"><img id="im-big" src="" alt="Ejercicio"></div></div><div class="ovl" id="ov-rest"><button class="x" id="rt-close" aria-label="Cerrar">&times;</button><div style="font-size:11px;letter-spacing:.08em;color:#7d8da6">DESCANSO</div><div style="position:relative;width:170px;height:170px"><svg width="170" height="170" viewBox="0 0 120 120" style="transform:rotate(-90deg)"><circle cx="60" cy="60" r="52" fill="none" stroke="#16213a" stroke-width="9"></circle><circle id="rt-ring" cx="60" cy="60" r="52" fill="none" stroke="#3a86d8" stroke-width="9" stroke-linecap="round" stroke-dasharray="326.726" stroke-dashoffset="0"></circle></svg><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><div id="rt-time" style="font-size:36px;font-weight:800;color:#e7eef7">1:00</div><div id="rt-sub" style="font-size:11px;color:#7d8da6">listo</div></div></div><div class="rt-btns"><button id="rt-main">Iniciar</button><button class="sec" id="rt-reset">Reiniciar</button></div></div>
+<div class="ovl" id="ov-img"><button class="x" id="im-close" aria-label="Cerrar">&times;</button><div class="imgbox"><img id="im-big" src="" alt="Ejercicio"></div></div><div class="ovl" id="ov-rest"><button class="x" id="rt-close" aria-label="Cerrar">&times;</button><div style="font-size:11px;letter-spacing:.08em;color:#7d8da6">DESCANSO</div><div style="position:relative;width:170px;height:170px"><svg width="170" height="170" viewBox="0 0 120 120" style="transform:rotate(-90deg)"><circle cx="60" cy="60" r="52" fill="none" stroke="#16213a" stroke-width="9"></circle><circle id="rt-ring" cx="60" cy="60" r="52" fill="none" stroke="#3a86d8" stroke-width="9" stroke-linecap="round" stroke-dasharray="326.726" stroke-dashoffset="0"></circle></svg><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><div id="rt-time" style="font-size:36px;font-weight:800;color:#e7eef7">1:00</div><div id="rt-sub" style="font-size:11px;color:#7d8da6">listo</div></div></div><div class="rt-btns"><button id="rt-main">Iniciar</button><button class="sec" id="rt-reset">Reiniciar</button></div></div><div class="ovl" id="ov-dia"><button class="x" id="dia-close" aria-label="Cerrar">&times;</button><div style="width:100%;max-width:330px"><div id="dia-titulo" style="font-size:18px;font-weight:700;margin-bottom:12px;color:#e7eef7"></div><div id="dia-cont" style="margin-bottom:12px"></div><button id="dia-add" style="width:100%;background:#16213a;color:#cdd8e8;border:none;border-radius:11px;padding:11px;font-size:14px;cursor:pointer;font-family:var(--font)">+ Añadir evento</button><div id="dia-form" style="display:none;margin-top:12px"><input id="ev-titulo" class="field" placeholder="Título (ej. Partido vs CB Costa)"><select id="ev-tipo" class="field"><option value="entrenamiento">Entrenamiento</option><option value="partido">Partido</option><option value="descanso">Descanso</option><option value="otro">Otro</option></select><input id="ev-hora" class="field" type="time"><input id="ev-lugar" class="field" placeholder="Lugar (opcional)"><button id="ev-guardar" style="width:100%;background:#d6a743;color:#3a2a06;border:none;border-radius:11px;padding:12px;font-weight:700;cursor:pointer;font-family:var(--font)">Guardar evento</button><p id="ev-msg" style="font-size:12px;color:#f3c969;text-align:center;margin-top:8px"></p></div></div></div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -668,9 +668,43 @@ async function cargarCalendario(){
     var st='aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:13px;border-radius:8px;';
     if(set[ds]) st+='background:#123a24;color:#7fe0a8;font-weight:700;'; else st+='color:#cdd8e8;';
     if(ds===todayStr) st+='border:1.5px solid #5fa0e6;';
-    html+='<div style="'+st+'">'+d+'</div>';
+    html+='<div data-f="'+ds+'" style="cursor:pointer;'+st+'">'+d+'</div>';
   }
   cont.innerHTML=html;
+}
+window.__diaSel=null;
+async function abrirDia(f){
+  window.__diaSel=f; var ov=document.getElementById('ov-dia'); if(!ov) return;
+  var parts=f.split('-'); var dd=new Date(parts[0],parts[1]-1,parts[2]);
+  var dows=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  var meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  document.getElementById('dia-titulo').textContent=dows[dd.getDay()]+' '+parseInt(parts[2],10)+' de '+meses[parts[1]-1];
+  var cont=document.getElementById('dia-cont'); cont.innerHTML='Cargando…'; document.getElementById('dia-form').style.display='none';
+  var html='';
+  try{ var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null;
+    if(uid){
+      var ses=await sb.from('sesiones').select('pilares,entorno,estado').eq('jugador_id',uid).eq('fecha',f);
+      (ses.data||[]).forEach(function(x){ html+='<div style="background:#123a24;border-radius:10px;padding:9px 11px;margin-bottom:8px;color:#cfeede;font-size:13px"><b>Entrenamiento '+(x.estado==='completada'?'completado':x.estado)+'</b><br><span style="color:#9fccb6">'+((x.pilares||[]).join(', ')||'sesión')+' · '+(x.entorno||'')+'</span></div>'; });
+      var evs=await sb.from('eventos').select('tipo,titulo,hora,lugar').eq('jugador_id',uid).eq('fecha',f);
+      (evs.data||[]).forEach(function(x){ html+='<div style="background:#101b2e;border-radius:10px;padding:9px 11px;margin-bottom:8px;color:#cdd8e8;font-size:13px"><b>'+x.titulo+'</b><br><span style="color:#7d8da6">'+x.tipo+(x.hora?' · '+String(x.hora).slice(0,5):'')+(x.lugar?' · '+x.lugar:'')+'</span></div>'; });
+    } }catch(e){}
+  if(!html) html='<div style="color:#7d8da6;font-size:13px">No hay nada registrado este día.</div>';
+  cont.innerHTML=html; ov.classList.add('open');
+}
+async function guardarEvento(){
+  var f=window.__diaSel; if(!f) return;
+  var t=document.getElementById('ev-titulo').value.trim(); var msg=document.getElementById('ev-msg');
+  if(!t){ msg.textContent='Escribe un título.'; return; }
+  msg.textContent='Guardando…';
+  try{ var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null; if(!uid){msg.textContent='No hay sesión iniciada.';return;}
+    var hora=document.getElementById('ev-hora').value||null;
+    var row={jugador_id:uid, tipo:document.getElementById('ev-tipo').value, titulo:t, fecha:f, lugar:(document.getElementById('ev-lugar').value.trim()||null)};
+    if(hora) row.hora=hora;
+    var r=await sb.from('eventos').insert(row);
+    if(r.error){ msg.textContent='No se pudo guardar.'; return; }
+    document.getElementById('ev-titulo').value=''; document.getElementById('ev-lugar').value=''; document.getElementById('ev-hora').value='';
+    msg.textContent=''; abrirDia(f); cargarCalendario();
+  }catch(e){ msg.textContent='Error al guardar.'; }
 }
 window.__entornoSel='sin_material';
 (function(){
@@ -688,6 +722,11 @@ window.__entornoSel='sin_material';
     }); });
   }
   var bi=document.getElementById('se-inicio'); if(bi){ bi.addEventListener('click',function(){ go('hoy'); }); }
+  var cal=document.getElementById('cal'); if(cal){ cal.addEventListener('click',function(e){ var c=e.target.closest&&e.target.closest('[data-f]'); if(c) abrirDia(c.getAttribute('data-f')); }); }
+  var dc=document.getElementById('dia-close'); if(dc){ dc.addEventListener('click',function(){ document.getElementById('ov-dia').classList.remove('open'); }); }
+  var ovd2=document.getElementById('ov-dia'); if(ovd2){ ovd2.addEventListener('click',function(e){ if(e.target===ovd2) ovd2.classList.remove('open'); }); }
+  var da=document.getElementById('dia-add'); if(da){ da.addEventListener('click',function(){ var ff=document.getElementById('dia-form'); ff.style.display=(ff.style.display==='none'?'block':'none'); }); }
+  var eg=document.getElementById('ev-guardar'); if(eg){ eg.addEventListener('click',guardarEvento); }
 })();
 
 (function(){
