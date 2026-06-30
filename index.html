@@ -363,6 +363,11 @@ select.field{appearance:none;-webkit-appearance:none}
             <div class="prow"><span>Mentoría (bienestar)</span><span>Activada</span></div>
             <div class="prow" style="border:none"><span>Compartir con entrenador</span><span style="color:var(--orange)">Sí</span></div>
           </div>
+          <div class="section-t">Mi objetivo (ficha del jugador)</div>
+          <div id="modo-tabs" style="display:flex;gap:8px;margin-bottom:12px"><button class="modo-b" data-m="fisico" style="flex:1;border:none;border-radius:10px;padding:9px;font-size:13px;cursor:pointer;font-family:var(--font);background:#16213a;color:#cdd8e8">Físico</button><button class="modo-b" data-m="tecnico" style="flex:1;border:none;border-radius:10px;padding:9px;font-size:13px;cursor:pointer;font-family:var(--font);background:#16213a;color:#cdd8e8">Técnico</button><button class="modo-b" data-m="conjunto" style="flex:1;border:none;border-radius:10px;padding:9px;font-size:13px;cursor:pointer;font-family:var(--font);background:#16213a;color:#cdd8e8">Conjunto</button></div>
+          <div class="card" id="obj-cont"></div>
+          <button class="btn btn-primary" id="obj-guardar" style="margin-top:12px">Guardar mis objetivos</button>
+          <p class="msg" id="obj-msg" style="text-align:center;font-size:12px;margin-top:8px"></p>
           <button class="btn btn-ghost" style="margin-top:18px" data-go="login">Cerrar sesión</button>
         </div>
       </section>
@@ -389,7 +394,7 @@ function go(name){
   var nav=document.getElementById('nav');
   nav.classList.toggle('hidden', name==='login'||name==='sesion'||name==='entrevista');
   nav.querySelectorAll('button').forEach(function(b){b.classList.toggle('on', b.dataset.go===name);});
-  if(name==='sesion'){ cargarSesion(); } if(name==='hoy'){ cargarSemana(); } if(name==='calendario'){ cargarCalendario(); } if(name==='progreso'){ cargarProgreso(); }
+  if(name==='sesion'){ cargarSesion(); } if(name==='hoy'){ cargarSemana(); } if(name==='calendario'){ cargarCalendario(); } if(name==='progreso'){ cargarProgreso(); } if(name==='perfil'){ cargarObjetivos(); }
 }
 var msg=document.getElementById('msg');
 function setMsg(t,ok){ if(!msg)return; msg.textContent=t||''; msg.className='msg '+(ok?'ok':'err'); }
@@ -696,6 +701,38 @@ async function guardarTest(){
     document.getElementById('t-valor').value=''; msg.textContent=''; document.getElementById('ov-test').classList.remove('open'); cargarProgreso();
   }catch(e){ msg.textContent='Error al guardar.'; }
 }
+var ATRIBS=[{k:'salto',n:'Salto vertical',g:'f'},{k:'potencia',n:'Potencia / explosividad',g:'f'},{k:'velocidad',n:'Velocidad',g:'f'},{k:'agilidad',n:'Agilidad',g:'f'},{k:'fuerza_inf',n:'Fuerza tren inferior',g:'f'},{k:'fuerza_sup',n:'Fuerza tren superior',g:'f'},{k:'resistencia',n:'Resistencia',g:'f'},{k:'tiro_libre',n:'Tiro libre',g:'t'},{k:'tiro_tres',n:'Tiro de 3',g:'t'},{k:'tiro_media',n:'Tiro media distancia',g:'t'},{k:'manejo',n:'Manejo de balón',g:'t'},{k:'dribbling',n:'Dribbling en velocidad',g:'t'},{k:'entrada',n:'Entrada a canasta',g:'t'},{k:'pase',n:'Pase',g:'t'}];
+var PERFILES={
+ 'Base':{salto:6,potencia:6,velocidad:9,agilidad:9,fuerza_inf:6,fuerza_sup:5,resistencia:8,tiro_libre:8,tiro_tres:8,tiro_media:7,manejo:9,dribbling:9,entrada:7,pase:9},
+ 'Escolta':{salto:7,potencia:7,velocidad:8,agilidad:8,fuerza_inf:6,fuerza_sup:6,resistencia:7,tiro_libre:9,tiro_tres:9,tiro_media:8,manejo:8,dribbling:8,entrada:7,pase:7},
+ 'Alero':{salto:7,potencia:7,velocidad:7,agilidad:7,fuerza_inf:7,fuerza_sup:7,resistencia:7,tiro_libre:7,tiro_tres:7,tiro_media:7,manejo:7,dribbling:7,entrada:8,pase:7},
+ 'Ala-pívot':{salto:8,potencia:8,velocidad:6,agilidad:6,fuerza_inf:8,fuerza_sup:8,resistencia:7,tiro_libre:7,tiro_tres:5,tiro_media:6,manejo:5,dribbling:5,entrada:8,pase:6},
+ 'Pívot':{salto:8,potencia:8,velocidad:5,agilidad:5,fuerza_inf:9,fuerza_sup:9,resistencia:7,tiro_libre:7,tiro_tres:3,tiro_media:5,manejo:4,dribbling:4,entrada:9,pase:6},
+ '_def':{salto:6,potencia:6,velocidad:6,agilidad:6,fuerza_inf:6,fuerza_sup:6,resistencia:6,tiro_libre:6,tiro_tres:6,tiro_media:6,manejo:6,dribbling:6,entrada:6,pase:6}};
+window.__objModo='conjunto';
+function renderModo(){ var tabs=document.getElementById('modo-tabs'); if(!tabs)return; Array.prototype.forEach.call(tabs.querySelectorAll('.modo-b'),function(b){ var on=b.getAttribute('data-m')===window.__objModo; b.style.background=on?'#3a86d8':'#16213a'; b.style.color=on?'#fff':'#cdd8e8'; }); }
+async function cargarObjetivos(){
+  var cont=document.getElementById('obj-cont'); if(!cont) return; cont.innerHTML='Cargando…';
+  var dj={};
+  try{ var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null;
+    if(uid){ var d=await sb.from('datos_jugador').select('posicion,atributos_objetivo,modo_entreno').eq('id',uid).maybeSingle(); if(d.data) dj=d.data; } }catch(e){}
+  var obj=dj.atributos_objetivo||{}, pos=dj.posicion||'', perfil=PERFILES[pos]||PERFILES['_def'];
+  window.__objModo=dj.modo_entreno||'conjunto';
+  var vals={}; ATRIBS.forEach(function(a){ vals[a.k]=(obj&&obj[a.k]!=null)?obj[a.k]:(perfil[a.k]!=null?perfil[a.k]:6); });
+  function grupo(g,tit,col){ var h='<div style="font-size:11px;letter-spacing:.06em;color:'+col+';margin:2px 0 10px">'+tit+'</div>'; ATRIBS.filter(function(a){return a.g===g;}).forEach(function(a){ h+='<div style="margin-bottom:13px"><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px"><span style="color:#cdd8e8">'+a.n+'</span><span style="color:#5fa0e6;font-weight:700" id="ov-'+a.k+'">'+vals[a.k]+'</span></div><input type="range" min="0" max="10" value="'+vals[a.k]+'" id="sl-'+a.k+'" style="width:100%"></div>'; }); return h; }
+  cont.innerHTML=grupo('f','FÍSICO','#5fa0e6')+'<div style="height:6px"></div>'+grupo('t','TÉCNICO (baloncesto)','#d6a743');
+  ATRIBS.forEach(function(a){ var sl=document.getElementById('sl-'+a.k), ov=document.getElementById('ov-'+a.k); if(sl&&ov){ sl.addEventListener('input',function(){ ov.textContent=sl.value; }); } });
+  renderModo();
+}
+async function guardarObjetivos(){
+  var msg=document.getElementById('obj-msg'); msg.style.color='#f3c969'; msg.textContent='Guardando…';
+  try{ var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null; if(!uid){msg.textContent='No hay sesión iniciada.';return;}
+    var obj={}; ATRIBS.forEach(function(a){ var el=document.getElementById('sl-'+a.k); if(el) obj[a.k]=parseInt(el.value,10); });
+    var r=await sb.from('datos_jugador').update({atributos_objetivo:obj, modo_entreno:window.__objModo}).eq('id',uid);
+    if(r.error){ msg.textContent='No se pudo guardar.'; return; }
+    msg.style.color='#69d6b1'; msg.textContent='¡Objetivos guardados!';
+  }catch(e){ msg.textContent='Error al guardar.'; }
+}
 window.__entornoSel='sin_material';
 (function(){
   var chips=document.getElementById('chips-ent');
@@ -721,6 +758,8 @@ window.__entornoSel='sin_material';
   var tc=document.getElementById('test-close'); if(tc){ tc.addEventListener('click',function(){ document.getElementById('ov-test').classList.remove('open'); }); }
   var ovt2=document.getElementById('ov-test'); if(ovt2){ ovt2.addEventListener('click',function(e){ if(e.target===ovt2) ovt2.classList.remove('open'); }); }
   var tg=document.getElementById('t-guardar'); if(tg){ tg.addEventListener('click',guardarTest); }
+  var mt=document.getElementById('modo-tabs'); if(mt){ Array.prototype.forEach.call(mt.querySelectorAll('.modo-b'),function(b){ b.addEventListener('click',function(){ window.__objModo=b.getAttribute('data-m'); renderModo(); }); }); }
+  var og=document.getElementById('obj-guardar'); if(og){ og.addEventListener('click',guardarObjetivos); }
 })();
 
 (function(){
