@@ -500,7 +500,7 @@ var SEL='nombre,descripcion,instrucciones,imagen_url,musculos_primarios,series_d
 var MAPFIS={salto:['Legs','Calves'],potencia:['Legs','Calves'],velocidad:['Cardio','Legs'],agilidad:['Cardio','Calves','Legs'],fuerza_inf:['Legs','Calves'],fuerza_sup:['Chest','Back','Shoulders','Arms'],resistencia:['Cardio']};
 var MAPTEC={tiro_libre:'Tiro libre',tiro_tres:'Tiro de 3',tiro_media:'Tiro media',manejo:'Manejo de balón',dribbling:'Dribbling',entrada:'Entrada',pase:'Pase'};
 function pickPonderado(rows,pesoCat,n){
-  rows.sort(function(a,b){ return (b.imagen_url?1:0)-(a.imagen_url?1:0); });
+  for(var _i=rows.length-1;_i>0;_i--){ var _j=Math.floor(Math.random()*(_i+1)); var _t=rows[_i]; rows[_i]=rows[_j]; rows[_j]=_t; }
   var byCat={}; rows.forEach(function(r){ var c=r.categoria_origen||'otros'; if(!byCat[c])byCat[c]=[]; byCat[c].push(r); });
   var cats=Object.keys(byCat); if(!cats.length) return [];
   var total=0; cats.forEach(function(c){ total+=(pesoCat[c]||1); }); if(total<=0) total=cats.length;
@@ -718,7 +718,7 @@ var PERFILES={
  'Pívot':{salto:8,potencia:8,velocidad:5,agilidad:5,fuerza_inf:9,fuerza_sup:9,resistencia:7,tiro_libre:7,tiro_tres:3,tiro_media:5,manejo:4,dribbling:4,entrada:9,pase:6},
  '_def':{salto:6,potencia:6,velocidad:6,agilidad:6,fuerza_inf:6,fuerza_sup:6,resistencia:6,tiro_libre:6,tiro_tres:6,tiro_media:6,manejo:6,dribbling:6,entrada:6,pase:6}};
 window.__objModo='conjunto';
-function renderModo(){ var tabs=document.getElementById('modo-tabs'); if(!tabs)return; Array.prototype.forEach.call(tabs.querySelectorAll('.modo-b'),function(b){ var on=b.getAttribute('data-m')===window.__objModo; b.style.background=on?'#3a86d8':'#16213a'; b.style.color=on?'#fff':'#cdd8e8'; }); }
+function renderModo(){ var tabs=document.getElementById('modo-tabs'); if(tabs){ Array.prototype.forEach.call(tabs.querySelectorAll('.modo-b'),function(b){ var on=b.getAttribute('data-m')===window.__objModo; b.style.background=on?'#3a86d8':'#16213a'; b.style.color=on?'#fff':'#cdd8e8'; }); } var gf=document.getElementById('grp-fis'), gt=document.getElementById('grp-tec'); if(gf) gf.style.display=(window.__objModo==='tecnico')?'none':'block'; if(gt) gt.style.display=(window.__objModo==='fisico')?'none':'block'; }
 async function cargarObjetivos(){
   var cont=document.getElementById('obj-cont'); if(!cont) return; cont.innerHTML='Cargando…';
   var dj={};
@@ -728,7 +728,7 @@ async function cargarObjetivos(){
   window.__objModo=dj.modo_entreno||'conjunto';
   var vals={}; ATRIBS.forEach(function(a){ vals[a.k]=(obj&&obj[a.k]!=null)?obj[a.k]:(perfil[a.k]!=null?perfil[a.k]:6); });
   function grupo(g,tit,col){ var h='<div style="font-size:11px;letter-spacing:.06em;color:'+col+';margin:2px 0 10px">'+tit+'</div>'; ATRIBS.filter(function(a){return a.g===g;}).forEach(function(a){ h+='<div style="margin-bottom:13px"><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px"><span style="color:#cdd8e8">'+a.n+'</span><span style="color:#5fa0e6;font-weight:700" id="ov-'+a.k+'">'+vals[a.k]+'</span></div><input type="range" min="0" max="10" value="'+vals[a.k]+'" id="sl-'+a.k+'" style="width:100%"></div>'; }); return h; }
-  cont.innerHTML=grupo('f','FÍSICO','#5fa0e6')+'<div style="height:6px"></div>'+grupo('t','TÉCNICO (baloncesto)','#d6a743');
+  cont.innerHTML='<div id="grp-fis">'+grupo('f','FÍSICO','#5fa0e6')+'</div><div id="grp-tec" style="margin-top:6px">'+grupo('t','TÉCNICO (baloncesto)','#d6a743')+'</div>';
   ATRIBS.forEach(function(a){ var sl=document.getElementById('sl-'+a.k), ov=document.getElementById('ov-'+a.k); if(sl&&ov){ sl.addEventListener('input',function(){ ov.textContent=sl.value; }); } });
   renderModo();
 }
