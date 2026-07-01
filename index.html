@@ -499,12 +499,17 @@ var sesionEjercicios=[], sesionIdx=0;
 var SEL='nombre,descripcion,instrucciones,imagen_url,musculos_primarios,series_def,reps_def,descanso_seg_def,pilar,categoria_origen,tempo';
 var MAPFIS={salto:['Legs','Calves'],potencia:['Legs','Calves'],velocidad:['Cardio','Legs'],agilidad:['Cardio','Calves','Legs'],fuerza_inf:['Legs','Calves'],fuerza_sup:['Chest','Back','Shoulders','Arms'],resistencia:['Cardio']};
 var MAPTEC={tiro_libre:'Tiro libre',tiro_tres:'Tiro de 3',tiro_media:'Tiro media',manejo:'Manejo de balón',dribbling:'Dribbling',entrada:'Entrada',pase:'Pase'};
-function pickVariado(rows,orderCats,n){
+function pickPonderado(rows,pesoCat,n){
   rows.sort(function(a,b){ return (b.imagen_url?1:0)-(a.imagen_url?1:0); });
   var byCat={}; rows.forEach(function(r){ var c=r.categoria_origen||'otros'; if(!byCat[c])byCat[c]=[]; byCat[c].push(r); });
-  var order=orderCats.filter(function(c){return byCat[c];}); Object.keys(byCat).forEach(function(c){ if(order.indexOf(c)<0) order.push(c); });
-  var pick=[], i=0;
-  while(pick.length<n){ var added=false; for(var k=0;k<order.length&&pick.length<n;k++){ var arr=byCat[order[k]]; if(arr&&arr[i]){ pick.push(arr[i]); added=true; } } if(!added) break; i++; }
+  var cats=Object.keys(byCat); if(!cats.length) return [];
+  var total=0; cats.forEach(function(c){ total+=(pesoCat[c]||1); }); if(total<=0) total=cats.length;
+  var asign={}, base=0, rem=[];
+  cats.forEach(function(c){ var q=n*(pesoCat[c]||1)/total; var f=Math.floor(q); asign[c]=Math.min(f, byCat[c].length); base+=asign[c]; rem.push({c:c,frac:q-f}); });
+  rem.sort(function(a,b){return b.frac-a.frac;});
+  for(var r=0;r<rem.length&&base<n;r++){ var c=rem[r].c; if(asign[c]<byCat[c].length){ asign[c]++; base++; } }
+  var pick=[]; cats.forEach(function(c){ for(var i=0;i<asign[c]&&i<byCat[c].length;i++) pick.push(byCat[c][i]); });
+  if(pick.length<n){ cats.forEach(function(c){ for(var i=asign[c];i<byCat[c].length&&pick.length<n;i++) pick.push(byCat[c][i]); }); }
   return pick.slice(0,n);
 }
 async function cargarSesion(){
@@ -522,9 +527,9 @@ async function cargarSesion(){
   var catsTec=Object.keys(pesoTec).sort(function(a,b){return pesoTec[b]-pesoTec[a];});
   var nFis=(modo==='tecnico')?0:(modo==='fisico'?6:4); var nTec=(modo==='fisico')?0:(modo==='tecnico'?6:3);
   var principal=[];
-  if(nFis>0){ var qf=await sb.from('ejercicios').select(SEL).eq('activo',true).contains('entornos',[ent]).in('categoria_origen',catsFis).limit(150); var rf=qf.data||[]; if(rf.length<nFis){ var qf2=await sb.from('ejercicios').select(SEL).eq('activo',true).in('pilar',['fuerza','acondicionamiento']).contains('entornos',[ent]).limit(150); rf=qf2.data||[]; } principal=principal.concat(pickVariado(rf,catsFis,nFis)); }
-  if(nTec>0){ var qt=await sb.from('ejercicios').select(SEL).eq('activo',true).eq('pilar','tecnica').in('categoria_origen',catsTec).limit(80); principal=principal.concat(pickVariado(qt.data||[],catsTec,nTec)); }
-  if(!principal.length){ var qx=await sb.from('ejercicios').select(SEL).eq('activo',true).contains('entornos',[ent]).limit(60); principal=pickVariado(qx.data||[],catsFis,6); }
+  if(nFis>0){ var qf=await sb.from('ejercicios').select(SEL).eq('activo',true).contains('entornos',[ent]).in('categoria_origen',catsFis).limit(150); var rf=qf.data||[]; if(rf.length<nFis){ var qf2=await sb.from('ejercicios').select(SEL).eq('activo',true).in('pilar',['fuerza','acondicionamiento']).contains('entornos',[ent]).limit(150); rf=qf2.data||[]; } principal=principal.concat(pickPonderado(rf,pesoFis,nFis)); }
+  if(nTec>0){ var qt=await sb.from('ejercicios').select(SEL).eq('activo',true).eq('pilar','tecnica').in('categoria_origen',catsTec).limit(80); principal=principal.concat(pickPonderado(qt.data||[],pesoTec,nTec)); }
+  if(!principal.length){ var qx=await sb.from('ejercicios').select(SEL).eq('activo',true).contains('entornos',[ent]).limit(60); principal=pickPonderado(qx.data||[],pesoFis,6); }
   var qc=await sb.from('ejercicios').select(SEL).eq('activo',true).eq('pilar','calentamiento').contains('entornos',[ent]).limit(20);
   var cal=(qc.data||[]).slice(0,4);
   var qs=await sb.from('ejercicios').select(SEL).eq('activo',true).eq('pilar','recuperacion').contains('entornos',[ent]).limit(20);
@@ -733,7 +738,7 @@ async function guardarObjetivos(){
     var obj={}; ATRIBS.forEach(function(a){ var el=document.getElementById('sl-'+a.k); if(el) obj[a.k]=parseInt(el.value,10); });
     var r=await sb.from('datos_jugador').update({atributos_objetivo:obj, modo_entreno:window.__objModo}).eq('id',uid);
     if(r.error){ msg.textContent='No se pudo guardar.'; return; }
-    msg.style.color='#69d6b1'; msg.textContent='¡Objetivos guardados!';
+    sesionEjercicios=[]; msg.style.color='#69d6b1'; msg.textContent='¡Objetivos guardados! Empieza una sesión para verlo.';
   }catch(e){ msg.textContent='Error al guardar.'; }
 }
 window.__entornoSel='sin_material';
