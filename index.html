@@ -497,31 +497,34 @@ if(_iv){ _iv.addEventListener('click', async function(){
 }); }
 var sesionEjercicios=[], sesionIdx=0;
 var SEL='nombre,descripcion,instrucciones,imagen_url,musculos_primarios,series_def,reps_def,descanso_seg_def,pilar,categoria_origen,tempo';
+var MAPFIS={salto:['Legs','Calves'],potencia:['Legs','Calves'],velocidad:['Cardio','Legs'],agilidad:['Cardio','Calves','Legs'],fuerza_inf:['Legs','Calves'],fuerza_sup:['Chest','Back','Shoulders','Arms'],resistencia:['Cardio']};
+var MAPTEC={tiro_libre:'Tiro libre',tiro_tres:'Tiro de 3',tiro_media:'Tiro media',manejo:'Manejo de balón',dribbling:'Dribbling',entrada:'Entrada',pase:'Pase'};
+function pickVariado(rows,orderCats,n){
+  rows.sort(function(a,b){ return (b.imagen_url?1:0)-(a.imagen_url?1:0); });
+  var byCat={}; rows.forEach(function(r){ var c=r.categoria_origen||'otros'; if(!byCat[c])byCat[c]=[]; byCat[c].push(r); });
+  var order=orderCats.filter(function(c){return byCat[c];}); Object.keys(byCat).forEach(function(c){ if(order.indexOf(c)<0) order.push(c); });
+  var pick=[], i=0;
+  while(pick.length<n){ var added=false; for(var k=0;k<order.length&&pick.length<n;k++){ var arr=byCat[order[k]]; if(arr&&arr[i]){ pick.push(arr[i]); added=true; } } if(!added) break; i++; }
+  return pick.slice(0,n);
+}
 async function cargarSesion(){
   if(sesionEjercicios.length){ renderEjercicio(); return; }
   document.getElementById('se-steplabel').textContent='Preparando tu sesion...'; window.__sesionGuardada=false;
   var dj={};
   try{ var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null;
-    if(uid){ var d=await sb.from('datos_jugador').select('objetivo_principal,condicion_fisica,entorno_habitual,lesiones').eq('id',uid).maybeSingle(); if(d.data) dj=d.data; } }catch(e){}
+    if(uid){ var d=await sb.from('datos_jugador').select('condicion_fisica,entorno_habitual,objetivo_principal,atributos_objetivo,modo_entreno,lesiones').eq('id',uid).maybeSingle(); if(d.data) dj=d.data; } }catch(e){}
   var ent=window.__entornoSel||dj.entorno_habitual||'sin_material'; if(ent==='kit_minimo') ent='sin_material';
   window.__perfil=dj;
-  var obj=(dj.objetivo_principal||'').toLowerCase(), cats;
-  if(obj.indexOf('salt')>-1) cats=['Legs','Calves','Abs','Cardio'];
-  else if(obj.indexOf('fuerza')>-1) cats=['Legs','Back','Chest','Shoulders','Arms','Abs'];
-  else if(obj.indexOf('resist')>-1) cats=['Cardio','Legs','Abs','Back'];
-  else if(obj.indexOf('veloc')>-1||obj.indexOf('agil')>-1) cats=['Cardio','Legs','Calves','Abs'];
-  else cats=['Legs','Back','Chest','Abs','Shoulders','Cardio'];
-  var q=await sb.from('ejercicios').select(SEL).eq('activo',true).contains('entornos',[ent]).in('categoria_origen',cats).limit(120);
-  var rows=(q.data||[]);
-  if(rows.length<8){ var q2=await sb.from('ejercicios').select(SEL).eq('activo',true).contains('entornos',[ent]).limit(120); rows=(q2.data||[]); }
-  if(!rows.length){ document.getElementById('se-steplabel').textContent='No se pudieron cargar los ejercicios.'; return; }
-  rows.sort(function(a,b){ return (b.imagen_url?1:0)-(a.imagen_url?1:0); });
-  var byCat={}, order=[];
-  rows.forEach(function(r){ var c=r.categoria_origen||'otros'; if(!byCat[c]){byCat[c]=[];order.push(c);} byCat[c].push(r); });
-  order.sort(function(a,b){ var ia=cats.indexOf(a),ib=cats.indexOf(b); ia=ia<0?99:ia; ib=ib<0?99:ib; return ia-ib; });
-  var pick=[], i=0;
-  while(pick.length<8){ var added=false; for(var k=0;k<order.length&&pick.length<8;k++){ var arr=byCat[order[k]]; if(arr&&arr[i]){ pick.push(arr[i]); added=true; } } if(!added) break; i++; }
-  var principal=pick.slice(0,6);
+  var modo=dj.modo_entreno||'conjunto'; var ao=dj.atributos_objetivo||{};
+  var pesoFis={}; Object.keys(MAPFIS).forEach(function(k){ var w=(ao[k]!=null?ao[k]:5); MAPFIS[k].forEach(function(c){ pesoFis[c]=(pesoFis[c]||0)+w; }); });
+  var catsFis=Object.keys(pesoFis).sort(function(a,b){return pesoFis[b]-pesoFis[a];}); if(!catsFis.length) catsFis=['Legs','Back','Chest','Abs','Shoulders','Cardio'];
+  var pesoTec={}; Object.keys(MAPTEC).forEach(function(k){ pesoTec[MAPTEC[k]]=(ao[k]!=null?ao[k]:5); });
+  var catsTec=Object.keys(pesoTec).sort(function(a,b){return pesoTec[b]-pesoTec[a];});
+  var nFis=(modo==='tecnico')?0:(modo==='fisico'?6:4); var nTec=(modo==='fisico')?0:(modo==='tecnico'?6:3);
+  var principal=[];
+  if(nFis>0){ var qf=await sb.from('ejercicios').select(SEL).eq('activo',true).contains('entornos',[ent]).in('categoria_origen',catsFis).limit(150); var rf=qf.data||[]; if(rf.length<nFis){ var qf2=await sb.from('ejercicios').select(SEL).eq('activo',true).in('pilar',['fuerza','acondicionamiento']).contains('entornos',[ent]).limit(150); rf=qf2.data||[]; } principal=principal.concat(pickVariado(rf,catsFis,nFis)); }
+  if(nTec>0){ var qt=await sb.from('ejercicios').select(SEL).eq('activo',true).eq('pilar','tecnica').in('categoria_origen',catsTec).limit(80); principal=principal.concat(pickVariado(qt.data||[],catsTec,nTec)); }
+  if(!principal.length){ var qx=await sb.from('ejercicios').select(SEL).eq('activo',true).contains('entornos',[ent]).limit(60); principal=pickVariado(qx.data||[],catsFis,6); }
   var qc=await sb.from('ejercicios').select(SEL).eq('activo',true).eq('pilar','calentamiento').contains('entornos',[ent]).limit(20);
   var cal=(qc.data||[]).slice(0,4);
   var qs=await sb.from('ejercicios').select(SEL).eq('activo',true).eq('pilar','recuperacion').contains('entornos',[ent]).limit(20);
