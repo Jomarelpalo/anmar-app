@@ -311,6 +311,11 @@ select.field{appearance:none;-webkit-appearance:none}
             <div style="flex:1"><div style="font-weight:800;font-size:15px">Pliometría · gimnasio</div><div style="font-size:12px;color:var(--muted)">Salto y explosividad</div></div>
             <span style="color:var(--muted2);font-size:22px">›</span>
           </div>
+          <div class="card tipo-b" data-tipo="tecnica" style="display:flex;align-items:center;gap:12px;margin-bottom:10px;cursor:pointer">
+            <div style="width:42px;height:42px;border-radius:11px;flex:none;background:rgba(160,120,230,.18);color:#c3a7f5;display:flex;align-items:center;justify-content:center;font-size:22px">🏀</div>
+            <div style="flex:1"><div style="font-weight:800;font-size:15px">Técnica de baloncesto</div><div style="font-size:12px;color:var(--muted)">Tiro, pase, bote y entrada</div></div>
+            <span style="color:var(--muted2);font-size:22px">›</span>
+          </div>
           <div class="card tipo-b" data-tipo="funcional" style="display:flex;align-items:center;gap:12px;margin-bottom:14px;cursor:pointer">
             <div style="width:42px;height:42px;border-radius:11px;flex:none;background:rgba(54,192,138,.16);color:var(--ok);display:flex;align-items:center;justify-content:center;font-size:22px">🤸</div>
             <div style="flex:1"><div style="font-weight:800;font-size:15px">Funcional</div><div style="font-size:12px;color:var(--muted)">Movimiento, core y equilibrio</div></div>
@@ -849,7 +854,7 @@ window.__entornoSel='sin_material';
       if(m<0||(m===0&&t.getDate()<d.getDate())) e--; return e;
     }catch(e){ return null; }
   }
-  var TITU={fuerza_gym:'Fuerza en gimnasio',pliometria:'Pliometría',funcional:'Funcional'};
+  var TITU={fuerza_gym:'Fuerza en gimnasio',pliometria:'Pliometría',funcional:'Funcional',tecnica:'Técnica de baloncesto'};
   async function cargarRutinaTipo(tipo){
     try{ document.getElementById('se-steplabel').textContent='Preparando tu rutina...'; }catch(e){}
     var L=_durezaL();
