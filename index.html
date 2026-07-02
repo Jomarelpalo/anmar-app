@@ -288,6 +288,32 @@ select.field{appearance:none;-webkit-appearance:none}
             <div class="chip"><span class="ico">🏋️</span>Gimnasio</div>
           </div>
 
+          <div class="section-t">Entrena algo concreto</div>
+          <div style="font-size:12px;color:var(--muted);margin:-4px 4px 10px">Rutinas inteligentes adaptadas a ti y pensadas para no lesionarte</div>
+          <div style="display:flex;align-items:center;gap:10px;margin:0 4px 8px">
+            <span style="font-size:11px;letter-spacing:1px;color:var(--muted2);font-weight:700">DUREZA</span>
+            <div class="chips" id="chips-dureza" style="flex:1;margin-top:0">
+              <div class="chip" data-d="0">Suave</div>
+              <div class="chip on" data-d="1">Media</div>
+              <div class="chip" data-d="2">Fuerte</div>
+            </div>
+          </div>
+          <div id="dureza-auto" style="font-size:11.5px;color:var(--muted2);margin:0 4px 12px"></div>
+          <div class="card tipo-b" data-tipo="fuerza_gym" style="display:flex;align-items:center;gap:12px;margin-bottom:10px;cursor:pointer">
+            <div style="width:42px;height:42px;border-radius:11px;flex:none;background:rgba(47,111,176,.18);color:var(--blue-l);display:flex;align-items:center;justify-content:center;font-size:22px">🏋️</div>
+            <div style="flex:1"><div style="font-weight:800;font-size:15px">Fuerza · gimnasio</div><div style="font-size:12px;color:var(--muted)">Potencia para el baloncesto, sin hipertrofia</div></div>
+            <span style="color:var(--muted2);font-size:22px">›</span>
+          </div>
+          <div class="card tipo-b" data-tipo="pliometria" style="display:flex;align-items:center;gap:12px;margin-bottom:10px;cursor:pointer">
+            <div style="width:42px;height:42px;border-radius:11px;flex:none;background:rgba(242,121,43,.16);color:var(--orange);display:flex;align-items:center;justify-content:center;font-size:22px">⚡</div>
+            <div style="flex:1"><div style="font-weight:800;font-size:15px">Pliometría · gimnasio</div><div style="font-size:12px;color:var(--muted)">Salto y explosividad</div></div>
+            <span style="color:var(--muted2);font-size:22px">›</span>
+          </div>
+          <div class="card tipo-b" data-tipo="funcional" style="display:flex;align-items:center;gap:12px;margin-bottom:14px;cursor:pointer">
+            <div style="width:42px;height:42px;border-radius:11px;flex:none;background:rgba(54,192,138,.16);color:var(--ok);display:flex;align-items:center;justify-content:center;font-size:22px">🤸</div>
+            <div style="flex:1"><div style="font-weight:800;font-size:15px">Funcional</div><div style="font-size:12px;color:var(--muted)">Movimiento, core y equilibrio</div></div>
+            <span style="color:var(--muted2);font-size:22px">›</span>
+          </div>
           <div class="section-t">Tu semana</div>
           <div class="stats">
             <div class="stat"><div class="n o" id="st-racha">0</div><div class="l">días de racha</div></div>
@@ -394,7 +420,7 @@ function go(name){
   var nav=document.getElementById('nav');
   nav.classList.toggle('hidden', name==='login'||name==='sesion'||name==='entrevista');
   nav.querySelectorAll('button').forEach(function(b){b.classList.toggle('on', b.dataset.go===name);});
-  if(name==='sesion'){ cargarSesion(); } if(name==='hoy'){ cargarSemana(); } if(name==='calendario'){ cargarCalendario(); } if(name==='progreso'){ cargarProgreso(); } if(name==='perfil'){ cargarObjetivos(); }
+  if(name==='sesion'){ cargarSesion(); } if(name==='hoy'){ cargarSemana(); if(window._loadCond)window._loadCond(); } if(name==='calendario'){ cargarCalendario(); } if(name==='progreso'){ cargarProgreso(); } if(name==='perfil'){ cargarObjetivos(); }
 }
 var msg=document.getElementById('msg');
 function setMsg(t,ok){ if(!msg)return; msg.textContent=t||''; msg.className='msg '+(ok?'ok':'err'); }
@@ -554,10 +580,10 @@ function renderEjercicio(){
   var img=document.getElementById('se-img');
   if(ej.imagen_url){ img.style.backgroundImage="url('"+ej.imagen_url+"')"; img.classList.add('has-img'); document.getElementById('se-ph').style.display='none'; }
   else { img.style.backgroundImage='none'; img.classList.remove('has-img'); document.getElementById('se-ph').style.display='flex'; }
-  var __cond=(window.__perfil&&window.__perfil.condicion_fisica)||'media';
-  var __ser=ej.series_def||4, __rep=ej.reps_def||12, __des=ej.descanso_seg_def||60;
+  var __L=(window._durezaL?window._durezaL():1);
+  var __ser=ej.series_def||3, __rep=ej.reps_def||10, __des=ej.descanso_seg_def||60;
   var __esFase=(ej.pilar==='calentamiento'||ej.pilar==='recuperacion');
-  if(!__esFase){ if(__cond==='baja'){ __ser=Math.max(2,__ser-1); __des=__des+15; } else if(__cond==='alta'){ __ser=__ser+1; __des=Math.max(30,__des-15); } }
+  if(!__esFase){ if(__L===0){ __ser=Math.max(2,__ser-1); __des=__des+15; } else if(__L===2){ __ser=__ser+1; __des=Math.max(30,__des-10); } }
   if(__esFase){ document.getElementById('se-series-k').textContent='RONDAS'; document.getElementById('se-series').textContent='1'; document.getElementById('se-reps-k').textContent='DURACIÓN'; document.getElementById('se-reps').textContent=ej.tempo||'—'; document.getElementById('se-reps').style.fontSize='14px'; }
   else { document.getElementById('se-series-k').textContent='SERIES'; document.getElementById('se-series').textContent=__ser; document.getElementById('se-reps-k').textContent='REPETICIONES'; document.getElementById('se-reps').textContent=__rep; document.getElementById('se-reps').style.fontSize=''; }
   window.__rest=__des; window.__img=ej.imagen_url||''; document.getElementById('se-descanso').innerHTML=window.__rest+' <small>seg</small>';
@@ -778,6 +804,69 @@ window.__entornoSel='sin_material';
     var dot=''; if(matches.indexOf(d)>-1) dot='<span class="dot ma"></span>'; else if(training.indexOf(d)>-1) dot='<span class="dot tr"></span>';
     cell.innerHTML=d+dot; cal.appendChild(cell);
   }
+})();
+</script>
+<script>
+(function(){
+  function _autoD(){ var c=(window.__perfilCond||'media'); return c==='baja'?0:(c==='alta'?2:1); }
+  function _durezaL(){ return (window.__durezaManual!=null)?window.__durezaManual:_autoD(); }
+  window._durezaL=_durezaL;
+  var NOM=['suave','media','fuerte'];
+  function _paint(){
+    var box=document.getElementById('chips-dureza'); if(!box) return;
+    var L=_durezaL();
+    Array.prototype.forEach.call(box.querySelectorAll('.chip'),function(c){ c.classList.toggle('on', (+c.getAttribute('data-d'))===L); });
+    var a=document.getElementById('dureza-auto');
+    if(a){ a.textContent=(window.__durezaManual==null)?('Ajustada a tu forma ('+NOM[L]+'). Puedes cambiarla.'):('La has puesto en '+NOM[L]+'.'); }
+  }
+  window._paintDureza=_paint;
+  async function _loadCond(){
+    try{ var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null;
+      if(uid){ var d=await sb.from('datos_jugador').select('condicion_fisica').eq('id',uid).maybeSingle(); if(d.data&&d.data.condicion_fisica) window.__perfilCond=d.data.condicion_fisica; }
+    }catch(e){}
+    _paint();
+  }
+  window._loadCond=_loadCond;
+  var SELT='nombre,descripcion,instrucciones,imagen_url,musculos_primarios,series_def,reps_def,descanso_seg_def,pilar,categoria_origen,tempo,nivel,edad_min,tipo_rutina,entornos';
+  function _sh(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i];a[i]=a[j];a[j]=t; } return a; }
+  async function _edad(){
+    try{ var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null; if(!uid) return null;
+      var p=await sb.from('profiles').select('fecha_nacimiento').eq('id',uid).maybeSingle();
+      var fn=p.data&&p.data.fecha_nacimiento; if(!fn) return null;
+      var d=new Date(fn), t=new Date(), e=t.getFullYear()-d.getFullYear(), m=t.getMonth()-d.getMonth();
+      if(m<0||(m===0&&t.getDate()<d.getDate())) e--; return e;
+    }catch(e){ return null; }
+  }
+  var TITU={fuerza_gym:'Fuerza en gimnasio',pliometria:'Pliometría',funcional:'Funcional'};
+  async function cargarRutinaTipo(tipo){
+    try{ document.getElementById('se-steplabel').textContent='Preparando tu rutina...'; }catch(e){}
+    var L=_durezaL();
+    var niveles=(L===0)?['iniciacion']:((L===1)?['iniciacion','medio']:['iniciacion','medio','avanzado']);
+    var nMain=(L===0)?4:((L===1)?5:6);
+    var edad=await _edad();
+    var q=await sb.from('ejercicios').select(SELT).eq('activo',true).contains('tipo_rutina',[tipo]).limit(250);
+    var all=q.data||[];
+    function edadOk(x){ return !(edad!=null && x.edad_min!=null && x.edad_min>edad); }
+    var rows=all.filter(function(x){ return edadOk(x) && niveles.indexOf(x.nivel)>=0; });
+    if(rows.length<nMain){ rows=all.filter(edadOk); }
+    var main=_sh(rows).slice(0,nMain);
+    var qc=await sb.from('ejercicios').select(SELT).eq('activo',true).eq('pilar','calentamiento').limit(20);
+    var cal=_sh(qc.data||[]).slice(0,3);
+    var qs=await sb.from('ejercicios').select(SELT).eq('activo',true).eq('pilar','recuperacion').limit(20);
+    var est=_sh(qs.data||[]).slice(0,2);
+    window.__rutinaTipo=tipo; window.__rutinaNombre=TITU[tipo]||'Rutina';
+    window.__perfil=window.__perfil||{};
+    sesionEjercicios=cal.concat(main).concat(est); sesionIdx=0;
+    go('sesion');
+  }
+  window.cargarRutinaTipo=cargarRutinaTipo;
+  document.addEventListener('click',function(e){
+    if(!e.target||!e.target.closest) return;
+    var d=e.target.closest('#chips-dureza .chip');
+    if(d){ window.__durezaManual=(+d.getAttribute('data-d')); _paint(); return; }
+    var b=e.target.closest('.tipo-b');
+    if(b){ var tp=b.getAttribute('data-tipo'); if(tp){ sesionEjercicios=[]; cargarRutinaTipo(tp); } }
+  });
 })();
 </script>
 </body>
