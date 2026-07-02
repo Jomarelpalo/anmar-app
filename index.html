@@ -103,7 +103,7 @@
   /* environment chips */
   .chips{display:flex;gap:8px;margin-top:14px}
   .chip{flex:1;text-align:center;background:#121a29;border:1px solid var(--line);border-radius:12px;padding:11px 6px;font-size:12px;color:var(--muted);font-weight:600;cursor:pointer}
-  .chip.on{background:rgba(47,111,176,.18);border-color:var(--blue-l);color:#dceaf8}
+  .chip.on{background:rgba(230,92,0,.16);border-color:var(--blue-l);color:#dceaf8}
   .chip .ico{font-size:18px;display:block;margin-bottom:3px}
 
   /* stats */
@@ -204,7 +204,7 @@ select.field{appearance:none;-webkit-appearance:none}
 .ex-img.has-img{background-color:#fff!important;background-size:contain!important;background-repeat:no-repeat!important;background-position:center!important;cursor:zoom-in;position:relative}
 .ex-img.has-img::after{content:'ampliar';position:absolute;right:8px;bottom:8px;background:rgba(10,17,25,.8);color:#dfe8f4;font-size:10px;padding:3px 8px;border-radius:12px;pointer-events:none}
 .metric.rest{cursor:pointer;position:relative}
-.metric.rest::after{content:'tocar';position:absolute;right:9px;top:7px;font-size:9px;color:#5fa0e6}
+.metric.rest::after{content:'tocar';position:absolute;right:9px;top:7px;font-size:9px;color:#E65C00}
 .ovl{position:absolute;inset:0;z-index:60;background:rgba(3,6,12,.93);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:18px}
 .ovl.open{display:flex}
 .ovl .x{position:absolute;top:14px;right:14px;width:40px;height:40px;border-radius:50%;background:#1a2740;color:#e7eef7;border:none;font-size:22px;line-height:1;cursor:pointer}
@@ -213,6 +213,28 @@ select.field{appearance:none;-webkit-appearance:none}
 .rt-btns{display:flex;gap:10px}
 .rt-btns button{background:#d6a743;color:#3a2a06;border:none;border-radius:11px;padding:12px 22px;font-size:15px;font-weight:700;cursor:pointer}
 .rt-btns .sec{background:#16213a;color:#cdd8e8}
+</style>
+<style id="tema-asphalt">
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&display=swap');
+:root{
+  --bg:#1C1D21; --bg2:#16171A;
+  --surface:#24262D; --surface2:#2A2C33;
+  --line:#343742;
+  --orange:#E65C00; --orange-d:#B84A00;
+  --blue:#3D2B1F; --blue-l:#F1C40F;
+  --text:#EAEAEA; --muted:#8A8D93; --muted2:#6B6E73;
+  --ok:#2ECC71;
+}
+body{ background:#1C1D21 !important; background-image:none !important; }
+h2, .hero h2, .section-t, .badge{ font-family:'Barlow Condensed','Inter',sans-serif; letter-spacing:.4px; }
+.section-t{ text-transform:uppercase; }
+.nav{ background:#16171A !important; }
+#s-login{ background:#1C1D21 !important; }
+#s-login .bg{ background:#1C1D21 !important; background-image:none !important; }
+#s-login .veil{ background:linear-gradient(180deg,rgba(28,29,33,.35),rgba(28,29,33,.92)) !important; }
+.graffiti{ background:linear-gradient(100deg,#F1C40F,#E65C00) !important; -webkit-background-clip:text; background-clip:text; color:transparent !important; filter:none !important; }
+.btn-primary{ background:#E65C00 !important; background-image:none !important; color:#1C1D21 !important; border:none !important; box-shadow:none !important; text-shadow:none !important; font-family:'Barlow Condensed','Inter',sans-serif; letter-spacing:.6px; }
+.btn-primary:active{ transform:translateY(1px); }
 </style>
 </head>
 <body>
@@ -279,7 +301,7 @@ select.field{appearance:none;-webkit-appearance:none}
             <span style="color:var(--muted2);font-size:22px">›</span>
           </div>
           <div class="card" data-go="libre" style="cursor:pointer;display:flex;align-items:center;gap:14px;margin-bottom:18px">
-            <div style="width:46px;height:46px;border-radius:12px;flex:none;background:rgba(47,111,176,.18);color:var(--blue-l);display:flex;align-items:center;justify-content:center;font-size:24px">🏀</div>
+            <div style="width:46px;height:46px;border-radius:12px;flex:none;background:rgba(230,92,0,.16);color:var(--blue-l);display:flex;align-items:center;justify-content:center;font-size:24px">🏀</div>
             <div style="flex:1"><div style="font-weight:800;font-size:16px">Libre</div><div style="font-size:12.5px;color:var(--muted)">Eliges el tipo, el sistema te guía</div></div>
             <span style="color:var(--muted2);font-size:22px">›</span>
           </div>
@@ -296,7 +318,7 @@ select.field{appearance:none;-webkit-appearance:none}
       <section class="screen" id="s-dirigido">
         <div class="pad pad-top">
           <div style="display:flex;align-items:center;gap:18px;margin-bottom:12px">
-            <button data-nav="back" style="background:none;border:none;color:#5fa0e6;font-size:14px;cursor:pointer;font-family:var(--font);padding:0">‹ Atrás</button>
+            <button data-nav="back" style="background:none;border:none;color:#E65C00;font-size:14px;cursor:pointer;font-family:var(--font);padding:0">‹ Atrás</button>
             <button data-go="hoy" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;font-family:var(--font);padding:0">⌂ Inicio</button>
           </div>
           <div class="card" style="padding:18px">
@@ -313,7 +335,7 @@ select.field{appearance:none;-webkit-appearance:none}
       <section class="screen" id="s-libre">
         <div class="pad pad-top">
           <div style="display:flex;align-items:center;gap:18px;margin-bottom:12px">
-            <button data-nav="back" style="background:none;border:none;color:#5fa0e6;font-size:14px;cursor:pointer;font-family:var(--font);padding:0">‹ Atrás</button>
+            <button data-nav="back" style="background:none;border:none;color:#E65C00;font-size:14px;cursor:pointer;font-family:var(--font);padding:0">‹ Atrás</button>
             <button data-go="hoy" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;font-family:var(--font);padding:0">⌂ Inicio</button>
           </div>
           <div class="section-t">Elige tu entrenamiento</div>
@@ -336,7 +358,7 @@ select.field{appearance:none;-webkit-appearance:none}
           </div>
           <div id="dureza-auto" style="font-size:11.5px;color:var(--muted2);margin:0 4px 12px"></div>
           <div class="card tipo-b" data-tipo="fuerza_gym" style="display:flex;align-items:center;gap:12px;margin-bottom:10px;cursor:pointer">
-            <div style="width:42px;height:42px;border-radius:11px;flex:none;background:rgba(47,111,176,.18);color:var(--blue-l);display:flex;align-items:center;justify-content:center;font-size:22px">🏋️</div>
+            <div style="width:42px;height:42px;border-radius:11px;flex:none;background:rgba(230,92,0,.16);color:var(--blue-l);display:flex;align-items:center;justify-content:center;font-size:22px">🏋️</div>
             <div style="flex:1"><div style="font-weight:800;font-size:15px">Fuerza · gimnasio</div><div style="font-size:12px;color:var(--muted)">Potencia para el baloncesto, sin hipertrofia</div></div>
             <span style="color:var(--muted2);font-size:22px">›</span>
           </div>
@@ -361,7 +383,7 @@ select.field{appearance:none;-webkit-appearance:none}
       <!-- SESION -->
       
 <section class="screen" id="s-sesion">
-        <div class="sess-head"><button id="se-inicio" style="background:none;border:none;color:#5fa0e6;font-size:13px;cursor:pointer;padding:0 0 8px;font-family:var(--font)">‹ Inicio</button>
+        <div class="sess-head"><button id="se-inicio" style="background:none;border:none;color:#E65C00;font-size:13px;cursor:pointer;padding:0 0 8px;font-family:var(--font)">‹ Inicio</button>
           <div class="steplabel" id="se-steplabel">Cargando sesión…</div>
           <div class="stepbar" id="se-stepbar"></div>
         </div>
@@ -703,7 +725,7 @@ async function cargarCalendario(){
     var ds=y+'-'+(m+1<10?'0':'')+(m+1)+'-'+(d<10?'0':'')+d;
     var st='aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:13px;border-radius:8px;';
     if(set[ds]) st+='background:#123a24;color:#7fe0a8;font-weight:700;'; else st+='color:#cdd8e8;';
-    if(ds===todayStr) st+='border:1.5px solid #5fa0e6;';
+    if(ds===todayStr) st+='border:1.5px solid #E65C00;';
     html+='<div data-f="'+ds+'" style="cursor:pointer;'+st+'">'+d+'</div>';
   }
   cont.innerHTML=html;
@@ -797,8 +819,8 @@ async function cargarObjetivos(){
   var obj=dj.atributos_objetivo||{}, pos=dj.posicion||'', perfil=PERFILES[pos]||PERFILES['_def'];
   window.__objModo=dj.modo_entreno||'conjunto';
   var vals={}; ATRIBS.forEach(function(a){ vals[a.k]=(obj&&obj[a.k]!=null)?obj[a.k]:(perfil[a.k]!=null?perfil[a.k]:6); });
-  function grupo(g,tit,col){ var h='<div style="font-size:11px;letter-spacing:.06em;color:'+col+';margin:2px 0 10px">'+tit+'</div>'; ATRIBS.filter(function(a){return a.g===g;}).forEach(function(a){ h+='<div style="margin-bottom:13px"><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px"><span style="color:#cdd8e8">'+a.n+'</span><span style="color:#5fa0e6;font-weight:700" id="ov-'+a.k+'">'+vals[a.k]+'</span></div><input type="range" min="0" max="10" value="'+vals[a.k]+'" id="sl-'+a.k+'" style="width:100%"></div>'; }); return h; }
-  cont.innerHTML='<div id="grp-fis">'+grupo('f','FÍSICO','#5fa0e6')+'</div><div id="grp-tec" style="margin-top:6px">'+grupo('t','TÉCNICO (baloncesto)','#d6a743')+'</div>';
+  function grupo(g,tit,col){ var h='<div style="font-size:11px;letter-spacing:.06em;color:'+col+';margin:2px 0 10px">'+tit+'</div>'; ATRIBS.filter(function(a){return a.g===g;}).forEach(function(a){ h+='<div style="margin-bottom:13px"><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px"><span style="color:#cdd8e8">'+a.n+'</span><span style="color:#E65C00;font-weight:700" id="ov-'+a.k+'">'+vals[a.k]+'</span></div><input type="range" min="0" max="10" value="'+vals[a.k]+'" id="sl-'+a.k+'" style="width:100%"></div>'; }); return h; }
+  cont.innerHTML='<div id="grp-fis">'+grupo('f','FÍSICO','#E65C00')+'</div><div id="grp-tec" style="margin-top:6px">'+grupo('t','TÉCNICO (baloncesto)','#d6a743')+'</div>';
   ATRIBS.forEach(function(a){ var sl=document.getElementById('sl-'+a.k), ov=document.getElementById('ov-'+a.k); if(sl&&ov){ sl.addEventListener('input',function(){ ov.textContent=sl.value; }); } });
   renderModo();
 }
