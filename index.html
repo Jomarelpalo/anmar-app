@@ -245,6 +245,8 @@ select.field{appearance:none;-webkit-appearance:none}
           <div class="section-t">Cuéntanos sobre ti</div>
           <h2 style="font-size:23px;font-weight:800;margin-bottom:4px">Entrevista inicial</h2>
           <p style="color:var(--muted);font-size:13.5px;margin-bottom:8px">Solo se hace una vez. Sirve para personalizar tu entrenamiento.</p>
+          <label class="ev-lab">Fecha de nacimiento</label>
+          <input class="field" id="iv-nacimiento" type="date">
           <label class="ev-lab">Posición en la pista</label>
           <select class="field" id="iv-posicion"><option value="">Elige…</option><option>Base</option><option>Escolta</option><option>Alero</option><option>Ala-pívot</option><option>Pívot</option></select>
           <label class="ev-lab">¿Compites en partidos?</label>
@@ -443,9 +445,13 @@ async function loadProfileAndEnter(){
   var roles={admin:'Administrador',entrenador:'Entrenador',jugador:'Jugador'};
   var rolEl=document.getElementById('u-rol'); if(rolEl) rolEl.textContent=roles[role]||role;
   setMsg('');
-  var dj=await sb.from('datos_jugador').select('entrevista_completada').eq('id',user.id).maybeSingle();
+  var dj=await sb.from('datos_jugador').select('entrevista_completada,fecha_nacimiento').eq('id',user.id).maybeSingle();
   if(!dj.data || !dj.data.entrevista_completada){ go('entrevista'); return; }
+  window.__edad=(window.edadDeFecha?window.edadDeFecha(dj.data.fecha_nacimiento):null);
+  window.__categoria=(window.categoriaEdad?window.categoriaEdad(window.__edad):null);
+  if(window.__edad!=null && window.__edad<14){ try{await sb.auth.signOut();}catch(e){} go('login'); setMsg('Este entrenamiento auto-guiado es para 14 años en adelante. Los más jóvenes entrenan con su entrenador.'); return; }
   go('hoy');
+  try{ var _hb=document.querySelector('#s-hoy .hello'); if(_hb && !document.getElementById('u-cat')){ var _ce=document.createElement('div'); _ce.id='u-cat'; _ce.style.cssText='font-size:11px;color:#8aa0bd;margin-top:3px;font-weight:600'; _hb.appendChild(_ce); } var _cx=document.getElementById('u-cat'); if(_cx) _cx.textContent=window.__categoria?('Categoría: '+window.__categoria+(window.__edad!=null?(' · '+window.__edad+' años'):'')):''; }catch(e){}
 }
 function showSetPass(){ go('login'); document.getElementById('loginForm').hidden=true; document.getElementById('setPassForm').hidden=false; setMsg('Crea tu contraseña para activar tu cuenta.',true); }
 
@@ -510,6 +516,7 @@ if(_iv){ _iv.addEventListener('click', async function(){
   var u=await sb.auth.getUser(); var user=u.data&&u.data.user; if(!user) return;
   var m=document.getElementById('iv-msg');
   var row={ id:user.id,
+    fecha_nacimiento:(document.getElementById('iv-nacimiento').value||null),
     posicion:document.getElementById('iv-posicion').value||null,
     compite:document.getElementById('iv-compite').value==='si',
     condicion_fisica:document.getElementById('iv-condicion').value||null,
@@ -518,6 +525,9 @@ if(_iv){ _iv.addEventListener('click', async function(){
     material:[],
     lesiones:document.getElementById('iv-lesiones').value||null,
     entrevista_completada:true };
+  var _fn=document.getElementById('iv-nacimiento').value; var _ed=(window.edadDeFecha?window.edadDeFecha(_fn):null);
+  if(!_fn){ m.textContent='Pon tu fecha de nacimiento.'; m.className='msg err'; return; }
+  if(_ed!=null && _ed<14){ m.textContent='Este entrenamiento auto-guiado es para 14 años en adelante. Los más jóvenes entrenan con su entrenador.'; m.className='msg err'; return; }
   m.textContent='Guardando…'; m.className='msg ok';
   var r=await sb.from('datos_jugador').upsert(row);
   if(r.error){ m.textContent='No se pudo guardar: '+r.error.message; m.className='msg err'; return; }
@@ -811,7 +821,7 @@ window.__entornoSel='sin_material';
 <script>
 (function(){
   function _autoD(){ var c=(window.__perfilCond||'media'); return c==='baja'?0:(c==='alta'?2:1); }
-  function _durezaL(){ return (window.__durezaManual!=null)?window.__durezaManual:_autoD(); }
+  function _durezaL(){ var L=(window.__durezaManual!=null)?window.__durezaManual:_autoD(); if(window.__edad!=null && window.__edad<17 && L>1) L=1; return L; }
   window._durezaL=_durezaL;
   var NOM=['suave','media','fuerte'];
   function _paint(){
@@ -831,9 +841,9 @@ window.__entornoSel='sin_material';
   window._loadCond=_loadCond;
   var SELT='nombre,descripcion,instrucciones,imagen_url,musculos_primarios,series_def,reps_def,descanso_seg_def,pilar,categoria_origen,tempo,nivel,edad_min,tipo_rutina,entornos';
   function _sh(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i];a[i]=a[j];a[j]=t; } return a; }
-  async function _edad(){
+  async function _edad(){ if(window.__edad!=null) return window.__edad;
     try{ var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null; if(!uid) return null;
-      var p=await sb.from('profiles').select('fecha_nacimiento').eq('id',uid).maybeSingle();
+      var p=await sb.from('datos_jugador').select('fecha_nacimiento').eq('id',uid).maybeSingle();
       var fn=p.data&&p.data.fecha_nacimiento; if(!fn) return null;
       var d=new Date(fn), t=new Date(), e=t.getFullYear()-d.getFullYear(), m=t.getMonth()-d.getMonth();
       if(m<0||(m===0&&t.getDate()<d.getDate())) e--; return e;
@@ -910,6 +920,13 @@ window.__entornoSel='sin_material';
   }
   function _dashHoy(){ try{recomendacionHoy();}catch(e){} try{cargarProximos();}catch(e){} }
   window._dashHoy=_dashHoy;
+})();
+</script>
+<script>
+(function(){
+  function edadDeFecha(f){ if(!f) return null; var d=new Date(f); if(isNaN(d)) return null; var t=new Date(), e=t.getFullYear()-d.getFullYear(), m=t.getMonth()-d.getMonth(); if(m<0||(m===0&&t.getDate()<d.getDate())) e--; return e; }
+  function categoriaEdad(e){ if(e==null) return null; if(e<14) return 'Menor de 14'; if(e<15) return 'Infantil'; if(e<17) return 'Cadete'; return 'Júnior/Sénior'; }
+  window.edadDeFecha=edadDeFecha; window.categoriaEdad=categoriaEdad;
 })();
 </script>
 </body>
