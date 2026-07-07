@@ -957,7 +957,13 @@ async function registrarSesion(){
   try{ if(window.__sesionGuardada) return; window.__sesionGuardada=true;
     var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null; if(!uid) return;
     var pilares=[]; (sesionEjercicios||[]).forEach(function(x){ if(x.pilar&&pilares.indexOf(x.pilar)<0)pilares.push(x.pilar); });
-    await sb.from('sesiones').insert({jugador_id:uid, titulo:'Sesion de entrenamiento', pilares:pilares, entorno:(window.__entornoSel||'sin_material'), estado:'completada', duracion_min:Math.max(10,Math.round((sesionEjercicios||[]).length*4))});
+    var __ins=await sb.from('sesiones').insert({jugador_id:uid, titulo:'Sesion de entrenamiento', pilares:pilares, entorno:(window.__entornoSel||'sin_material'), estado:'completada', duracion_min:Math.max(10,Math.round((sesionEjercicios||[]).length*4))}).select('id').single();
+    var __sid=(__ins&&__ins.data)?__ins.data.id:null;
+    if(__sid&&sesionEjercicios&&sesionEjercicios.length){
+      var __uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      var __filas=sesionEjercicios.map(function(x,i){ return {sesion_id:__sid, ejercicio_id:(x.id&&__uuid.test(String(x.id)))?x.id:null, orden:i+1, nombre:x.nombre||'Ejercicio', series:(x.series_def||null), reps:(x.reps_def||null), descanso_seg:(x.descanso_seg_def||null), tempo:(x.tempo||null), completado:true}; });
+      await sb.from('ejercicios_sesion').insert(__filas);
+    }
   }catch(e){}
 }
 function __kfecha(d){ var m=d.getMonth()+1, day=d.getDate(); return d.getFullYear()+'-'+(m<10?'0'+m:m)+'-'+(day<10?'0'+day:day); }
