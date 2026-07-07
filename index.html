@@ -507,6 +507,13 @@ body{
   #s-login .login-bottom{max-width:360px;margin:0 auto!important}
 }
 </style>
+<style id="tema-pweye">
+.pw-wrap{position:relative;display:block;max-width:340px;margin:0 auto 11px}
+.pw-wrap .field{max-width:none!important;width:100%!important;margin:0!important;padding-right:46px!important}
+.pw-eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#8A8D93;padding:6px;line-height:0;display:flex;align-items:center;justify-content:center}
+.pw-eye:hover{color:#EAEAEA}
+.pw-eye svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+</style>
 </head>
 <body>
 <div class="appwrap">
@@ -1347,6 +1354,23 @@ window.__entornoSel='sin_material';
 (function(){var p=document.getElementById('cal-prev'),n=document.getElementById('cal-next');
 if(p)p.onclick=function(){window.__calOffset=(window.__calOffset||0)-1;cargarCalendario();};
 if(n)n.onclick=function(){window.__calOffset=(window.__calOffset||0)+1;cargarCalendario();};})();
+</script>
+<script>
+(function(){
+ var OPEN='<svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+ var OFF='<svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+ function eye(id){
+   var inp=document.getElementById(id); if(!inp||inp.__eye) return; inp.__eye=1;
+   var w=document.createElement('span'); w.className='pw-wrap';
+   inp.parentNode.insertBefore(w,inp); w.appendChild(inp);
+   var b=document.createElement('button'); b.type='button'; b.className='pw-eye'; b.setAttribute('aria-label','Mostrar u ocultar contrasena');
+   b.innerHTML=OPEN;
+   b.addEventListener('click',function(){ if(inp.type==='password'){inp.type='text';b.innerHTML=OFF;} else {inp.type='password';b.innerHTML=OPEN;} });
+   w.appendChild(b);
+ }
+ function init(){ eye('password'); eye('newpass'); }
+ if(document.readyState!=='loading') init(); else document.addEventListener('DOMContentLoaded',init);
+})();
 </script>
 </body>
 </html>
