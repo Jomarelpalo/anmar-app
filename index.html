@@ -493,6 +493,20 @@ body{
   #s-login .login-bottom{max-width:400px}
 }
 </style>
+<style id="tema-login2">
+/* Escritorio: formulario mas ALTO y a la DERECHA (zona despejada), sin tapar "ANMAR TRAINING" */
+@media(min-width:1024px){
+  #s-login .inner{justify-content:center!important;align-items:flex-end!important;padding:0 7% 0 0!important}
+  #s-login .login-bottom{margin:0!important;max-width:340px;text-align:center}
+  #s-login .bg{background-position:center 42%!important}
+}
+/* Movil: bloque abajo centrado, mural un poco mas arriba para dejar libre el nombre */
+@media(max-width:1023px){
+  #s-login .bg{background-position:center 28%!important}
+  #s-login .inner{justify-content:flex-end!important;align-items:center!important;padding:0 0 42px!important}
+  #s-login .login-bottom{max-width:360px;margin:0 auto!important}
+}
+</style>
 </head>
 <body>
 <div class="appwrap">
