@@ -455,6 +455,15 @@ body{
 @media(max-width:1023px){ #s-progreso .pad{padding-top:120px!important} }
 @media(min-width:1024px){ #s-progreso .pad{padding-top:180px!important;max-width:620px;margin:0 auto} }
 </style>
+<style id="tema-perfil">
+#s-perfil #u-ini2{background:linear-gradient(160deg,var(--orange),var(--orange-d))!important;box-shadow:0 0 22px rgba(230,92,0,.5)}
+#s-perfil #u-nombre2{font-family:'Anton','Inter',sans-serif;letter-spacing:.5px;font-size:24px}
+.modo-b{border-radius:11px!important;padding:10px 8px!important;font-weight:700!important;letter-spacing:.5px;font-family:'Chakra Petch','Inter',sans-serif;cursor:pointer}
+#obj-cont input[type=range]{accent-color:#E65C00;height:6px}
+#obj-cont{padding:16px}
+@media(max-width:1023px){ #s-perfil .pad{padding-top:100px!important} }
+@media(min-width:1024px){ #s-perfil .pad{padding-top:170px!important;max-width:640px;margin:0 auto} }
+</style>
 </head>
 <body>
 <div class="appwrap">
@@ -1052,7 +1061,7 @@ var PERFILES={
  'Pívot':{salto:8,potencia:8,velocidad:5,agilidad:5,fuerza_inf:9,fuerza_sup:9,resistencia:7,tiro_libre:7,tiro_tres:3,tiro_media:5,manejo:4,dribbling:4,entrada:9,pase:6},
  '_def':{salto:6,potencia:6,velocidad:6,agilidad:6,fuerza_inf:6,fuerza_sup:6,resistencia:6,tiro_libre:6,tiro_tres:6,tiro_media:6,manejo:6,dribbling:6,entrada:6,pase:6}};
 window.__objModo='conjunto';
-function renderModo(){ var tabs=document.getElementById('modo-tabs'); if(tabs){ Array.prototype.forEach.call(tabs.querySelectorAll('.modo-b'),function(b){ var on=b.getAttribute('data-m')===window.__objModo; b.style.background=on?'#3a86d8':'#16213a'; b.style.color=on?'#fff':'#cdd8e8'; }); } var gf=document.getElementById('grp-fis'), gt=document.getElementById('grp-tec'); if(gf) gf.style.display=(window.__objModo==='tecnico')?'none':'block'; if(gt) gt.style.display=(window.__objModo==='fisico')?'none':'block'; }
+function renderModo(){ var tabs=document.getElementById('modo-tabs'); if(tabs){ Array.prototype.forEach.call(tabs.querySelectorAll('.modo-b'),function(b){ var on=b.getAttribute('data-m')===window.__objModo; b.style.background=on?'#E65C00':'#2A2C33'; b.style.color=on?'#fff':'#cdd8e8'; }); } var gf=document.getElementById('grp-fis'), gt=document.getElementById('grp-tec'); if(gf) gf.style.display=(window.__objModo==='tecnico')?'none':'block'; if(gt) gt.style.display=(window.__objModo==='fisico')?'none':'block'; }
 async function cargarObjetivos(){
   var cont=document.getElementById('obj-cont'); if(!cont) return; cont.innerHTML='Cargando…';
   var dj={};
