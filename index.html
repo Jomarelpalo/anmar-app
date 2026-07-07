@@ -378,6 +378,23 @@ body{
   #s-login,#s-entrevista{left:0!important}
 }
 </style>
+<style id="tema-cristal-polish">
+/* velo un poco mas fuerte para leer mejor sobre el mural de tiza */
+@media(max-width:1023px){
+  body{background-image:linear-gradient(180deg,rgba(18,20,19,.80),rgba(18,20,19,.66) 42%,rgba(18,20,19,.84)),url('assets/fondo-movil.jpg')!important;
+    background-size:auto,contain!important;background-position:center,center top!important;background-repeat:no-repeat,no-repeat!important;background-attachment:fixed,fixed!important}
+}
+@media(min-width:1024px){
+  body{background-image:linear-gradient(180deg,rgba(18,20,19,.78),rgba(18,20,19,.62) 42%,rgba(18,20,19,.82)),url('assets/fondo-escritorio.jpg')!important;
+    background-size:auto,contain!important;background-position:center,center top!important;background-repeat:no-repeat,no-repeat!important;background-attachment:fixed,fixed!important}
+  /* pantallas que no son Inicio: columna centrada comoda, no estirada */
+  .appwrap .screen:not(#s-hoy) .pad{max-width:680px;margin:0 auto}
+  #s-sesion .ex-card,#s-sesion .sess-head,#s-sesion .sess-actions{max-width:680px;margin-left:auto;margin-right:auto}
+}
+/* boton "Anadir medicion" (Progreso) al estilo cristal naranja */
+#pr-add{background:linear-gradient(160deg,rgba(230,92,0,.88),rgba(191,77,0,.78))!important;color:#fff!important;
+  border:1px solid rgba(230,92,0,.5)!important;border-radius:12px!important;font-family:'Chakra Petch','Inter',sans-serif!important;letter-spacing:1px}
+</style>
 </head>
 <body>
 <div class="appwrap">
@@ -1201,6 +1218,10 @@ window.__entornoSel='sin_material';
   });
   setTimeout(_syncDesple,600);
 })();
+</script>
+<script>
+/* resaltar en el menu lateral la pantalla activa */
+(function(){var _g=window.go;if(typeof _g==='function'){window.go=function(n,b){_g(n,b);try{document.querySelectorAll('.side .mlink').forEach(function(m){m.classList.toggle('on',m.getAttribute('data-go')===n)});}catch(e){}};}})();
 </script>
 </body>
 </html>
