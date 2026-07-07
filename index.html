@@ -403,6 +403,36 @@ body{
   #s-calendario .pad{max-width:470px}
 }
 </style>
+<style id="tema-cal">
+.calhead{align-items:center}
+.calhead h2{font-family:'Anton','Inter',sans-serif;letter-spacing:1px}
+.calhead .calnav{display:flex;gap:8px}
+.calhead .calnav button{width:40px;height:40px;border-radius:11px;background:linear-gradient(160deg,rgba(234,234,234,.10),rgba(234,234,234,.03));border:1px solid rgba(234,234,234,.16);color:var(--text);cursor:pointer;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center}
+.calhead .calnav button:hover{box-shadow:0 0 16px rgba(230,92,0,.3)}
+.dow span{color:#FFD54A;font-weight:700}
+.grid-cal{gap:6px}
+.day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;border-radius:10px;color:var(--text);cursor:pointer;background:rgba(28,36,32,.6);border:1px solid rgba(234,234,234,.12);position:relative}
+.day:hover{border-color:rgba(255,213,74,.5)}
+.day.hecho{background:rgba(46,204,113,.18)!important;border-color:rgba(46,204,113,.4)!important;color:#8fe6b4!important}
+.day.today{border-color:var(--orange)!important;box-shadow:0 0 12px rgba(230,92,0,.35);color:var(--orange)!important}
+@media(min-width:1024px){ #s-calendario .pad{max-width:480px} }
+</style>
+<style id="tema-cal2">
+.cal-panel{padding:18px 16px;margin-bottom:16px}
+.grid-cal{gap:7px}
+.day{aspect-ratio:1;font-size:15px;font-weight:800;border-radius:10px;color:var(--text)!important;
+  background:#2A2C33!important;border:1px solid #3A3D46!important;box-shadow:0 2px 6px rgba(0,0,0,.28)}
+.day:hover{border-color:rgba(255,213,74,.6)!important}
+.day.hecho{background:rgba(46,204,113,.9)!important;border-color:#2ECC71!important;color:#08210f!important}
+.day.today{background:rgba(230,92,0,.92)!important;border-color:#E65C00!important;color:#fff!important;box-shadow:0 0 14px rgba(230,92,0,.5)}
+.dow{margin-bottom:8px}
+.dow span{color:#FFD54A!important;font-weight:800;font-size:12px}
+@media(min-width:1024px){
+  #s-calendario .pad{max-width:560px}
+  .cal-panel{padding:22px 20px}
+  .day{font-size:16px}
+}
+</style>
 </head>
 <body>
 <div class="appwrap">
@@ -606,12 +636,12 @@ body{
       
 <section class="screen" id="s-calendario">
         <div class="pad pad-top">
-          <div class="calhead">
+          <div class="card cal-panel"><div class="calhead">
             <h2 id="cal-mes">Junio 2026</h2>
-            <div class="nav"><button>‹</button><button>›</button></div>
+            <div class="calnav"><button id="cal-prev">‹</button><button id="cal-next">›</button></div>
           </div>
           <div class="dow"><span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
-          <div class="grid-cal" id="cal"></div>
+          <div class="grid-cal" id="cal"></div></div>
 
           <div class="section-t">Próximos eventos</div>
           <div id="cal-eventos"></div>
@@ -899,7 +929,7 @@ async function cargarSemana(){
 }
 async function cargarCalendario(){
   var cont=document.getElementById('cal'); if(!cont) return;
-  var now=new Date(), y=now.getFullYear(), m=now.getMonth();
+  var now=new Date(); var base=new Date(); base.setDate(1); base.setMonth(base.getMonth()+(window.__calOffset||0)); var y=base.getFullYear(), m=base.getMonth();
   var meses=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   var mh=document.getElementById('cal-mes'); if(mh) mh.textContent=meses[m]+' '+y;
   var set={};
@@ -911,10 +941,8 @@ async function cargarCalendario(){
   for(i=0;i<startDow;i++) html+='<div></div>';
   for(var d=1;d<=daysIn;d++){
     var ds=y+'-'+(m+1<10?'0':'')+(m+1)+'-'+(d<10?'0':'')+d;
-    var st='aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:13px;border-radius:8px;';
-    if(set[ds]) st+='background:#123a24;color:#7fe0a8;font-weight:700;'; else st+='color:#cdd8e8;';
-    if(ds===todayStr) st+='border:1.5px solid #E65C00;';
-    html+='<div data-f="'+ds+'" style="cursor:pointer;'+st+'">'+d+'</div>';
+    var cls='day'; if(set[ds]) cls+=' hecho'; if(ds===todayStr) cls+=' today';
+    html+='<div class="'+cls+'" data-f="'+ds+'">'+d+'</div>';
   }
   cont.innerHTML=html;
   var evc=document.getElementById('cal-eventos');
@@ -1230,6 +1258,11 @@ window.__entornoSel='sin_material';
 <script>
 /* resaltar en el menu lateral la pantalla activa */
 (function(){var _g=window.go;if(typeof _g==='function'){window.go=function(n,b){_g(n,b);try{document.querySelectorAll('.side .mlink').forEach(function(m){m.classList.toggle('on',m.getAttribute('data-go')===n)});}catch(e){}};}})();
+</script>
+<script>
+(function(){var p=document.getElementById('cal-prev'),n=document.getElementById('cal-next');
+if(p)p.onclick=function(){window.__calOffset=(window.__calOffset||0)-1;cargarCalendario();};
+if(n)n.onclick=function(){window.__calOffset=(window.__calOffset||0)+1;cargarCalendario();};})();
 </script>
 </body>
 </html>
