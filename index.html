@@ -464,6 +464,18 @@ body{
 @media(max-width:1023px){ #s-perfil .pad{padding-top:100px!important} }
 @media(min-width:1024px){ #s-perfil .pad{padding-top:170px!important;max-width:640px;margin:0 auto} }
 </style>
+<style id="tema-flow">
+@media(min-width:1024px){
+  /* bajar Dirigido y Libre para que se vea "ANMAR TRAINING" arriba */
+  #s-dirigido .pad,#s-libre .pad{padding-top:160px!important}
+  /* Sesion: bajar cabecera y limitar el cartel de fase (no full-width) */
+  #s-sesion .sess-head{padding-top:110px!important}
+  #se-fase{max-width:680px;margin-left:auto!important;margin-right:auto!important}
+}
+@media(max-width:1023px){
+  #s-dirigido .pad,#s-libre .pad{padding-top:95px!important}
+}
+</style>
 </head>
 <body>
 <div class="appwrap">
