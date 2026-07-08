@@ -766,6 +766,18 @@ body{
           <div class="card" id="obj-cont"></div>
           <button class="btn btn-primary" id="obj-guardar" style="margin-top:12px">Guardar mis objetivos</button>
           <p class="msg" id="obj-msg" style="text-align:center;font-size:12px;margin-top:8px"></p>
+          <div class="section-t">Mi cuenta</div>
+          <div class="card" id="mc-panel">
+            <div style="font-size:13px;color:var(--muted);margin-bottom:6px">Nombre</div>
+            <input class="field" id="mc-nombre" placeholder="Tu nombre" autocomplete="name">
+            <button class="btn btn-primary" id="mc-nombre-btn" style="margin-top:2px">Guardar nombre</button>
+            <div style="height:1px;background:rgba(255,255,255,.09);margin:16px 0"></div>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:6px">Nueva contraseña</div>
+            <input class="field" id="mc-pass" type="password" placeholder="Mín. 8, con letras y números" autocomplete="new-password">
+            <input class="field" id="mc-pass2" type="password" placeholder="Repite la contraseña" autocomplete="new-password">
+            <button class="btn btn-primary" id="mc-pass-btn" style="margin-top:2px">Cambiar contraseña</button>
+            <p class="msg" id="mc-msg" style="text-align:center;font-size:12px;margin-top:10px"></p>
+          </div>
           <button class="btn btn-primary solo-admin" style="margin-top:18px" data-go="admin">Administración</button>
           <button class="btn btn-ghost" style="margin-top:12px" data-go="login">Cerrar sesión</button>
         </div>
@@ -813,7 +825,7 @@ function go(name,isBack){
   var nav=document.getElementById('nav');
   nav.classList.toggle('hidden', name==='login'||name==='sesion'||name==='entrevista'||name==='libre'||name==='dirigido');
   nav.querySelectorAll('button').forEach(function(b){b.classList.toggle('on', b.dataset.go===name);});
-  if(name==='admin'){ cargarAdmin(); } if(name==='sesion'){ cargarSesion(); } if(name==='hoy'){ cargarSemana(); if(window._planHoy)window._planHoy(); } if(name==='dirigido'){ if(window._recDirigido)window._recDirigido(); } if(name==='libre'){ if(window._loadCond)window._loadCond(); } if(name==='calendario'){ cargarCalendario(); } if(name==='progreso'){ cargarProgreso(); } if(name==='perfil'){ cargarObjetivos(); }
+  if(name==='admin'){ cargarAdmin(); } if(name==='sesion'){ cargarSesion(); } if(name==='hoy'){ cargarSemana(); if(window._planHoy)window._planHoy(); } if(name==='dirigido'){ if(window._recDirigido)window._recDirigido(); } if(name==='libre'){ if(window._loadCond)window._loadCond(); } if(name==='calendario'){ cargarCalendario(); } if(name==='progreso'){ cargarProgreso(); } if(name==='perfil'){ cargarObjetivos(); if(window.cargarMiCuenta)cargarMiCuenta(); }
 }
 var msg=document.getElementById('msg');
 function setMsg(t,ok){ if(!msg)return; msg.textContent=t||''; msg.className='msg '+(ok?'ok':'err'); }
@@ -1401,7 +1413,7 @@ if(n)n.onclick=function(){window.__calOffset=(window.__calOffset||0)+1;cargarCal
    b.addEventListener('click',function(){ if(inp.type==='password'){inp.type='text';b.innerHTML=OFF;} else {inp.type='password';b.innerHTML=OPEN;} });
    w.appendChild(b);
  }
- function init(){ eye('password'); eye('newpass'); }
+ function init(){ eye('password'); eye('newpass'); eye('mc-pass'); eye('mc-pass2'); }
  if(document.readyState!=='loading') init(); else document.addEventListener('DOMContentLoaded',init);
 })();
 </script>
@@ -1457,6 +1469,51 @@ async function crearUsuario(){
   btn.disabled=false;
 }
 (function(){ var b=document.getElementById('nu-crear'); if(b) b.addEventListener('click',crearUsuario); })();
+</script>
+<script>
+async function cambiarNombre(){
+  var inp=document.getElementById('mc-nombre'), btn=document.getElementById('mc-nombre-btn'), m=document.getElementById('mc-msg');
+  var nombre=(inp.value||'').trim();
+  if(nombre.length<2){ m.style.color='#ff6b6b'; m.textContent='Escribe un nombre válido.'; return; }
+  btn.disabled=true; m.style.color='#9AA8A0'; m.textContent='Guardando…';
+  try{
+    var u=await sb.auth.getUser(); var user=u.data&&u.data.user;
+    if(!user){ m.style.color='#ff6b6b'; m.textContent='Tu sesión ha caducado. Vuelve a entrar.'; btn.disabled=false; return; }
+    var r=await sb.from('profiles').update({nombre:nombre}).eq('id',user.id);
+    if(r&&r.error){ m.style.color='#ff6b6b'; m.textContent='No se pudo guardar el nombre.'; btn.disabled=false; return; }
+    document.querySelectorAll('#u-nombre,#u-nombre2').forEach(function(el){el.textContent=nombre;});
+    var ini=(nombre||'?').charAt(0).toUpperCase();
+    document.querySelectorAll('#u-ini,#u-ini2').forEach(function(el){el.textContent=ini;});
+    m.style.color='#2ECC71'; m.textContent='Nombre actualizado.'; setTimeout(function(){ if(m&&m.textContent==='Nombre actualizado.')m.textContent=''; },2500);
+  }catch(e){ m.style.color='#ff6b6b'; m.textContent='Error al guardar el nombre.'; }
+  btn.disabled=false;
+}
+async function cambiarPass(){
+  var p1=document.getElementById('mc-pass'), p2=document.getElementById('mc-pass2'), btn=document.getElementById('mc-pass-btn'), m=document.getElementById('mc-msg');
+  var pass=p1.value||'', pass2=p2.value||'';
+  if(pass.length<8||!/[a-zA-Z]/.test(pass)||!/[0-9]/.test(pass)){ m.style.color='#ff6b6b'; m.textContent='Mínimo 8 caracteres, con letras y números.'; return; }
+  if(pass!==pass2){ m.style.color='#ff6b6b'; m.textContent='Las dos contraseñas no coinciden.'; return; }
+  btn.disabled=true; m.style.color='#9AA8A0'; m.textContent='Guardando…';
+  try{
+    var r=await sb.auth.updateUser({password:pass});
+    if(r&&r.error){ m.style.color='#ff6b6b'; m.textContent='No se pudo cambiar. Prueba a salir y entrar de nuevo.'; btn.disabled=false; return; }
+    p1.value=''; p2.value='';
+    m.style.color='#2ECC71'; m.textContent='Contraseña cambiada.'; setTimeout(function(){ if(m&&m.textContent==='Contraseña cambiada.')m.textContent=''; },3000);
+  }catch(e){ m.style.color='#ff6b6b'; m.textContent='Error al cambiar la contraseña.'; }
+  btn.disabled=false;
+}
+function cargarMiCuenta(){
+  var inp=document.getElementById('mc-nombre'); if(!inp) return;
+  var n=document.getElementById('u-nombre2'); if(n) inp.value=(n.textContent||'').trim();
+  var p1=document.getElementById('mc-pass'); if(p1) p1.value='';
+  var p2=document.getElementById('mc-pass2'); if(p2) p2.value='';
+  var m=document.getElementById('mc-msg'); if(m) m.textContent='';
+}
+window.cargarMiCuenta=cargarMiCuenta;
+(function(){
+  var nb=document.getElementById('mc-nombre-btn'); if(nb) nb.addEventListener('click',cambiarNombre);
+  var pb=document.getElementById('mc-pass-btn'); if(pb) pb.addEventListener('click',cambiarPass);
+})();
 </script>
 </body>
 </html>
