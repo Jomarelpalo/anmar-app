@@ -525,6 +525,28 @@ body{
 @media(min-width:1024px){ #s-admin .pad{max-width:640px;margin:0 auto;padding-top:150px!important} }
 @media(max-width:1023px){ #s-admin .pad{padding-top:60px} }
 </style>
+<style id="tema-entrenar-grande">
+@media(min-width:1024px){
+  /* Entrenar: usar mejor el ancho de pantalla en escritorio */
+  #s-libre .pad, #s-dirigido .pad{ max-width:920px!important; }
+
+  /* Dirigido: tarjeta de recomendación más grande */
+  #s-dirigido .card{ padding:30px!important; }
+  #s-dirigido #rec-titulo{ font-size:30px!important; }
+  #s-dirigido #rec-meta{ font-size:15px!important; }
+  #s-dirigido #rec-porque{ font-size:15px!important; }
+  #s-dirigido .card .btn{ font-size:16px; padding:14px; }
+
+  /* Libre: 4 rutinas en rejilla de 2 columnas, tarjetas grandes */
+  #rutinas-grid{ display:grid!important; grid-template-columns:1fr 1fr; gap:16px; }
+  #s-libre .tipo-b{ margin-bottom:0!important; padding:24px!important; gap:18px!important; min-height:104px; }
+  #s-libre .tipo-b > div:first-child{ width:64px!important; height:64px!important; border-radius:16px!important; font-size:32px!important; }
+  #s-libre .tipo-b > div:first-child img{ width:48px!important; height:48px!important; }
+  #s-libre .tipo-b > div:nth-child(2) > div:nth-child(1){ font-size:19px!important; }
+  #s-libre .tipo-b > div:nth-child(2) > div:nth-child(2){ font-size:13.5px!important; margin-top:4px; }
+  #s-libre .tipo-b > span:last-child{ font-size:26px!important; }
+}
+</style>
 </head>
 <body>
 <div class="appwrap">
@@ -668,6 +690,7 @@ body{
             </div>
             <div id="dureza-auto" style="font-size:11.5px;color:var(--muted2);margin:8px 4px 2px"></div>
           </details>
+          <div id="rutinas-grid">
           <div class="card tipo-b" data-tipo="fuerza_gym" style="display:flex;align-items:center;gap:12px;margin-bottom:10px;cursor:pointer">
             <div style="width:42px;height:42px;border-radius:11px;flex:none;background:rgba(230,92,0,.16);color:var(--blue-l);display:flex;align-items:center;justify-content:center"><img src="assets/ico-fuerza.png" style="width:34px;height:34px;object-fit:contain" alt=""></div>
             <div style="flex:1"><div style="font-weight:800;font-size:15px">Fuerza · gimnasio</div><div style="font-size:12px;color:var(--muted)">Potencia para el baloncesto, sin hipertrofia</div></div>
@@ -687,6 +710,7 @@ body{
             <div style="width:42px;height:42px;border-radius:11px;flex:none;background:rgba(54,192,138,.16);color:var(--ok);display:flex;align-items:center;justify-content:center;font-size:22px">🤸</div>
             <div style="flex:1"><div style="font-weight:800;font-size:15px">Funcional</div><div style="font-size:12px;color:var(--muted)">Movimiento, core y equilibrio</div></div>
             <span style="color:var(--muted2);font-size:22px">›</span>
+          </div>
           </div>
         </div>
       </section>
