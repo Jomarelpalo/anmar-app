@@ -782,7 +782,13 @@ body{
           <div class="section-t">Usuarios</div>
           <div class="card pr-panel" id="admin-users"><div style="color:var(--muted);font-size:13px">Cargando&hellip;</div></div>
           <div class="section-t" style="margin-top:20px">Crear usuario</div>
-          <div class="card pr-panel" id="admin-crear"><div style="color:var(--muted);font-size:13px">La creaci&oacute;n de usuarios se activar&aacute; en el siguiente paso.</div></div>
+          <div class="card pr-panel" id="admin-crear">
+            <input class="field" id="nu-nombre" placeholder="Nombre">
+            <input class="field" id="nu-email" type="email" placeholder="Correo electr&oacute;nico" autocomplete="off">
+            <select class="field" id="nu-rol"><option value="jugador">Jugador</option><option value="entrenador">Entrenador</option><option value="admin">Administrador</option></select>
+            <button class="btn btn-primary" id="nu-crear" style="margin-top:4px">Crear usuario</button>
+            <div id="nu-msg" style="font-size:13px;margin-top:12px;line-height:1.5"></div>
+          </div>
         </div>
       </section>
 <nav class="nav hidden" id="nav">
@@ -1421,6 +1427,28 @@ async function guardarRol(uid, rol, sel){
   try{ await sb.from('profiles').update({role:rol}).eq('id',uid); }catch(e){}
   if(sel){ sel.disabled=false; }
 }
+</script>
+<script>
+async function crearUsuario(){
+  var msg=document.getElementById('nu-msg'), btn=document.getElementById('nu-crear');
+  var nombre=(document.getElementById('nu-nombre').value||'').trim();
+  var email=(document.getElementById('nu-email').value||'').trim();
+  var rol=document.getElementById('nu-rol').value;
+  if(!email){ msg.style.color='#ff6b6b'; msg.textContent='Escribe el correo.'; return; }
+  btn.disabled=true; msg.style.color='#9AA8A0'; msg.textContent='Creando\u2026';
+  try{
+    var r=await sb.functions.invoke('admin-crear-usuario',{ body:{nombre:nombre,email:email,rol:rol} });
+    var err=(r.error)?(r.error.message||'error'):((r.data&&r.data.error)?r.data.error:null);
+    if(err){ msg.style.color='#ff6b6b'; msg.textContent=err; btn.disabled=false; return; }
+    var d=r.data;
+    msg.style.color='#2ECC71';
+    msg.innerHTML='Usuario creado. Contrase\u00f1a temporal:<br><b style="color:#FFD54A;font-size:16px;letter-spacing:.5px">'+d.password+'</b><br><span style="color:#9AA8A0">Comp\u00e1rtela con '+d.email+'. Deber\u00e1 cambiarla al entrar.</span>';
+    document.getElementById('nu-nombre').value=''; document.getElementById('nu-email').value='';
+    if(typeof cargarAdmin==='function') cargarAdmin();
+  }catch(e){ msg.style.color='#ff6b6b'; msg.textContent='Error: '+(e&&e.message||e); }
+  btn.disabled=false;
+}
+(function(){ var b=document.getElementById('nu-crear'); if(b) b.addEventListener('click',crearUsuario); })();
 </script>
 </body>
 </html>
