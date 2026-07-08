@@ -514,6 +514,17 @@ body{
 .pw-eye:hover{color:#EAEAEA}
 .pw-eye svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 </style>
+<style id="tema-admin">
+.solo-admin{display:none}
+#s-admin .admin-u{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:12px;border-radius:12px;background:#2A2C33;border:1px solid #3A3D46;margin-bottom:10px}
+#s-admin .admin-u-n{font-weight:700;font-size:14px;color:var(--text)}
+#s-admin .admin-u-e{font-size:12px;color:var(--muted);margin-top:2px}
+#s-admin .admin-rol{background:#1c2027;color:var(--text);border:1px solid #3A3D46;border-radius:8px;padding:8px 10px;font-family:var(--font);font-size:13px;cursor:pointer;flex:none}
+#s-admin .admin-rol:disabled{opacity:.5;cursor:default}
+.admin-volver{background:none!important;border:none!important;color:var(--orange)!important;cursor:pointer;font-size:14px;font-family:var(--font)}
+@media(min-width:1024px){ #s-admin .pad{max-width:640px;margin:0 auto;padding-top:150px!important} }
+@media(max-width:1023px){ #s-admin .pad{padding-top:60px} }
+</style>
 </head>
 <body>
 <div class="appwrap">
@@ -524,6 +535,7 @@ body{
   <button class="mlink" data-go="progreso"><span class="i">&#128200;</span> Progreso</button>
   <button class="mlink" data-go="calendario"><span class="i">&#128197;</span> Calendario</button>
   <button class="mlink" data-go="perfil"><span class="i">&#128100;</span> Perfil</button>
+  <button class="mlink solo-admin" data-go="admin"><span class="i">&#9881;</span> Admin</button>
 </aside>
 <div class="app-bg"></div>
 <section class="screen active" id="s-login">
@@ -754,12 +766,25 @@ body{
           <div class="card" id="obj-cont"></div>
           <button class="btn btn-primary" id="obj-guardar" style="margin-top:12px">Guardar mis objetivos</button>
           <p class="msg" id="obj-msg" style="text-align:center;font-size:12px;margin-top:8px"></p>
-          <button class="btn btn-ghost" style="margin-top:18px" data-go="login">Cerrar sesión</button>
+          <button class="btn btn-primary solo-admin" style="margin-top:18px" data-go="admin">Administración</button>
+          <button class="btn btn-ghost" style="margin-top:12px" data-go="login">Cerrar sesión</button>
         </div>
       </section>
 
       <!-- NAV -->
       
+<section class="screen" id="s-admin">
+        <div class="pad pad-top">
+          <div class="prog-head">
+            <h2>Administraci&oacute;n</h2>
+            <button class="admin-volver" data-go="perfil">&lsaquo; Volver</button>
+          </div>
+          <div class="section-t">Usuarios</div>
+          <div class="card pr-panel" id="admin-users"><div style="color:var(--muted);font-size:13px">Cargando&hellip;</div></div>
+          <div class="section-t" style="margin-top:20px">Crear usuario</div>
+          <div class="card pr-panel" id="admin-crear"><div style="color:var(--muted);font-size:13px">La creaci&oacute;n de usuarios se activar&aacute; en el siguiente paso.</div></div>
+        </div>
+      </section>
 <nav class="nav hidden" id="nav">
         <button data-go="hoy" class="on"><span class="i">🏠</span>Hoy</button>
         <button data-go="progreso"><span class="i">📈</span>Progreso</button>
@@ -781,7 +806,7 @@ function go(name,isBack){
   var nav=document.getElementById('nav');
   nav.classList.toggle('hidden', name==='login'||name==='sesion'||name==='entrevista'||name==='libre'||name==='dirigido');
   nav.querySelectorAll('button').forEach(function(b){b.classList.toggle('on', b.dataset.go===name);});
-  if(name==='sesion'){ cargarSesion(); } if(name==='hoy'){ cargarSemana(); if(window._planHoy)window._planHoy(); } if(name==='dirigido'){ if(window._recDirigido)window._recDirigido(); } if(name==='libre'){ if(window._loadCond)window._loadCond(); } if(name==='calendario'){ cargarCalendario(); } if(name==='progreso'){ cargarProgreso(); } if(name==='perfil'){ cargarObjetivos(); }
+  if(name==='admin'){ cargarAdmin(); } if(name==='sesion'){ cargarSesion(); } if(name==='hoy'){ cargarSemana(); if(window._planHoy)window._planHoy(); } if(name==='dirigido'){ if(window._recDirigido)window._recDirigido(); } if(name==='libre'){ if(window._loadCond)window._loadCond(); } if(name==='calendario'){ cargarCalendario(); } if(name==='progreso'){ cargarProgreso(); } if(name==='perfil'){ cargarObjetivos(); }
 }
 var msg=document.getElementById('msg');
 function setMsg(t,ok){ if(!msg)return; msg.textContent=t||''; msg.className='msg '+(ok?'ok':'err'); }
@@ -801,6 +826,7 @@ async function loadProfileAndEnter(){
   document.querySelectorAll('#u-ini,#u-ini2').forEach(function(el){el.textContent=ini;});
   var roles={admin:'Administrador',entrenador:'Entrenador',jugador:'Jugador'};
   var rolEl=document.getElementById('u-rol'); if(rolEl) rolEl.textContent=roles[role]||role;
+  window.__role=role; if(role==='admin'){ document.querySelectorAll('.solo-admin').forEach(function(e){e.style.display='';}); }
   setMsg('');
   var dj=await sb.from('datos_jugador').select('entrevista_completada,fecha_nacimiento').eq('id',user.id).maybeSingle();
   if(!dj.data || !dj.data.entrevista_completada){ go('entrevista'); return; }
@@ -1371,6 +1397,30 @@ if(n)n.onclick=function(){window.__calOffset=(window.__calOffset||0)+1;cargarCal
  function init(){ eye('password'); eye('newpass'); }
  if(document.readyState!=='loading') init(); else document.addEventListener('DOMContentLoaded',init);
 })();
+</script>
+<script>
+async function cargarAdmin(){
+  var cont=document.getElementById('admin-users'); if(!cont) return; cont.innerHTML='Cargando\u2026';
+  try{
+    var r=await sb.rpc('admin_lista_usuarios');
+    if(r.error){ cont.innerHTML='<div style="color:#ff6b6b;font-size:13px">No tienes permisos o hubo un error.</div>'; return; }
+    var rows=r.data||[];
+    if(!rows.length){ cont.innerHTML='<div style="color:var(--muted);font-size:13px">No hay usuarios.</div>'; return; }
+    var me=null; try{ var u=await sb.auth.getUser(); me=u.data&&u.data.user?u.data.user.id:null; }catch(e){}
+    cont.innerHTML=rows.map(function(x){
+      var yo=(x.id===me);
+      var opts=['jugador','entrenador','admin'].map(function(rr){ return '<option value="'+rr+'"'+(x.rol===rr?' selected':'')+'>'+rr+'</option>'; }).join('');
+      return '<div class="admin-u"><div><div class="admin-u-n">'+(x.nombre||'(sin nombre)')+(yo?' <span style="color:#8A8D93">(t\u00fa)</span>':'')+'</div><div class="admin-u-e">'+(x.email||'')+'</div></div>'+
+             '<select class="admin-rol" data-uid="'+x.id+'"'+(yo?' disabled':'')+'>'+opts+'</select></div>';
+    }).join('');
+    cont.querySelectorAll('.admin-rol').forEach(function(sel){ sel.addEventListener('change',function(){ guardarRol(sel.getAttribute('data-uid'), sel.value, sel); }); });
+  }catch(e){ cont.innerHTML='<div style="color:#ff6b6b;font-size:13px">Error al cargar.</div>'; }
+}
+async function guardarRol(uid, rol, sel){
+  if(sel){ sel.disabled=true; }
+  try{ await sb.from('profiles').update({role:rol}).eq('id',uid); }catch(e){}
+  if(sel){ sel.disabled=false; }
+}
 </script>
 </body>
 </html>
