@@ -750,9 +750,16 @@ body{
 <section class="screen" id="s-perfil">
         <div class="pad pad-top">
           <div style="text-align:center;margin-bottom:18px">
-            <div class="avatar" id="u-ini2" style="width:78px;height:78px;font-size:30px;margin:0 auto 12px">A</div>
+            <div style="position:relative;width:78px;height:78px;margin:0 auto 12px">
+              <div class="avatar" id="u-ini2" style="width:78px;height:78px;font-size:30px;margin:0">A</div>
+              <button id="av-cam" type="button" aria-label="Cambiar foto" style="position:absolute;right:-3px;bottom:-3px;width:28px;height:28px;border-radius:50%;border:2px solid #16213a;background:var(--orange);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              </button>
+              <input type="file" id="av-file" accept="image/*" style="display:none">
+            </div>
             <div style="font-size:20px;font-weight:800"><span id="u-nombre2">jugador</span></div>
             <div style="font-size:13px;color:var(--muted)"><span id="u-rol">Jugador</span></div>
+            <div id="av-msg" style="font-size:12px;min-height:15px;margin-top:5px"></div>
           </div>
           <div class="card">
             <div class="prow"><span>Objetivo</span><span>Saltar más alto</span></div>
@@ -838,11 +845,12 @@ function traducir(m){ m=(m||'').toLowerCase();
 async function loadProfileAndEnter(){
   var r=await sb.auth.getUser(); var user=r.data&&r.data.user; if(!user) return;
   var nombre=(user.email||'').split('@')[0], role='jugador';
-  var p=await sb.from('profiles').select('nombre,role').eq('id',user.id).maybeSingle();
+  var p=await sb.from('profiles').select('nombre,role,avatar_url').eq('id',user.id).maybeSingle();
   if(p.data){ nombre=p.data.nombre||nombre; role=p.data.role||role; }
   document.querySelectorAll('#u-nombre,#u-nombre2').forEach(function(el){el.textContent=nombre;});
   var ini=(nombre||'?').trim().charAt(0).toUpperCase();
   document.querySelectorAll('#u-ini,#u-ini2').forEach(function(el){el.textContent=ini;});
+  if(window.renderAvatar) renderAvatar((p.data&&p.data.avatar_url)||null);
   var roles={admin:'Administrador',entrenador:'Entrenador',jugador:'Jugador'};
   var rolEl=document.getElementById('u-rol'); if(rolEl) rolEl.textContent=roles[role]||role;
   window.__role=role; if(role==='admin'){ document.querySelectorAll('.solo-admin').forEach(function(e){e.style.display='';}); }
@@ -1483,7 +1491,8 @@ async function cambiarNombre(){
     if(r&&r.error){ m.style.color='#ff6b6b'; m.textContent='No se pudo guardar el nombre.'; btn.disabled=false; return; }
     document.querySelectorAll('#u-nombre,#u-nombre2').forEach(function(el){el.textContent=nombre;});
     var ini=(nombre||'?').charAt(0).toUpperCase();
-    document.querySelectorAll('#u-ini,#u-ini2').forEach(function(el){el.textContent=ini;});
+    if(window.__avatarUrl){ if(window.renderAvatar) renderAvatar(window.__avatarUrl); }
+    else { document.querySelectorAll('#u-ini,#u-ini2').forEach(function(el){el.textContent=ini;}); }
     m.style.color='#2ECC71'; m.textContent='Nombre actualizado.'; setTimeout(function(){ if(m&&m.textContent==='Nombre actualizado.')m.textContent=''; },2500);
   }catch(e){ m.style.color='#ff6b6b'; m.textContent='Error al guardar el nombre.'; }
   btn.disabled=false;
@@ -1513,6 +1522,44 @@ window.cargarMiCuenta=cargarMiCuenta;
 (function(){
   var nb=document.getElementById('mc-nombre-btn'); if(nb) nb.addEventListener('click',cambiarNombre);
   var pb=document.getElementById('mc-pass-btn'); if(pb) pb.addEventListener('click',cambiarPass);
+})();
+</script>
+<script>
+function renderAvatar(url){
+  window.__avatarUrl=url||null;
+  document.querySelectorAll('#u-ini,#u-ini2').forEach(function(el){
+    if(url){ el.textContent=''; el.style.backgroundImage='url("'+url+'")'; el.style.backgroundSize='cover'; el.style.backgroundPosition='center'; el.style.backgroundRepeat='no-repeat'; }
+    else { el.style.backgroundImage=''; }
+  });
+}
+window.renderAvatar=renderAvatar;
+async function subirAvatar(file){
+  var m=document.getElementById('av-msg');
+  if(!file) return;
+  if(!/^image\//.test(file.type||'')){ if(m){m.style.color='#ff6b6b';m.textContent='Elige una imagen (JPG o PNG).';} return; }
+  if(file.size>4*1024*1024){ if(m){m.style.color='#ff6b6b';m.textContent='La foto es muy grande (máx. 4 MB).';} return; }
+  if(m){ m.style.color='#9AA8A0'; m.textContent='Subiendo foto…'; }
+  try{
+    var u=await sb.auth.getUser(); var user=u.data&&u.data.user;
+    if(!user){ if(m){m.style.color='#ff6b6b';m.textContent='Tu sesión ha caducado. Vuelve a entrar.';} return; }
+    var ext=((file.name||'').split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,''); if(!ext||ext.length>5) ext='jpg';
+    var path=user.id+'/avatar.'+ext;
+    var up=await sb.storage.from('avatares').upload(path, file, {upsert:true, cacheControl:'3600', contentType:file.type});
+    if(up.error){ if(m){m.style.color='#ff6b6b';m.textContent='No se pudo subir la foto.';} return; }
+    var pub=sb.storage.from('avatares').getPublicUrl(path);
+    var url=(pub&&pub.data&&pub.data.publicUrl)? (pub.data.publicUrl+'?v='+Date.now()) : null;
+    var r=await sb.from('profiles').update({avatar_url:url}).eq('id',user.id);
+    if(r&&r.error){ if(m){m.style.color='#ff6b6b';m.textContent='Foto subida, pero no se pudo guardar.';} return; }
+    renderAvatar(url);
+    if(m){ m.style.color='#2ECC71'; m.textContent='Foto actualizada.'; setTimeout(function(){ if(m&&m.textContent==='Foto actualizada.')m.textContent=''; },2500); }
+  }catch(e){ if(m){m.style.color='#ff6b6b';m.textContent='Error al subir la foto.'; } }
+}
+(function(){
+  var cam=document.getElementById('av-cam'), f=document.getElementById('av-file');
+  if(cam&&f){
+    cam.addEventListener('click',function(){ f.click(); });
+    f.addEventListener('change',function(){ if(f.files&&f.files[0]) subirAvatar(f.files[0]); f.value=''; });
+  }
 })();
 </script>
 </body>
