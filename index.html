@@ -588,6 +588,15 @@ body{
   }
 }
 </style>
+<style id="tema-recomendacion">
+.rec-box{border-radius:12px;padding:12px 14px;margin-top:12px;line-height:1.5;border:1px solid;font-size:13px}
+.rec-box b{display:block;font-size:10.5px;letter-spacing:.09em;margin-bottom:5px}
+.rec-why{background:rgba(214,167,67,.10);border-color:rgba(214,167,67,.32);color:#e7dcc0}
+.rec-why b{color:#F3C969}
+.rec-for{background:rgba(46,204,113,.09);border-color:rgba(46,204,113,.30);color:#cfe8d8}
+.rec-for b{color:#2ECC71}
+@media(min-width:1024px){ #s-dirigido .rec-box{font-size:15px!important;padding:16px 18px} }
+</style>
 <style id="tema-fondos-apartados">
 /* Fondo propio de tiza por apartado (Inicio y Sesion mantienen el mural de la cancha) */
 @media(max-width:1023px){
@@ -710,8 +719,9 @@ body{
             <span class="badge">RECOMENDADO PARA HOY</span>
             <h2 id="rec-titulo" style="font-size:22px;font-weight:800;margin:8px 0 0">Tu sesión de hoy</h2>
             <div class="meta" id="rec-meta" style="color:var(--muted);font-size:13px;margin-top:6px;display:flex;gap:14px;flex-wrap:wrap"><span>⏱ 40-45 min</span></div>
-            <div id="rec-porque" style="color:#cdd8e8;font-size:12.5px;margin:10px 0 2px;line-height:1.45"></div>
-            <button class="btn btn-primary" data-go="sesion" style="margin-top:14px">Empezar sesión</button>
+            <div class="rec-box rec-why"><b>POR QUÉ</b><div id="rec-porque">Analizando tu historial…</div></div>
+            <div class="rec-box rec-for"><b>PARA QUÉ</b><div id="rec-para">—</div></div>
+            <button class="btn btn-primary" id="rec-start" style="margin-top:14px">Empezar sesión</button>
           </div>
           <div style="font-size:12px;color:var(--muted2);margin:12px 4px 0;line-height:1.5">El sistema elige por ti según tus objetivos y tu edad. Más adelante te irá guiando sesión a sesión.</div>
           <div class="section-t" style="margin-top:20px">¿Prefieres elegir tú?</div>
@@ -1047,6 +1057,7 @@ function pickPonderado(rows,pesoCat,n){
 async function cargarSesion(){
   if(sesionEjercicios.length){ renderEjercicio(); return; }
   document.getElementById('se-steplabel').textContent='Preparando tu sesion...'; window.__sesionGuardada=false;
+  window.__tipoRutina=null;
   var dj={};
   try{ var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null;
     if(uid){ var d=await sb.from('datos_jugador').select('condicion_fisica,entorno_habitual,objetivo_principal,atributos_objetivo,modo_entreno,lesiones').eq('id',uid).maybeSingle(); if(d.data) dj=d.data; } }catch(e){}
@@ -1132,7 +1143,9 @@ async function registrarSesion(){
   try{ if(window.__sesionGuardada) return; window.__sesionGuardada=true;
     var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null; if(!uid) return;
     var pilares=[]; (sesionEjercicios||[]).forEach(function(x){ if(x.pilar&&pilares.indexOf(x.pilar)<0)pilares.push(x.pilar); });
-    var __ins=await sb.from('sesiones').insert({jugador_id:uid, titulo:'Sesion de entrenamiento', pilares:pilares, entorno:(window.__entornoSel||'sin_material'), estado:'completada', duracion_min:Math.max(10,Math.round((sesionEjercicios||[]).length*4))}).select('id').single();
+    var __TIT={fuerza_gym:'Fuerza en gimnasio',pliometria:'Pliometria',funcional:'Funcional y core',tecnica:'Tecnica de baloncesto'};
+    var __tr=window.__tipoRutina||null;
+    var __ins=await sb.from('sesiones').insert({jugador_id:uid, titulo:(__tr&&__TIT[__tr])||'Sesion de entrenamiento', notas:__tr, pilares:pilares, entorno:(window.__entornoSel||'sin_material'), estado:'completada', duracion_min:Math.max(10,Math.round((sesionEjercicios||[]).length*4))}).select('id').single();
     var __sid=(__ins&&__ins.data)?__ins.data.id:null;
     if(__sid&&sesionEjercicios&&sesionEjercicios.length){
       var __uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -1349,6 +1362,7 @@ window.__entornoSel='sin_material';
   }
   var TITU={fuerza_gym:'Fuerza en gimnasio',pliometria:'Pliometría',funcional:'Funcional',tecnica:'Técnica de baloncesto'};
   async function cargarRutinaTipo(tipo){
+    window.__tipoRutina=tipo;
     try{ document.getElementById('se-steplabel').textContent='Preparando tu rutina...'; }catch(e){}
     var L=_durezaL();
     var niveles=(L===0)?['iniciacion']:((L===1)?['iniciacion','medio']:['iniciacion','medio','avanzado']);
@@ -1644,6 +1658,130 @@ async function subirAvatar(file){
     cam.addEventListener('click',function(){ f.click(); });
     f.addEventListener('change',function(){ if(f.files&&f.files[0]) subirAvatar(f.files[0]); f.value=''; });
   }
+})();
+</script>
+<script>
+/* CAPA INTELIGENTE - PASO 2: recomendacion de la proxima sesion por reglas */
+(function(){
+  var RUT={
+    fuerza_gym:{n:'Fuerza en gimnasio', carga:'alta', para:'Ganar fuerza util para saltar y aguantar el contacto, sin buscar volumen.'},
+    pliometria:{n:'Pliometria', carga:'alta', para:'Ganar altura de salto y un primer paso mas explosivo.'},
+    tecnica:{n:'Tecnica de baloncesto', carga:'baja', para:'Afinar tiro, bote, pase y entrada: lo que se ve en el partido.'},
+    funcional:{n:'Funcional y core', carga:'media', para:'Equilibrio, core y trabajo a una pierna: te mueves mejor y te lesionas menos.'}
+  };
+  var NOMD=['Suave','Media','Fuerte'];
+  function _f(d){ var m=d.getMonth()+1, x=d.getDate(); return d.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(x<10?'0':'')+x; }
+  function _pd(s){ var p=String(s).split('-'); var d=new Date(+p[0], p[1]-1, +p[2]); d.setHours(0,0,0,0); return d; }
+  function _dd(a,b){ return Math.round((a-b)/86400000); }
+  function _edad(f){ if(!f) return null; var d=new Date(f), t=new Date(), e=t.getFullYear()-d.getFullYear(), m=t.getMonth()-d.getMonth(); if(m<0||(m===0&&t.getDate()<d.getDate())) e--; return e; }
+  function _tipoDe(s){
+    var t=(s.notas||'').trim(); if(RUT[t]) return t;
+    var p=s.pilares||[];
+    if(p.indexOf('pliometria')>=0) return 'pliometria';
+    if(p.indexOf('tecnica')>=0) return 'tecnica';
+    if(p.indexOf('acondicionamiento')>=0) return 'funcional';
+    if(p.indexOf('fuerza')>=0) return 'fuerza_gym';
+    return null;
+  }
+
+  async function recomendacionInteligente(){
+    var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null; if(!uid) return;
+    var hoy=new Date(); hoy.setHours(0,0,0,0);
+    var desde=new Date(hoy.getTime()-20*86400000);
+    var hasta=new Date(hoy.getTime()+2*86400000);
+
+    var dj={}, ses=[], evs=[];
+    try{ var r1=await sb.from('datos_jugador').select('condicion_fisica,lesiones,objetivo_principal,fecha_nacimiento').eq('id',uid).maybeSingle(); dj=(r1&&r1.data)||{}; }catch(e){}
+    try{ var r2=await sb.from('sesiones').select('fecha,notas,pilares').eq('jugador_id',uid).eq('estado','completada').gte('fecha',_f(desde)).order('fecha',{ascending:false}); ses=(r2&&r2.data)||[]; }catch(e){}
+    try{ var r3=await sb.from('eventos').select('tipo,titulo,fecha').eq('jugador_id',uid).gte('fecha',_f(hoy)).lte('fecha',_f(hasta)); evs=(r3&&r3.data)||[]; }catch(e){}
+
+    var edad=_edad(dj.fecha_nacimiento);
+    var lesion=(dj.lesiones||'').trim();
+    var cond=dj.condicion_fisica||'media';
+
+    var sinTocar={fuerza_gym:999,pliometria:999,tecnica:999,funcional:999};
+    var ultimo=999, ultimoTipo=null;
+    ses.forEach(function(s){
+      var t=_tipoDe(s); if(!t) return;
+      var d=_dd(hoy,_pd(s.fecha)); if(d<0) return;
+      if(d<sinTocar[t]) sinTocar[t]=d;
+      if(d<ultimo){ ultimo=d; ultimoTipo=t; }
+    });
+
+    var pHoy=null, pManana=null;
+    evs.forEach(function(e){
+      if(e.tipo!=='partido') return;
+      var d=_dd(_pd(e.fecha),hoy);
+      if(d===0) pHoy=e; else if(d===1) pManana=e;
+    });
+
+    var L=(cond==='baja')?0:((cond==='alta')?2:1);
+    if(ultimo===0 || (ultimo===1 && ultimoTipo && RUT[ultimoTipo].carga==='alta')) L=Math.max(0,L-1);
+
+    var tipo=null, porque='', para='', aviso='';
+
+    if(pHoy){
+      tipo='funcional'; L=0;
+      porque='Hoy tienes partido'+(pHoy.titulo?(' ("'+pHoy.titulo+'")'):'')+'. No toca cargar las piernas.';
+      para='Activar el cuerpo sin fatigarlo, para llegar fresco al partido.';
+    } else if(pManana){
+      tipo='tecnica'; L=0;
+      porque='Manana juegas'+(pManana.titulo?(' ("'+pManana.titulo+'")'):'')+'. Hoy nada de fuerza pesada ni saltos.';
+      para='Afinar el gesto (tiro, bote, pase) sin dejar las piernas cansadas para el partido.';
+    } else if(lesion){
+      tipo='funcional'; L=0;
+      porque='En tu ficha has indicado molestias o lesion: "'+lesion+'".';
+      para='Movilidad y control, evitando impacto y saltos.';
+      aviso='Consulta con tu fisioterapeuta o medico antes de volver a la carga fuerte.';
+    } else if(ultimo>=5){
+      tipo='funcional'; L=Math.min(L,1);
+      porque=(ultimo>=900)?'Todavia no has registrado ninguna sesion.':('Llevas '+ultimo+' dias sin entrenar.');
+      para='Volver poco a poco: movilidad, core y equilibrio, sin agujetas ni riesgo de lesion.';
+    } else {
+      var cands=['fuerza_gym','pliometria','tecnica','funcional'];
+      if(ultimo<=1 && ultimoTipo && RUT[ultimoTipo].carga==='alta') cands=['tecnica','funcional'];
+      if(edad!=null && edad<15 && sinTocar.pliometria<=6) cands=cands.filter(function(c){ return c!=='pliometria'; });
+      if(ultimo<=1 && ultimoTipo && cands.length>1) cands=cands.filter(function(c){ return c!==ultimoTipo; });
+      if(!cands.length) cands=['funcional'];
+      var obj=(dj.objetivo_principal||'').toLowerCase();
+      function bono(c){
+        if(/salt/.test(obj) && c==='pliometria') return 1.5;
+        if(/fuer/.test(obj) && c==='fuerza_gym') return 1.5;
+        if(/tir|tecn|bote|pase/.test(obj) && c==='tecnica') return 1.5;
+        if(/lesi|equilib|core/.test(obj) && c==='funcional') return 1.5;
+        return 0;
+      }
+      cands.sort(function(a,b){ return (sinTocar[b]+bono(b))-(sinTocar[a]+bono(a)); });
+      tipo=cands[0];
+      var d=sinTocar[tipo];
+      porque=(d>=900)?('Aun no has hecho ninguna sesion de '+RUT[tipo].n.toLowerCase()+'.'):('Hace '+d+' dia'+(d===1?'':'s')+' que no trabajas '+RUT[tipo].n.toLowerCase()+'.');
+      if(ultimo<=1 && ultimoTipo) porque+=' Ayer hiciste '+RUT[ultimoTipo].n.toLowerCase()+', asi que toca cambiar de estimulo.';
+      para=RUT[tipo].para;
+    }
+
+    if(edad!=null && edad<15 && L>1){ L=1; aviso=aviso||'Intensidad limitada por tu edad: primero tecnica y prevencion.'; }
+
+    window.__recTipo=tipo; window.__recDureza=L;
+
+    var dur=(L===0)?'25-35 min':((L===1)?'35-45 min':'45-55 min');
+    var t=document.getElementById('rec-titulo'); if(t) t.textContent='Recomendado: '+RUT[tipo].n;
+    var m=document.getElementById('rec-meta'); if(m) m.innerHTML='<span>⏱ '+dur+'</span><span>🎯 '+RUT[tipo].n+'</span><span>💪 '+NOMD[L]+'</span>';
+    var p=document.getElementById('rec-porque'); if(p) p.textContent=porque;
+    var pa=document.getElementById('rec-para'); if(pa) pa.textContent=para+(aviso?(' '+aviso):'');
+  }
+
+  window.recomendacionInteligente=recomendacionInteligente;
+  window._recDirigido=function(){
+    try{ if(window._dashHoy) window._dashHoy(); }catch(e){}
+    try{ recomendacionInteligente().catch(function(){}); }catch(e){}
+  };
+  document.addEventListener('click',function(e){
+    if(!e.target||!e.target.closest) return;
+    if(!e.target.closest('#rec-start')) return;
+    if(window.__recDureza!=null) window.__durezaManual=window.__recDureza;
+    if(window.__recTipo && window.cargarRutinaTipo){ window.cargarRutinaTipo(window.__recTipo); }
+    else { go('sesion'); }
+  });
 })();
 </script>
 </body>
