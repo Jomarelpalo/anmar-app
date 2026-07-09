@@ -911,7 +911,14 @@ body{
         <button data-go="calendario"><span class="i">📅</span>Calendario</button>
         <button data-go="perfil"><span class="i">👤</span>Perfil</button>
       </nav>
-<div class="ovl" id="ov-fnac"><div style="width:100%;max-width:340px">
+<div class="ovl" id="ov-pass"><div style="width:100%;max-width:340px">
+  <div style="font-size:18px;font-weight:700;margin-bottom:6px;color:#e7eef7">Crea tu contraseña</div>
+  <div style="font-size:13px;color:#9AA8A0;margin-bottom:14px;line-height:1.5">Estás usando una contraseña temporal que conoce quien creó tu cuenta. Elige una tuya para continuar.</div>
+  <input id="np-pass" class="field" type="password" placeholder="Nueva contraseña (mín. 8, letras y números)" autocomplete="new-password">
+  <input id="np-pass2" class="field" type="password" placeholder="Repite la contraseña" autocomplete="new-password">
+  <button id="np-guardar" class="btn btn-primary" style="width:100%">Guardar y continuar</button>
+  <p id="np-msg" style="font-size:12px;text-align:center;margin-top:10px;min-height:16px"></p>
+</div></div><div class="ovl" id="ov-fnac"><div style="width:100%;max-width:340px">
   <div style="font-size:18px;font-weight:700;margin-bottom:6px;color:#e7eef7">Falta tu fecha de nacimiento</div>
   <div style="font-size:13px;color:#9AA8A0;margin-bottom:14px;line-height:1.5">La necesitamos para ajustar la intensidad a tu edad y proteger tu salud. Sin ella no podemos continuar.</div>
   <input id="fn-fecha" class="field" type="date">
@@ -945,7 +952,7 @@ function traducir(m){ m=(m||'').toLowerCase();
 async function loadProfileAndEnter(){
   var r=await sb.auth.getUser(); var user=r.data&&r.data.user; if(!user) return;
   var nombre=(user.email||'').split('@')[0], role='jugador';
-  var p=await sb.from('profiles').select('nombre,role,avatar_url').eq('id',user.id).maybeSingle();
+  var p=await sb.from('profiles').select('nombre,role,avatar_url,debe_cambiar_password').eq('id',user.id).maybeSingle();
   if(p.data){ nombre=p.data.nombre||nombre; role=p.data.role||role; }
   document.querySelectorAll('#u-nombre,#u-nombre2').forEach(function(el){el.textContent=nombre;});
   var ini=(nombre||'?').trim().charAt(0).toUpperCase();
@@ -955,6 +962,7 @@ async function loadProfileAndEnter(){
   var rolEl=document.getElementById('u-rol'); if(rolEl) rolEl.textContent=roles[role]||role;
   window.__role=role; if(role==='admin'){ document.querySelectorAll('.solo-admin').forEach(function(e){e.style.display='';}); }
   setMsg('');
+  if(p.data && p.data.debe_cambiar_password){ if(window.pedirNuevaPassword){ window.pedirNuevaPassword(); return; } }
   var dj=await sb.from('datos_jugador').select('entrevista_completada,fecha_nacimiento').eq('id',user.id).maybeSingle();
   if(!dj.data || !dj.data.entrevista_completada){ go('entrevista'); return; }
   if(!dj.data.fecha_nacimiento){ if(window.pedirFechaNacimiento){ window.pedirFechaNacimiento(); return; } }
@@ -1526,7 +1534,7 @@ if(n)n.onclick=function(){window.__calOffset=(window.__calOffset||0)+1;cargarCal
    b.addEventListener('click',function(){ if(inp.type==='password'){inp.type='text';b.innerHTML=OFF;} else {inp.type='password';b.innerHTML=OPEN;} });
    w.appendChild(b);
  }
- function init(){ eye('password'); eye('newpass'); eye('mc-pass'); eye('mc-pass2'); }
+ function init(){ eye('password'); eye('newpass'); eye('mc-pass'); eye('mc-pass2'); eye('np-pass'); eye('np-pass2'); }
  if(document.readyState!=='loading') init(); else document.addEventListener('DOMContentLoaded',init);
 })();
 </script>
@@ -1668,6 +1676,35 @@ async function subirAvatar(file){
 })();
 </script>
 <script>
+/* SEGURIDAD: si la cuenta sigue con la contraseña temporal, obligar a cambiarla */
+function pedirNuevaPassword(){
+  var ov=document.getElementById('ov-pass'); if(ov) ov.classList.add('open');
+}
+window.pedirNuevaPassword=pedirNuevaPassword;
+(function(){
+  var b=document.getElementById('np-guardar'); if(!b) return;
+  b.addEventListener('click', async function(){
+    var m=document.getElementById('np-msg');
+    var p1=(document.getElementById('np-pass')||{}).value||'';
+    var p2=(document.getElementById('np-pass2')||{}).value||'';
+    if(p1.length<8 || !/[a-zA-Z]/.test(p1) || !/[0-9]/.test(p1)){ m.style.color='#ff6b6b'; m.textContent='Mínimo 8 caracteres, con letras y números.'; return; }
+    if(p1!==p2){ m.style.color='#ff6b6b'; m.textContent='Las dos contraseñas no coinciden.'; return; }
+    b.disabled=true; m.style.color='#9AA8A0'; m.textContent='Guardando…';
+    try{
+      var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null;
+      if(!uid){ m.style.color='#ff6b6b'; m.textContent='Tu sesión ha caducado.'; b.disabled=false; return; }
+      var ru=await sb.auth.updateUser({password:p1});
+      if(ru&&ru.error){ m.style.color='#ff6b6b'; m.textContent='No se pudo cambiar la contraseña.'; b.disabled=false; return; }
+      var rp=await sb.from('profiles').update({debe_cambiar_password:false}).eq('id',uid);
+      if(rp&&rp.error){ m.style.color='#ff6b6b'; m.textContent='Contraseña cambiada, pero no se pudo guardar el estado.'; b.disabled=false; return; }
+      var ov=document.getElementById('ov-pass'); if(ov) ov.classList.remove('open');
+      document.getElementById('np-pass').value=''; document.getElementById('np-pass2').value='';
+      m.textContent=''; b.disabled=false;
+      loadProfileAndEnter();
+    }catch(e){ m.style.color='#ff6b6b'; m.textContent='Error al guardar.'; b.disabled=false; }
+  });
+})();
+
 /* SEGURIDAD: si falta la fecha de nacimiento, pedirla antes de entrar */
 function pedirFechaNacimiento(){
   var ov=document.getElementById('ov-fnac'); if(ov) ov.classList.add('open');
