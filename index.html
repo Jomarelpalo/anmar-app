@@ -571,6 +571,23 @@ body{
   #s-perfil .pad{ max-width:820px!important; }
 }
 </style>
+<style id="tema-fondo-entrenar">
+/* Fondo propio (tiza sentadilla) SOLO en las pantallas de Entrenar */
+@media(max-width:1023px){
+  body:has(#s-dirigido.active), body:has(#s-libre.active){
+    background-image:linear-gradient(180deg,rgba(24,26,25,.64),rgba(24,26,25,.52) 40%,rgba(24,26,25,.72)),url('assets/fondo-entrenar.jpg')!important;
+    background-size:auto,contain!important;
+    background-position:center,center center!important;
+  }
+}
+@media(min-width:1024px){
+  body:has(#s-dirigido.active), body:has(#s-libre.active){
+    background-image:linear-gradient(180deg,rgba(24,26,25,.60),rgba(24,26,25,.48) 40%,rgba(24,26,25,.66)),url('assets/fondo-entrenar.jpg')!important;
+    background-size:auto,contain!important;
+    background-position:center,center center!important;
+  }
+}
+</style>
 </head>
 <body>
 <div class="appwrap">
