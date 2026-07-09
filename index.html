@@ -1143,7 +1143,7 @@ async function registrarSesion(){
   try{ if(window.__sesionGuardada) return; window.__sesionGuardada=true;
     var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null; if(!uid) return;
     var pilares=[]; (sesionEjercicios||[]).forEach(function(x){ if(x.pilar&&pilares.indexOf(x.pilar)<0)pilares.push(x.pilar); });
-    var __TIT={fuerza_gym:'Fuerza en gimnasio',pliometria:'Pliometria',funcional:'Funcional y core',tecnica:'Tecnica de baloncesto'};
+    var __TIT={fuerza_gym:'Fuerza en gimnasio',pliometria:'Pliometría',funcional:'Funcional y core',tecnica:'Técnica de baloncesto'};
     var __tr=window.__tipoRutina||null;
     var __ins=await sb.from('sesiones').insert({jugador_id:uid, titulo:(__tr&&__TIT[__tr])||'Sesion de entrenamiento', notas:__tr, pilares:pilares, entorno:(window.__entornoSel||'sin_material'), estado:'completada', duracion_min:Math.max(10,Math.round((sesionEjercicios||[]).length*4))}).select('id').single();
     var __sid=(__ins&&__ins.data)?__ins.data.id:null;
@@ -1664,9 +1664,9 @@ async function subirAvatar(file){
 /* CAPA INTELIGENTE - PASO 2: recomendacion de la proxima sesion por reglas */
 (function(){
   var RUT={
-    fuerza_gym:{n:'Fuerza en gimnasio', carga:'alta', para:'Ganar fuerza util para saltar y aguantar el contacto, sin buscar volumen.'},
-    pliometria:{n:'Pliometria', carga:'alta', para:'Ganar altura de salto y un primer paso mas explosivo.'},
-    tecnica:{n:'Tecnica de baloncesto', carga:'baja', para:'Afinar tiro, bote, pase y entrada: lo que se ve en el partido.'},
+    fuerza_gym:{n:'Fuerza en gimnasio', carga:'alta', para:'Ganar fuerza útil para saltar y aguantar el contacto, sin buscar volumen.'},
+    pliometria:{n:'Pliometría', carga:'alta', para:'Ganar altura de salto y un primer paso más explosivo.'},
+    tecnica:{n:'Técnica de baloncesto', carga:'baja', para:'Afinar tiro, bote, pase y entrada: lo que se ve en el partido.'},
     funcional:{n:'Funcional y core', carga:'media', para:'Equilibrio, core y trabajo a una pierna: te mueves mejor y te lesionas menos.'}
   };
   var NOMD=['Suave','Media','Fuerte'];
@@ -1726,17 +1726,17 @@ async function subirAvatar(file){
       para='Activar el cuerpo sin fatigarlo, para llegar fresco al partido.';
     } else if(pManana){
       tipo='tecnica'; L=0;
-      porque='Manana juegas'+(pManana.titulo?(' ("'+pManana.titulo+'")'):'')+'. Hoy nada de fuerza pesada ni saltos.';
+      porque='Mañana juegas'+(pManana.titulo?(' ("'+pManana.titulo+'")'):'')+'. Hoy nada de fuerza pesada ni saltos.';
       para='Afinar el gesto (tiro, bote, pase) sin dejar las piernas cansadas para el partido.';
     } else if(lesion){
       tipo='funcional'; L=0;
-      porque='En tu ficha has indicado molestias o lesion: "'+lesion+'".';
+      porque='En tu ficha has indicado molestias o lesión: "'+lesion+'".';
       para='Movilidad y control, evitando impacto y saltos.';
-      aviso='Consulta con tu fisioterapeuta o medico antes de volver a la carga fuerte.';
+      aviso='Consulta con tu fisioterapeuta o médico antes de volver a la carga fuerte.';
     } else if(ultimo>=5){
       tipo='funcional'; L=Math.min(L,1);
-      porque=(ultimo>=900)?'Todavia no has registrado ninguna sesion.':('Llevas '+ultimo+' dias sin entrenar.');
-      para='Volver poco a poco: movilidad, core y equilibrio, sin agujetas ni riesgo de lesion.';
+      porque=(ultimo>=900)?'Todavía no has registrado ninguna sesión.':('Llevas '+ultimo+' días sin entrenar.');
+      para='Volver poco a poco: movilidad, core y equilibrio, sin agujetas ni riesgo de lesión.';
     } else {
       var cands=['fuerza_gym','pliometria','tecnica','funcional'];
       if(ultimo<=1 && ultimoTipo && RUT[ultimoTipo].carga==='alta') cands=['tecnica','funcional'];
@@ -1754,12 +1754,12 @@ async function subirAvatar(file){
       cands.sort(function(a,b){ return (sinTocar[b]+bono(b))-(sinTocar[a]+bono(a)); });
       tipo=cands[0];
       var d=sinTocar[tipo];
-      porque=(d>=900)?('Aun no has hecho ninguna sesion de '+RUT[tipo].n.toLowerCase()+'.'):('Hace '+d+' dia'+(d===1?'':'s')+' que no trabajas '+RUT[tipo].n.toLowerCase()+'.');
-      if(ultimo<=1 && ultimoTipo) porque+=' Ayer hiciste '+RUT[ultimoTipo].n.toLowerCase()+', asi que toca cambiar de estimulo.';
+      porque=(d>=900)?('Aún no has hecho ninguna sesión de '+RUT[tipo].n.toLowerCase()+'.'):('Hace '+d+' día'+(d===1?'':'s')+' que no trabajas '+RUT[tipo].n.toLowerCase()+'.');
+      if(ultimo<=1 && ultimoTipo) porque+=' Ayer hiciste '+RUT[ultimoTipo].n.toLowerCase()+', así que toca cambiar de estímulo.';
       para=RUT[tipo].para;
     }
 
-    if(edad!=null && edad<15 && L>1){ L=1; aviso=aviso||'Intensidad limitada por tu edad: primero tecnica y prevencion.'; }
+    if(edad!=null && edad<15 && L>1){ L=1; aviso=aviso||'Intensidad limitada por tu edad: primero técnica y prevención.'; }
 
     window.__recTipo=tipo; window.__recDureza=L;
 
