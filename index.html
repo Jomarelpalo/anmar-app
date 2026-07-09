@@ -911,7 +911,13 @@ body{
         <button data-go="calendario"><span class="i">📅</span>Calendario</button>
         <button data-go="perfil"><span class="i">👤</span>Perfil</button>
       </nav>
-<div class="ovl" id="ov-img"><button class="x" id="im-close" aria-label="Cerrar">&times;</button><div class="imgbox"><img id="im-big" src="" alt="Ejercicio"></div></div><div class="ovl" id="ov-rest"><button class="x" id="rt-close" aria-label="Cerrar">&times;</button><div style="font-size:11px;letter-spacing:.08em;color:#7d8da6">DESCANSO</div><div style="position:relative;width:170px;height:170px"><svg width="170" height="170" viewBox="0 0 120 120" style="transform:rotate(-90deg)"><circle cx="60" cy="60" r="52" fill="none" stroke="#16213a" stroke-width="9"></circle><circle id="rt-ring" cx="60" cy="60" r="52" fill="none" stroke="#3a86d8" stroke-width="9" stroke-linecap="round" stroke-dasharray="326.726" stroke-dashoffset="0"></circle></svg><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><div id="rt-time" style="font-size:36px;font-weight:800;color:#e7eef7">1:00</div><div id="rt-sub" style="font-size:11px;color:#7d8da6">listo</div></div></div><div class="rt-btns"><button id="rt-main">Iniciar</button><button class="sec" id="rt-reset">Reiniciar</button></div></div><div class="ovl" id="ov-dia"><button class="x" id="dia-close" aria-label="Cerrar">&times;</button><div style="width:100%;max-width:330px"><div id="dia-titulo" style="font-size:18px;font-weight:700;margin-bottom:12px;color:#e7eef7"></div><div id="dia-cont" style="margin-bottom:12px"></div><button id="dia-add" style="width:100%;background:#16213a;color:#cdd8e8;border:none;border-radius:11px;padding:11px;font-size:14px;cursor:pointer;font-family:var(--font)">+ Añadir evento</button><div id="dia-form" style="display:none;margin-top:12px"><input id="ev-titulo" class="field" placeholder="Título (ej. Partido vs CB Costa)"><select id="ev-tipo" class="field"><option value="entrenamiento">Entrenamiento</option><option value="partido">Partido</option><option value="descanso">Descanso</option><option value="otro">Otro</option></select><input id="ev-hora" class="field" type="time"><input id="ev-lugar" class="field" placeholder="Lugar (opcional)"><button id="ev-guardar" style="width:100%;background:#d6a743;color:#3a2a06;border:none;border-radius:11px;padding:12px;font-weight:700;cursor:pointer;font-family:var(--font)">Guardar evento</button><p id="ev-msg" style="font-size:12px;color:#f3c969;text-align:center;margin-top:8px"></p></div></div></div><div class="ovl" id="ov-test"><button class="x" id="test-close" aria-label="Cerrar">&times;</button><div style="width:100%;max-width:330px"><div style="font-size:18px;font-weight:700;margin-bottom:12px;color:#e7eef7">Nueva medición</div><select id="t-tipo" class="field"><option value="salto_vertical">Salto vertical (cm)</option><option value="velocidad_20m">Velocidad 20 m (s)</option><option value="agilidad">Agilidad T-test (s)</option><option value="resistencia">Resistencia (nivel)</option><option value="otro">Otro</option></select><input id="t-valor" class="field" type="number" step="0.01" placeholder="Valor (ej. 47)"><input id="t-fecha" class="field" type="date"><button id="t-guardar" style="width:100%;background:#d6a743;color:#3a2a06;border:none;border-radius:11px;padding:12px;font-weight:700;cursor:pointer;font-family:var(--font)">Guardar medición</button><p id="t-msg" style="font-size:12px;color:#f3c969;text-align:center;margin-top:8px"></p></div></div>
+<div class="ovl" id="ov-fnac"><div style="width:100%;max-width:340px">
+  <div style="font-size:18px;font-weight:700;margin-bottom:6px;color:#e7eef7">Falta tu fecha de nacimiento</div>
+  <div style="font-size:13px;color:#9AA8A0;margin-bottom:14px;line-height:1.5">La necesitamos para ajustar la intensidad a tu edad y proteger tu salud. Sin ella no podemos continuar.</div>
+  <input id="fn-fecha" class="field" type="date">
+  <button id="fn-guardar" class="btn btn-primary" style="width:100%">Guardar y continuar</button>
+  <p id="fn-msg" style="font-size:12px;text-align:center;margin-top:10px;min-height:16px"></p>
+</div></div><div class="ovl" id="ov-img"><button class="x" id="im-close" aria-label="Cerrar">&times;</button><div class="imgbox"><img id="im-big" src="" alt="Ejercicio"></div></div><div class="ovl" id="ov-rest"><button class="x" id="rt-close" aria-label="Cerrar">&times;</button><div style="font-size:11px;letter-spacing:.08em;color:#7d8da6">DESCANSO</div><div style="position:relative;width:170px;height:170px"><svg width="170" height="170" viewBox="0 0 120 120" style="transform:rotate(-90deg)"><circle cx="60" cy="60" r="52" fill="none" stroke="#16213a" stroke-width="9"></circle><circle id="rt-ring" cx="60" cy="60" r="52" fill="none" stroke="#3a86d8" stroke-width="9" stroke-linecap="round" stroke-dasharray="326.726" stroke-dashoffset="0"></circle></svg><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><div id="rt-time" style="font-size:36px;font-weight:800;color:#e7eef7">1:00</div><div id="rt-sub" style="font-size:11px;color:#7d8da6">listo</div></div></div><div class="rt-btns"><button id="rt-main">Iniciar</button><button class="sec" id="rt-reset">Reiniciar</button></div></div><div class="ovl" id="ov-dia"><button class="x" id="dia-close" aria-label="Cerrar">&times;</button><div style="width:100%;max-width:330px"><div id="dia-titulo" style="font-size:18px;font-weight:700;margin-bottom:12px;color:#e7eef7"></div><div id="dia-cont" style="margin-bottom:12px"></div><button id="dia-add" style="width:100%;background:#16213a;color:#cdd8e8;border:none;border-radius:11px;padding:11px;font-size:14px;cursor:pointer;font-family:var(--font)">+ Añadir evento</button><div id="dia-form" style="display:none;margin-top:12px"><input id="ev-titulo" class="field" placeholder="Título (ej. Partido vs CB Costa)"><select id="ev-tipo" class="field"><option value="entrenamiento">Entrenamiento</option><option value="partido">Partido</option><option value="descanso">Descanso</option><option value="otro">Otro</option></select><input id="ev-hora" class="field" type="time"><input id="ev-lugar" class="field" placeholder="Lugar (opcional)"><button id="ev-guardar" style="width:100%;background:#d6a743;color:#3a2a06;border:none;border-radius:11px;padding:12px;font-weight:700;cursor:pointer;font-family:var(--font)">Guardar evento</button><p id="ev-msg" style="font-size:12px;color:#f3c969;text-align:center;margin-top:8px"></p></div></div></div><div class="ovl" id="ov-test"><button class="x" id="test-close" aria-label="Cerrar">&times;</button><div style="width:100%;max-width:330px"><div style="font-size:18px;font-weight:700;margin-bottom:12px;color:#e7eef7">Nueva medición</div><select id="t-tipo" class="field"><option value="salto_vertical">Salto vertical (cm)</option><option value="velocidad_20m">Velocidad 20 m (s)</option><option value="agilidad">Agilidad T-test (s)</option><option value="resistencia">Resistencia (nivel)</option><option value="otro">Otro</option></select><input id="t-valor" class="field" type="number" step="0.01" placeholder="Valor (ej. 47)"><input id="t-fecha" class="field" type="date"><button id="t-guardar" style="width:100%;background:#d6a743;color:#3a2a06;border:none;border-radius:11px;padding:12px;font-weight:700;cursor:pointer;font-family:var(--font)">Guardar medición</button><p id="t-msg" style="font-size:12px;color:#f3c969;text-align:center;margin-top:8px"></p></div></div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -951,6 +957,7 @@ async function loadProfileAndEnter(){
   setMsg('');
   var dj=await sb.from('datos_jugador').select('entrevista_completada,fecha_nacimiento').eq('id',user.id).maybeSingle();
   if(!dj.data || !dj.data.entrevista_completada){ go('entrevista'); return; }
+  if(!dj.data.fecha_nacimiento){ if(window.pedirFechaNacimiento){ window.pedirFechaNacimiento(); return; } }
   window.__edad=(window.edadDeFecha?window.edadDeFecha(dj.data.fecha_nacimiento):null);
   window.__categoria=(window.categoriaEdad?window.categoriaEdad(window.__edad):null);
   if(window.__edad!=null && window.__edad<14){ try{await sb.auth.signOut();}catch(e){} go('login'); setMsg('Este entrenamiento auto-guiado es para 14 años en adelante. Los más jóvenes entrenan con su entrenador.'); return; }
@@ -1658,6 +1665,42 @@ async function subirAvatar(file){
     cam.addEventListener('click',function(){ f.click(); });
     f.addEventListener('change',function(){ if(f.files&&f.files[0]) subirAvatar(f.files[0]); f.value=''; });
   }
+})();
+</script>
+<script>
+/* SEGURIDAD: si falta la fecha de nacimiento, pedirla antes de entrar */
+function pedirFechaNacimiento(){
+  var ov=document.getElementById('ov-fnac'); if(ov) ov.classList.add('open');
+}
+window.pedirFechaNacimiento=pedirFechaNacimiento;
+(function(){
+  var b=document.getElementById('fn-guardar'); if(!b) return;
+  b.addEventListener('click', async function(){
+    var m=document.getElementById('fn-msg');
+    var v=(document.getElementById('fn-fecha')||{}).value||'';
+    if(!v){ m.style.color='#ff6b6b'; m.textContent='Pon tu fecha de nacimiento.'; return; }
+    var ed=(window.edadDeFecha?window.edadDeFecha(v):null);
+    if(ed==null || ed<0 || ed>100){ m.style.color='#ff6b6b'; m.textContent='Esa fecha no es válida.'; return; }
+    if(ed<14){
+      m.style.color='#ff6b6b'; m.textContent='Este entrenamiento es para 14 años en adelante.';
+      try{ await sb.auth.signOut(); }catch(e){}
+      setTimeout(function(){
+        var ov=document.getElementById('ov-fnac'); if(ov) ov.classList.remove('open');
+        go('login'); setMsg('Este entrenamiento auto-guiado es para 14 años en adelante. Los más jóvenes entrenan con su entrenador.');
+      },1800);
+      return;
+    }
+    b.disabled=true; m.style.color='#9AA8A0'; m.textContent='Guardando…';
+    try{
+      var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null;
+      if(!uid){ m.style.color='#ff6b6b'; m.textContent='Tu sesión ha caducado.'; b.disabled=false; return; }
+      var r=await sb.from('datos_jugador').update({fecha_nacimiento:v}).eq('id',uid);
+      if(r&&r.error){ m.style.color='#ff6b6b'; m.textContent='No se pudo guardar.'; b.disabled=false; return; }
+      var ov=document.getElementById('ov-fnac'); if(ov) ov.classList.remove('open');
+      m.textContent=''; b.disabled=false;
+      loadProfileAndEnter();
+    }catch(e){ m.style.color='#ff6b6b'; m.textContent='Error al guardar.'; b.disabled=false; }
+  });
 })();
 </script>
 <script>
