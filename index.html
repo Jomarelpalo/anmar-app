@@ -922,6 +922,23 @@ body{
             <button class="btn btn-primary" id="nu-crear" style="margin-top:4px">Crear usuario</button>
             <div id="nu-msg" style="font-size:13px;margin-top:12px;line-height:1.5"></div>
           </div>
+          <div class="section-t" style="margin-top:20px">Configuraci&oacute;n legal</div>
+          <div class="card pr-panel" id="admin-legal">
+            <label class="lg-chk"><input type="checkbox" id="cfg-consent"><span>Exigir consentimiento a los usuarios al entrar (act&iacute;valo antes de que entren jugadores)</span></label>
+            <div style="font-size:12px;line-height:1.55;color:#e7dcc0;background:rgba(214,167,67,.10);border:1px solid rgba(214,167,67,.32);border-radius:10px;padding:10px 12px;margin-top:12px">
+              <b style="color:#F3C969">Ojo:</b> desact&iacute;valo solo mientras haces pruebas t&uacute; mismo. Si usa la app cualquier persona ajena a tu familia, el RGPD te obliga <b>aunque no cobres</b>, y aqu&iacute; se tratan datos de salud.
+            </div>
+            <div style="font-size:13px;color:var(--muted);margin:16px 0 6px">Responsable del tratamiento</div>
+            <input class="field" id="cfg-nombre" placeholder="Nombre o raz&oacute;n social">
+            <input class="field" id="cfg-nif" placeholder="NIF / CIF">
+            <input class="field" id="cfg-dom" placeholder="Domicilio">
+            <input class="field" id="cfg-email" type="email" placeholder="Correo de contacto" autocomplete="off">
+            <div style="font-size:13px;color:var(--muted);margin:8px 0 6px">Versi&oacute;n del texto legal</div>
+            <div style="font-size:11.5px;color:var(--muted2);margin:-2px 2px 8px;line-height:1.5">Si cambias el aviso, sube la versi&oacute;n: a todos se les volver&aacute; a pedir que lo acepten.</div>
+            <input class="field" id="cfg-version" placeholder="2026-07-10.v1">
+            <button class="btn btn-primary" id="cfg-guardar" style="margin-top:4px">Guardar configuraci&oacute;n</button>
+            <div id="cfg-msg" style="font-size:13px;margin-top:12px;line-height:1.5;min-height:16px"></div>
+          </div>
         </div>
       </section>
 <nav class="nav hidden" id="nav">
@@ -935,7 +952,7 @@ body{
   <div style="font-size:12.5px;color:#9AA8A0;margin-bottom:10px;line-height:1.5">Lee esto y acepta para poder usar ANMAR TRAINING.</div>
   <div id="lg-texto">
     <h4>Aviso de privacidad</h4>
-    <p><b>Quién trata tus datos:</b> ANMAR TRAINING. Contacto: jorge@jomarelpalo.com</p>
+    <p><b>Quién trata tus datos:</b> <span id="lg-resp">ANMAR TRAINING. Contacto: jorge@jomarelpalo.com</span></p>
     <p><b>Qué datos:</b> tu nombre, correo y fecha de nacimiento; tu posición y objetivos; datos de salud (peso, altura, condición física y lesiones); y tus entrenamientos y mediciones.</p>
     <p><b>Para qué:</b> crear tu cuenta y personalizar tus entrenamientos según tu edad y tu estado, ajustando la intensidad para reducir el riesgo de lesión.</p>
     <p><b>Base legal:</b> tu consentimiento explícito. Los datos de salud son una categoría especial y necesitan tu permiso expreso. En España, a partir de los 14 años puedes darlo tú mismo.</p>
@@ -980,7 +997,7 @@ function go(name,isBack){
   var nav=document.getElementById('nav');
   nav.classList.toggle('hidden', name==='login'||name==='sesion'||name==='entrevista'||name==='libre'||name==='dirigido');
   nav.querySelectorAll('button').forEach(function(b){b.classList.toggle('on', b.dataset.go===name);});
-  if(name==='admin'){ cargarAdmin(); } if(name==='sesion'){ cargarSesion(); } if(name==='hoy'){ cargarSemana(); if(window._planHoy)window._planHoy(); } if(name==='dirigido'){ if(window._recDirigido)window._recDirigido(); } if(name==='libre'){ if(window._loadCond)window._loadCond(); } if(name==='calendario'){ cargarCalendario(); } if(name==='progreso'){ cargarProgreso(); } if(name==='perfil'){ cargarObjetivos(); if(window.cargarMiCuenta)cargarMiCuenta(); }
+  if(name==='admin'){ cargarAdmin(); if(window.cargarAdminLegal) cargarAdminLegal(); } if(name==='sesion'){ cargarSesion(); } if(name==='hoy'){ cargarSemana(); if(window._planHoy)window._planHoy(); } if(name==='dirigido'){ if(window._recDirigido)window._recDirigido(); } if(name==='libre'){ if(window._loadCond)window._loadCond(); } if(name==='calendario'){ cargarCalendario(); } if(name==='progreso'){ cargarProgreso(); } if(name==='perfil'){ cargarObjetivos(); if(window.cargarMiCuenta)cargarMiCuenta(); }
 }
 var msg=document.getElementById('msg');
 function setMsg(t,ok){ if(!msg)return; msg.textContent=t||''; msg.className='msg '+(ok?'ok':'err'); }
@@ -1633,6 +1650,50 @@ async function crearUsuario(){
   btn.disabled=false;
 }
 (function(){ var b=document.getElementById('nu-crear'); if(b) b.addEventListener('click',crearUsuario); })();
+
+/* ADMIN: configuracion legal (interruptor de consentimiento + datos del responsable) */
+async function cargarAdminLegal(){
+  var c=null;
+  try{ c=await window.cargarConfig(); }catch(e){}
+  if(!c) return;
+  var v=function(id,val){ var e=document.getElementById(id); if(e) e.value=val||''; };
+  var ck=document.getElementById('cfg-consent'); if(ck) ck.checked=!!c.consentimiento_activo;
+  v('cfg-nombre',c.responsable_nombre); v('cfg-nif',c.responsable_nif);
+  v('cfg-dom',c.responsable_domicilio); v('cfg-email',c.responsable_email);
+  v('cfg-version',c.legal_version);
+  var m=document.getElementById('cfg-msg'); if(m) m.textContent='';
+}
+window.cargarAdminLegal=cargarAdminLegal;
+async function guardarConfig(){
+  var m=document.getElementById('cfg-msg'), b=document.getElementById('cfg-guardar');
+  var activo=document.getElementById('cfg-consent').checked;
+  var nombre=(document.getElementById('cfg-nombre').value||'').trim();
+  var nif=(document.getElementById('cfg-nif').value||'').trim();
+  var dom=(document.getElementById('cfg-dom').value||'').trim();
+  var email=(document.getElementById('cfg-email').value||'').trim();
+  var ver=(document.getElementById('cfg-version').value||'').trim();
+  if(!ver){ m.style.color='#ff6b6b'; m.textContent='Pon una versión para el texto legal.'; return; }
+  if(activo && (!nombre || !nif || !email)){
+    m.style.color='#ff6b6b';
+    m.textContent='Para exigir consentimiento necesitas al menos nombre o razón social, NIF y correo de contacto.';
+    return;
+  }
+  b.disabled=true; m.style.color='#9AA8A0'; m.textContent='Guardando…';
+  try{
+    var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null;
+    var r=await sb.from('configuracion').update({
+      consentimiento_activo:activo, responsable_nombre:nombre||null, responsable_nif:nif||null,
+      responsable_domicilio:dom||null, responsable_email:email||null, legal_version:ver,
+      updated_at:new Date().toISOString(), updated_by:uid
+    }).eq('id',1);
+    if(r&&r.error){ m.style.color='#ff6b6b'; m.textContent='No se pudo guardar (¿eres administrador?).'; b.disabled=false; return; }
+    window.__config=null; await window.cargarConfig();
+    m.style.color='#2ECC71';
+    m.textContent=activo?'Guardado. El consentimiento se pedirá a todos los usuarios.':'Guardado. El consentimiento está DESACTIVADO (solo para tus pruebas).';
+  }catch(e){ m.style.color='#ff6b6b'; m.textContent='Error al guardar.'; }
+  b.disabled=false;
+}
+(function(){ var b=document.getElementById('cfg-guardar'); if(b) b.addEventListener('click',guardarConfig); })();
 </script>
 <script>
 async function cambiarNombre(){
@@ -1764,16 +1825,38 @@ async function subirAvatar(file){
 })();
 
 /* LEGAL: aviso de privacidad + descargo deportivo. Sube la version al cambiar el texto. */
-var LEGAL_VERSION='2026-07-10.v1';
+var LEGAL_VERSION='2026-07-10.v1';   /* solo de reserva si no hay configuracion */
+window.__config=null;
+async function cargarConfig(){
+  try{
+    var r=await sb.from('configuracion').select('*').eq('id',1).maybeSingle();
+    if(r && r.data) window.__config=r.data;
+  }catch(e){}
+  return window.__config;
+}
+window.cargarConfig=cargarConfig;
+function _versionLegal(){ return (window.__config && window.__config.legal_version) || LEGAL_VERSION; }
 async function faltaConsentimiento(uid){
   try{
-    var r=await sb.from('consentimientos').select('id').eq('usuario_id',uid).eq('version',LEGAL_VERSION).limit(1);
+    var c=await cargarConfig();
+    if(!c || !c.consentimiento_activo) return false;   /* interruptor del admin: apagado = no se pide */
+    var r=await sb.from('consentimientos').select('id').eq('usuario_id',uid).eq('version',_versionLegal()).limit(1);
     if(r&&r.error) return false;              /* si falla la consulta, no bloqueamos el acceso */
     return !(r.data && r.data.length);
   }catch(e){ return false; }
 }
 window.faltaConsentimiento=faltaConsentimiento;
 function pedirConsentimiento(){
+  var c=window.__config||{};
+  var el=document.getElementById('lg-resp');
+  if(el){
+    var partes=[];
+    if(c.responsable_nombre) partes.push(c.responsable_nombre);
+    if(c.responsable_nif) partes.push('NIF '+c.responsable_nif);
+    if(c.responsable_domicilio) partes.push(c.responsable_domicilio);
+    var mail=c.responsable_email||'jorge@jomarelpalo.com';
+    el.textContent=(partes.length?partes.join(' · '):'ANMAR TRAINING')+'. Contacto: '+mail;
+  }
   var ov=document.getElementById('ov-legal'); if(ov) ov.classList.add('open');
 }
 window.pedirConsentimiento=pedirConsentimiento;
@@ -1794,7 +1877,7 @@ window.pedirConsentimiento=pedirConsentimiento;
         var fn=d.data&&d.data.fecha_nacimiento;
         if(fn && window.edadDeFecha) edad=window.edadDeFecha(fn);
       }catch(e){}
-      var r=await sb.from('consentimientos').insert({usuario_id:uid, version:LEGAL_VERSION, privacidad:true, descargo_deportivo:true, edad_al_aceptar:edad});
+      var r=await sb.from('consentimientos').insert({usuario_id:uid, version:_versionLegal(), privacidad:true, descargo_deportivo:true, edad_al_aceptar:edad});
       if(r&&r.error){ m.style.color='#ff6b6b'; m.textContent='No se pudo guardar. Inténtalo de nuevo.'; b.disabled=false; return; }
       var ov=document.getElementById('ov-legal'); if(ov) ov.classList.remove('open');
       m.textContent=''; b.disabled=false;
