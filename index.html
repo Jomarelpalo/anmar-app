@@ -929,6 +929,20 @@ body{
             <button class="btn btn-primary" id="nu-crear" style="margin-top:4px">Crear usuario</button>
             <div id="nu-msg" style="font-size:13px;margin-top:12px;line-height:1.5"></div>
           </div>
+          <div class="section-t" style="margin-top:20px">Invitar por enlace</div>
+          <div class="card pr-panel" id="admin-invitar">
+            <div style="font-size:12px;color:var(--muted2);margin:-2px 2px 10px;line-height:1.5">El jugador crea su propia contrase&ntilde;a. T&uacute; no llegas a conocerla. El enlace caduca en 7 d&iacute;as y solo sirve una vez.</div>
+            <input class="field" id="iv-nombre2" placeholder="Nombre (opcional)">
+            <input class="field" id="iv-email2" type="email" placeholder="Correo electr&oacute;nico" autocomplete="off">
+            <select class="field" id="iv-rol2"><option value="jugador">Jugador</option><option value="entrenador">Entrenador</option><option value="admin">Administrador</option></select>
+            <button class="btn btn-primary" id="iv-crear2" style="margin-top:4px">Generar enlace</button>
+            <div id="iv-enlace" style="display:none;margin-top:12px">
+              <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Copia este enlace y m&aacute;ndaselo:</div>
+              <textarea id="iv-url" readonly rows="3" class="field" style="resize:none;font-size:12px;line-height:1.4"></textarea>
+              <button class="btn btn-ghost" id="iv-copiar">Copiar enlace</button>
+            </div>
+            <div id="iv-msg2" style="font-size:13px;margin-top:12px;line-height:1.5;min-height:16px"></div>
+          </div>
           <div class="section-t" style="margin-top:20px">Configuraci&oacute;n legal</div>
           <div class="card pr-panel" id="admin-legal">
             <label class="lg-chk"><input type="checkbox" id="cfg-consent"><span>Exigir consentimiento a los usuarios al entrar (act&iacute;valo antes de que entren jugadores)</span></label>
@@ -954,7 +968,16 @@ body{
         <button data-go="calendario"><span class="i">📅</span>Calendario</button>
         <button data-go="perfil"><span class="i">👤</span>Perfil</button>
       </nav>
-<div class="ovl" id="ov-legal"><div style="width:100%;max-width:420px">
+<div class="ovl" id="ov-inv"><div style="width:100%;max-width:360px">
+  <div style="font-size:18px;font-weight:700;margin-bottom:6px;color:#e7eef7">Te han invitado a ANMAR TRAINING</div>
+  <div style="font-size:13px;color:#9AA8A0;margin-bottom:6px;line-height:1.5">Crea tu contraseña. Solo la sabrás tú.</div>
+  <div id="inv-email" style="font-size:12.5px;color:#F3C969;margin-bottom:12px"></div>
+  <input class="field" id="inv-nombre" placeholder="Tu nombre" autocomplete="name">
+  <input class="field" id="inv-pass" type="password" placeholder="Contraseña (mín. 8, letras y números)" autocomplete="new-password">
+  <input class="field" id="inv-pass2" type="password" placeholder="Repite la contraseña" autocomplete="new-password">
+  <button id="inv-aceptar" class="btn btn-primary" style="width:100%">Crear mi cuenta</button>
+  <p id="inv-msg" style="font-size:12px;text-align:center;margin-top:10px;min-height:16px;line-height:1.45"></p>
+</div></div><div class="ovl" id="ov-legal"><div style="width:100%;max-width:420px">
   <div style="font-size:18px;font-weight:700;margin-bottom:6px;color:#e7eef7">Antes de empezar</div>
   <div style="font-size:12.5px;color:#9AA8A0;margin-bottom:10px;line-height:1.5">Lee esto y acepta para poder usar ANMAR TRAINING.</div>
   <div id="lg-texto">
@@ -1601,7 +1624,7 @@ if(n)n.onclick=function(){window.__calOffset=(window.__calOffset||0)+1;cargarCal
    b.addEventListener('click',function(){ if(inp.type==='password'){inp.type='text';b.innerHTML=OFF;} else {inp.type='password';b.innerHTML=OPEN;} });
    w.appendChild(b);
  }
- function init(){ eye('password'); eye('newpass'); eye('mc-pass'); eye('mc-pass2'); eye('np-pass'); eye('np-pass2'); }
+ function init(){ eye('password'); eye('newpass'); eye('mc-pass'); eye('mc-pass2'); eye('np-pass'); eye('np-pass2'); eye('inv-pass'); eye('inv-pass2'); }
  if(document.readyState!=='loading') init(); else document.addEventListener('DOMContentLoaded',init);
 })();
 </script>
@@ -1657,6 +1680,83 @@ async function crearUsuario(){
   btn.disabled=false;
 }
 (function(){ var b=document.getElementById('nu-crear'); if(b) b.addEventListener('click',crearUsuario); })();
+
+/* INVITACIONES POR ENLACE */
+async function _sha256hex(s){
+  var buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+}
+async function crearInvitacion(){
+  var m=document.getElementById('iv-msg2'), b=document.getElementById('iv-crear2');
+  var nombre=(document.getElementById('iv-nombre2').value||'').trim();
+  var email=(document.getElementById('iv-email2').value||'').trim().toLowerCase();
+  var rol=document.getElementById('iv-rol2').value;
+  if(!email || email.indexOf('@')<0){ m.style.color='#ff6b6b'; m.textContent='Escribe un correo válido.'; return; }
+  b.disabled=true; m.style.color='#9AA8A0'; m.textContent='Generando…';
+  try{
+    var bytes=new Uint8Array(32); crypto.getRandomValues(bytes);
+    var token=Array.from(bytes).map(function(x){ return x.toString(16).padStart(2,'0'); }).join('');
+    var hash=await _sha256hex(token);
+    var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null;
+    var r=await sb.from('invitaciones').insert({token_hash:hash, email:email, nombre:nombre||null, rol:rol, creada_por:uid});
+    if(r&&r.error){ m.style.color='#ff6b6b'; m.textContent='No se pudo crear la invitación (¿eres administrador?).'; b.disabled=false; return; }
+    var enlace=location.origin+location.pathname+'?inv='+token+'&e='+encodeURIComponent(email);
+    document.getElementById('iv-url').value=enlace;
+    document.getElementById('iv-enlace').style.display='block';
+    m.style.color='#2ECC71'; m.textContent='Enlace creado. Caduca en 7 días y solo sirve una vez.';
+    document.getElementById('iv-nombre2').value=''; document.getElementById('iv-email2').value='';
+  }catch(e){ m.style.color='#ff6b6b'; m.textContent='Error al generar el enlace.'; }
+  b.disabled=false;
+}
+async function aceptarInvitacion(){
+  var m=document.getElementById('inv-msg'), b=document.getElementById('inv-aceptar');
+  var nombre=(document.getElementById('inv-nombre').value||'').trim();
+  var p1=(document.getElementById('inv-pass')||{}).value||'';
+  var p2=(document.getElementById('inv-pass2')||{}).value||'';
+  if(nombre.length<2){ m.style.color='#ff6b6b'; m.textContent='Escribe tu nombre.'; return; }
+  if(p1.length<8 || !/[a-zA-Z]/.test(p1) || !/[0-9]/.test(p1)){ m.style.color='#ff6b6b'; m.textContent='Mínimo 8 caracteres, con letras y números.'; return; }
+  if(p1!==p2){ m.style.color='#ff6b6b'; m.textContent='Las dos contraseñas no coinciden.'; return; }
+  b.disabled=true; m.style.color='#9AA8A0'; m.textContent='Creando tu cuenta…';
+  try{
+    var r=await sb.functions.invoke('aceptar-invitacion',{ body:{token:window.__invToken, nombre:nombre, password:p1} });
+    var err=null;
+    if(r && r.error){
+      err='No se pudo crear la cuenta.';
+      try{ if(r.error.context && r.error.context.json){ var j=await r.error.context.json(); if(j&&j.error) err=j.error; } }catch(_){}
+    } else if(r && r.data && r.data.error){ err=r.data.error; }
+    if(err){ m.style.color='#ff6b6b'; m.textContent=err; b.disabled=false; return; }
+    var correo=r.data.email;
+    var si=await sb.auth.signInWithPassword({email:correo, password:p1});
+    var ov=document.getElementById('ov-inv'); if(ov) ov.classList.remove('open');
+    try{ history.replaceState(null,'',location.pathname); }catch(e){}
+    window.__invToken=null;
+    if(si.error){ go('login'); setMsg('Cuenta creada. Entra con tu correo y tu contraseña.',true); b.disabled=false; return; }
+    loadProfileAndEnter();
+  }catch(e){ m.style.color='#ff6b6b'; m.textContent='Error al crear la cuenta.'; b.disabled=false; }
+}
+(function(){
+  var qs; try{ qs=new URLSearchParams(location.search); }catch(e){ return; }
+  var tok=qs.get('inv'); if(!tok) return;
+  window.__invToken=tok;
+  var mail=qs.get('e')||'';
+  var abierto=false;
+  function abrir(){
+    if(abierto) return; abierto=true;
+    var e=document.getElementById('inv-email'); if(e) e.textContent=mail?('Cuenta: '+mail):'';
+    var ov=document.getElementById('ov-inv'); if(ov) ov.classList.add('open');
+  }
+  if(document.readyState!=='loading') abrir(); else document.addEventListener('DOMContentLoaded',abrir);
+})();
+(function(){
+  var c=document.getElementById('iv-crear2'); if(c) c.addEventListener('click',crearInvitacion);
+  var a=document.getElementById('inv-aceptar'); if(a) a.addEventListener('click',aceptarInvitacion);
+  var cp=document.getElementById('iv-copiar');
+  if(cp) cp.addEventListener('click',async function(){
+    var t=document.getElementById('iv-url');
+    try{ await navigator.clipboard.writeText(t.value); cp.textContent='¡Copiado!'; setTimeout(function(){ cp.textContent='Copiar enlace'; },1800); }
+    catch(e){ t.select(); }
+  });
+})();
 
 /* ADMIN: configuracion legal (interruptor de consentimiento + datos del responsable) */
 async function cargarAdminLegal(){
