@@ -588,6 +588,16 @@ body{
   }
 }
 </style>
+<style id="tema-legal">
+#lg-texto{max-height:44vh;overflow-y:auto;background:rgba(16,18,17,.55);border:1px solid rgba(234,234,234,.10);border-radius:12px;padding:14px 16px;font-size:12.5px;line-height:1.55;color:#cdd8e8}
+#lg-texto h4{font-size:13px;color:#F3C969;margin:14px 0 6px;letter-spacing:.03em}
+#lg-texto h4:first-child{margin-top:0}
+#lg-texto p{margin:0 0 8px}
+#lg-texto b{color:#e7eef7}
+.lg-chk{display:flex;align-items:flex-start;gap:10px;margin-top:12px;font-size:12.5px;line-height:1.45;color:#cdd8e8;cursor:pointer}
+.lg-chk input{margin-top:2px;width:18px;height:18px;flex:none;accent-color:#E65C00;cursor:pointer}
+@media(min-width:1024px){ #lg-texto{max-height:38vh;font-size:13.5px} .lg-chk{font-size:13.5px} }
+</style>
 <style id="tema-progreso-graf">
 #pr-graf .graf{background:#2A2C33;border:1px solid #3A3D46;border-radius:12px;padding:14px;margin-top:12px;box-shadow:0 2px 6px rgba(0,0,0,.25)}
 #pr-graf .gh{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
@@ -920,7 +930,29 @@ body{
         <button data-go="calendario"><span class="i">📅</span>Calendario</button>
         <button data-go="perfil"><span class="i">👤</span>Perfil</button>
       </nav>
-<div class="ovl" id="ov-pass"><div style="width:100%;max-width:340px">
+<div class="ovl" id="ov-legal"><div style="width:100%;max-width:420px">
+  <div style="font-size:18px;font-weight:700;margin-bottom:6px;color:#e7eef7">Antes de empezar</div>
+  <div style="font-size:12.5px;color:#9AA8A0;margin-bottom:10px;line-height:1.5">Lee esto y acepta para poder usar ANMAR TRAINING.</div>
+  <div id="lg-texto">
+    <h4>Aviso de privacidad</h4>
+    <p><b>Quién trata tus datos:</b> ANMAR TRAINING. Contacto: jorge@jomarelpalo.com</p>
+    <p><b>Qué datos:</b> tu nombre, correo y fecha de nacimiento; tu posición y objetivos; datos de salud (peso, altura, condición física y lesiones); y tus entrenamientos y mediciones.</p>
+    <p><b>Para qué:</b> crear tu cuenta y personalizar tus entrenamientos según tu edad y tu estado, ajustando la intensidad para reducir el riesgo de lesión.</p>
+    <p><b>Base legal:</b> tu consentimiento explícito. Los datos de salud son una categoría especial y necesitan tu permiso expreso. En España, a partir de los 14 años puedes darlo tú mismo.</p>
+    <p><b>Cuánto tiempo:</b> mientras tengas la cuenta. Puedes pedir que se borren cuando quieras.</p>
+    <p><b>Tus derechos:</b> acceso, rectificación, supresión, oposición, limitación y portabilidad, escribiendo a jorge@jomarelpalo.com. También puedes reclamar ante la Agencia Española de Protección de Datos (aepd.es).</p>
+    <p><b>Cesiones:</b> no vendemos ni cedemos tus datos. Solo los tratan los proveedores necesarios para que la app funcione (alojamiento y base de datos).</p>
+    <h4>Descargo deportivo</h4>
+    <p>Entrenar implica esfuerzo físico y riesgo de lesión. Debes estar en condiciones de salud adecuadas para hacerlo.</p>
+    <p>Si tienes dolor, molestias o una lesión, <b>consulta a un médico o fisioterapeuta antes de entrenar</b>. Esta app no diagnostica ni trata lesiones.</p>
+    <p>ANMAR TRAINING es una ayuda, <b>no sustituye</b> la supervisión de un entrenador, un médico o un fisioterapeuta.</p>
+    <p>Si eres menor de edad, informa a tu padre, madre o tutor de que usas esta app.</p>
+  </div>
+  <label class="lg-chk"><input type="checkbox" id="lg-priv"><span>He leído y acepto el aviso de privacidad, incluido el tratamiento de mis datos de salud.</span></label>
+  <label class="lg-chk"><input type="checkbox" id="lg-desc"><span>Entiendo y acepto el descargo deportivo.</span></label>
+  <button id="lg-aceptar" class="btn btn-primary" style="width:100%;margin-top:12px">Acepto y continúo</button>
+  <p id="lg-msg" style="font-size:12px;text-align:center;margin-top:10px;min-height:16px"></p>
+</div></div><div class="ovl" id="ov-pass"><div style="width:100%;max-width:340px">
   <div style="font-size:18px;font-weight:700;margin-bottom:6px;color:#e7eef7">Crea tu contraseña</div>
   <div style="font-size:13px;color:#9AA8A0;margin-bottom:14px;line-height:1.5">Estás usando una contraseña temporal que conoce quien creó tu cuenta. Elige una tuya para continuar.</div>
   <input id="np-pass" class="field" type="password" placeholder="Nueva contraseña (mín. 8, letras y números)" autocomplete="new-password">
@@ -972,6 +1004,7 @@ async function loadProfileAndEnter(){
   window.__role=role; if(role==='admin'){ document.querySelectorAll('.solo-admin').forEach(function(e){e.style.display='';}); }
   setMsg('');
   if(p.data && p.data.debe_cambiar_password){ if(window.pedirNuevaPassword){ window.pedirNuevaPassword(); return; } }
+  if(window.faltaConsentimiento){ var _fc=await window.faltaConsentimiento(user.id); if(_fc){ window.pedirConsentimiento(); return; } }
   var dj=await sb.from('datos_jugador').select('entrevista_completada,fecha_nacimiento').eq('id',user.id).maybeSingle();
   if(!dj.data || !dj.data.entrevista_completada){ go('entrevista'); return; }
   if(!dj.data.fecha_nacimiento){ if(window.pedirFechaNacimiento){ window.pedirFechaNacimiento(); return; } }
@@ -1728,6 +1761,46 @@ async function subirAvatar(file){
     box.innerHTML = html ? ('<div class="section-t" style="margin-top:18px">Evolución</div>'+html) : '';
   }
   window.pintarGraficas=pintarGraficas;
+})();
+
+/* LEGAL: aviso de privacidad + descargo deportivo. Sube la version al cambiar el texto. */
+var LEGAL_VERSION='2026-07-10.v1';
+async function faltaConsentimiento(uid){
+  try{
+    var r=await sb.from('consentimientos').select('id').eq('usuario_id',uid).eq('version',LEGAL_VERSION).limit(1);
+    if(r&&r.error) return false;              /* si falla la consulta, no bloqueamos el acceso */
+    return !(r.data && r.data.length);
+  }catch(e){ return false; }
+}
+window.faltaConsentimiento=faltaConsentimiento;
+function pedirConsentimiento(){
+  var ov=document.getElementById('ov-legal'); if(ov) ov.classList.add('open');
+}
+window.pedirConsentimiento=pedirConsentimiento;
+(function(){
+  var b=document.getElementById('lg-aceptar'); if(!b) return;
+  b.addEventListener('click', async function(){
+    var m=document.getElementById('lg-msg');
+    var priv=document.getElementById('lg-priv').checked;
+    var desc=document.getElementById('lg-desc').checked;
+    if(!priv || !desc){ m.style.color='#ff6b6b'; m.textContent='Debes marcar las dos casillas para continuar.'; return; }
+    b.disabled=true; m.style.color='#9AA8A0'; m.textContent='Guardando…';
+    try{
+      var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null;
+      if(!uid){ m.style.color='#ff6b6b'; m.textContent='Tu sesión ha caducado.'; b.disabled=false; return; }
+      var edad=null;
+      try{
+        var d=await sb.from('datos_jugador').select('fecha_nacimiento').eq('id',uid).maybeSingle();
+        var fn=d.data&&d.data.fecha_nacimiento;
+        if(fn && window.edadDeFecha) edad=window.edadDeFecha(fn);
+      }catch(e){}
+      var r=await sb.from('consentimientos').insert({usuario_id:uid, version:LEGAL_VERSION, privacidad:true, descargo_deportivo:true, edad_al_aceptar:edad});
+      if(r&&r.error){ m.style.color='#ff6b6b'; m.textContent='No se pudo guardar. Inténtalo de nuevo.'; b.disabled=false; return; }
+      var ov=document.getElementById('ov-legal'); if(ov) ov.classList.remove('open');
+      m.textContent=''; b.disabled=false;
+      loadProfileAndEnter();
+    }catch(e){ m.style.color='#ff6b6b'; m.textContent='Error al guardar.'; b.disabled=false; }
+  });
 })();
 
 /* SEGURIDAD: si la cuenta sigue con la contraseña temporal, obligar a cambiarla */
