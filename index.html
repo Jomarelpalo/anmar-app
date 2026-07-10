@@ -1825,7 +1825,7 @@ window.pedirFechaNacimiento=pedirFechaNacimiento;
     var hasta=new Date(hoy.getTime()+2*86400000);
 
     var dj={}, ses=[], evs=[];
-    try{ var r1=await sb.from('datos_jugador').select('condicion_fisica,lesiones,objetivo_principal,fecha_nacimiento').eq('id',uid).maybeSingle(); dj=(r1&&r1.data)||{}; }catch(e){}
+    try{ var r1=await sb.from('datos_jugador').select('condicion_fisica,lesiones,objetivo_principal,fecha_nacimiento,atributos_objetivo,modo_entreno').eq('id',uid).maybeSingle(); dj=(r1&&r1.data)||{}; }catch(e){}
     try{ var r2=await sb.from('sesiones').select('fecha,notas,pilares').eq('jugador_id',uid).eq('estado','completada').gte('fecha',_f(desde)).order('fecha',{ascending:false}); ses=(r2&&r2.data)||[]; }catch(e){}
     try{ var r3=await sb.from('eventos').select('tipo,titulo,fecha').eq('jugador_id',uid).gte('fecha',_f(hoy)).lte('fecha',_f(hasta)); evs=(r3&&r3.data)||[]; }catch(e){}
 
@@ -1878,18 +1878,38 @@ window.pedirFechaNacimiento=pedirFechaNacimiento;
       if(ultimo<=1 && ultimoTipo && cands.length>1) cands=cands.filter(function(c){ return c!==ultimoTipo; });
       if(!cands.length) cands=['funcional'];
       var obj=(dj.objetivo_principal||'').toLowerCase();
+      var ao=dj.atributos_objetivo||{};
+      var modo=dj.modo_entreno||'conjunto';
+      var AFIN={
+        pliometria:['salto','potencia','agilidad','velocidad'],
+        fuerza_gym:['fuerza_inf','fuerza_sup','potencia'],
+        tecnica:['tiro_libre','tiro_media','tiro_tres','pase','manejo','dribbling','entrada'],
+        funcional:['resistencia','agilidad','velocidad']
+      };
+      function mediaFicha(c){
+        var ks=AFIN[c]||[], s=0, n=0;
+        ks.forEach(function(k){ if(typeof ao[k]==='number'){ s+=ao[k]; n++; } });
+        return n? (s/n) : null;
+      }
       function bono(c){
-        if(/salt/.test(obj) && c==='pliometria') return 1.5;
-        if(/fuer/.test(obj) && c==='fuerza_gym') return 1.5;
-        if(/tir|tecn|bote|pase/.test(obj) && c==='tecnica') return 1.5;
-        if(/lesi|equilib|core/.test(obj) && c==='funcional') return 1.5;
-        return 0;
+        var b=0;
+        var m=mediaFicha(c);
+        if(m!=null) b += (m-5)/2.5;            /* ficha de 14 cualidades: -2 .. +2 */
+        if(modo==='fisico' && c==='tecnica') b -= 2;
+        if(modo==='tecnico'){ if(c==='tecnica') b += 2; else if(c==='fuerza_gym'||c==='pliometria') b -= 1; }
+        if(/salt/.test(obj) && c==='pliometria') b += 1;
+        if(/fuer/.test(obj) && c==='fuerza_gym') b += 1;
+        if(/tir|tecn|bote|pase/.test(obj) && c==='tecnica') b += 1;
+        if(/lesi|equilib|core/.test(obj) && c==='funcional') b += 1;
+        return b;
       }
       cands.sort(function(a,b){ return (sinTocar[b]+bono(b))-(sinTocar[a]+bono(a)); });
       tipo=cands[0];
       var d=sinTocar[tipo];
       porque=(d>=900)?('Aún no has hecho ninguna sesión de '+RUT[tipo].n.toLowerCase()+'.'):('Hace '+d+' día'+(d===1?'':'s')+' que no trabajas '+RUT[tipo].n.toLowerCase()+'.');
       if(ultimo<=1 && ultimoTipo) porque+=' Ayer hiciste '+RUT[ultimoTipo].n.toLowerCase()+', así que toca cambiar de estímulo.';
+      var mf=mediaFicha(tipo);
+      if(mf!=null && mf>=7) porque+=' Además encaja con lo que has marcado como prioritario en tu ficha.';
       para=RUT[tipo].para;
     }
 
