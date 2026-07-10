@@ -897,6 +897,13 @@ body{
             <input class="field" id="mc-pass2" type="password" placeholder="Repite la contraseña" autocomplete="new-password">
             <button class="btn btn-primary" id="mc-pass-btn" style="margin-top:2px">Cambiar contraseña</button>
             <p class="msg" id="mc-msg" style="text-align:center;font-size:12px;margin-top:10px"></p>
+            <div style="height:1px;background:rgba(255,255,255,.09);margin:16px 0"></div>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Tus datos</div>
+            <button class="btn btn-ghost" id="dg-descargar">Descargar mis datos</button>
+            <div style="font-size:12px;color:var(--muted2);margin:14px 2px 8px;line-height:1.5">Borrar la cuenta elimina tu perfil, tus sesiones, tus mediciones y tus eventos. <b style="color:#ff8f8f">No se puede deshacer.</b></div>
+            <input class="field" id="dg-conf" placeholder="Escribe BORRAR para confirmar" autocomplete="off">
+            <button class="btn" id="dg-borrar" style="width:100%;background:#7a2323;color:#fff;border:1px solid #a34040">Borrar mi cuenta</button>
+            <p id="dg-msg" style="text-align:center;font-size:12px;margin-top:10px;min-height:16px;line-height:1.45"></p>
           </div>
           <button class="btn btn-primary solo-admin" style="margin-top:18px" data-go="admin">Administración</button>
           <button class="btn btn-ghost" style="margin-top:12px" data-go="login">Cerrar sesión</button>
@@ -1734,11 +1741,72 @@ function cargarMiCuenta(){
   var p1=document.getElementById('mc-pass'); if(p1) p1.value='';
   var p2=document.getElementById('mc-pass2'); if(p2) p2.value='';
   var m=document.getElementById('mc-msg'); if(m) m.textContent='';
+  var dc=document.getElementById('dg-conf'); if(dc) dc.value='';
+  var dm=document.getElementById('dg-msg'); if(dm) dm.textContent='';
 }
 window.cargarMiCuenta=cargarMiCuenta;
 (function(){
   var nb=document.getElementById('mc-nombre-btn'); if(nb) nb.addEventListener('click',cambiarNombre);
   var pb=document.getElementById('mc-pass-btn'); if(pb) pb.addEventListener('click',cambiarPass);
+})();
+
+/* RGPD: derecho de acceso (descargar) y de supresion (borrar cuenta) */
+async function descargarMisDatos(){
+  var m=document.getElementById('dg-msg'), b=document.getElementById('dg-descargar');
+  b.disabled=true; m.style.color='#9AA8A0'; m.textContent='Preparando tus datos…';
+  try{
+    var u=await sb.auth.getUser(); var user=u.data&&u.data.user; var uid=user?user.id:null;
+    if(!uid){ m.style.color='#ff6b6b'; m.textContent='Tu sesión ha caducado.'; b.disabled=false; return; }
+    var _d=async function(t,col){ try{ var r=await sb.from(t).select('*').eq(col,uid); return (r&&r.data)||[]; }catch(e){ return []; } };
+    var perfil=null, datos=null;
+    try{ perfil=(await sb.from('profiles').select('*').eq('id',uid).maybeSingle()).data; }catch(e){}
+    try{ datos=(await sb.from('datos_jugador').select('*').eq('id',uid).maybeSingle()).data; }catch(e){}
+    var sesiones=await _d('sesiones','jugador_id');
+    var ejer=[];
+    try{
+      var ids=sesiones.map(function(s){return s.id;});
+      if(ids.length){ var re=await sb.from('ejercicios_sesion').select('*').in('sesion_id',ids); ejer=(re&&re.data)||[]; }
+    }catch(e){}
+    var eventos=await _d('eventos','jugador_id');
+    var mediciones=await _d('tests_progreso','jugador_id');
+    var consent=await _d('consentimientos','usuario_id');
+    var paquete={
+      exportado_en:new Date().toISOString(),
+      cuenta:{id:uid, correo:user.email, creada_en:user.created_at},
+      perfil:perfil, datos_jugador:datos, sesiones:sesiones, ejercicios_de_sesion:ejer,
+      eventos:eventos, mediciones:mediciones, consentimientos:consent
+    };
+    var blob=new Blob([JSON.stringify(paquete,null,2)],{type:'application/json'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a'); a.href=url; a.download='anmar-mis-datos.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ try{URL.revokeObjectURL(url);}catch(e){} },1500);
+    m.style.color='#2ECC71'; m.textContent='Descargado.';
+    setTimeout(function(){ if(m&&m.textContent==='Descargado.') m.textContent=''; },2500);
+  }catch(e){ m.style.color='#ff6b6b'; m.textContent='No se pudieron descargar los datos.'; }
+  b.disabled=false;
+}
+async function borrarMiCuenta(){
+  var m=document.getElementById('dg-msg'), b=document.getElementById('dg-borrar');
+  var conf=((document.getElementById('dg-conf')||{}).value||'').trim().toUpperCase();
+  if(conf!=='BORRAR'){ m.style.color='#ff6b6b'; m.textContent='Escribe BORRAR para confirmar.'; return; }
+  b.disabled=true; m.style.color='#9AA8A0'; m.textContent='Borrando tu cuenta…';
+  try{
+    var r=await sb.functions.invoke('borrar-mi-cuenta',{ body:{confirmacion:'BORRAR'} });
+    var err=null;
+    if(r && r.error){
+      err='No se pudo borrar la cuenta.';
+      try{ if(r.error.context && r.error.context.json){ var j=await r.error.context.json(); if(j&&j.error) err=j.error; } }catch(_){}
+    } else if(r && r.data && r.data.error){ err=r.data.error; }
+    if(err){ m.style.color='#ff6b6b'; m.textContent=err; b.disabled=false; return; }
+    try{ await sb.auth.signOut(); }catch(e){}
+    var ov=document.getElementById('dg-conf'); if(ov) ov.value='';
+    go('login'); setMsg('Tu cuenta y tus datos se han borrado.',true);
+  }catch(e){ m.style.color='#ff6b6b'; m.textContent='Error al borrar la cuenta.'; b.disabled=false; }
+}
+(function(){
+  var d=document.getElementById('dg-descargar'); if(d) d.addEventListener('click',descargarMisDatos);
+  var x=document.getElementById('dg-borrar'); if(x) x.addEventListener('click',borrarMiCuenta);
 })();
 </script>
 <script>
