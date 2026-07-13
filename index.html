@@ -942,6 +942,7 @@ body{
               <button class="btn btn-ghost" id="iv-copiar">Copiar enlace</button>
             </div>
             <div id="iv-msg2" style="font-size:13px;margin-top:12px;line-height:1.5;min-height:16px"></div>
+            <div id="iv-lista" style="margin-top:14px"></div>
           </div>
           <div class="section-t" style="margin-top:20px">Configuraci&oacute;n legal</div>
           <div class="card pr-panel" id="admin-legal">
@@ -1027,7 +1028,7 @@ function go(name,isBack){
   var nav=document.getElementById('nav');
   nav.classList.toggle('hidden', name==='login'||name==='sesion'||name==='entrevista'||name==='libre'||name==='dirigido');
   nav.querySelectorAll('button').forEach(function(b){b.classList.toggle('on', b.dataset.go===name);});
-  if(name==='admin'){ cargarAdmin(); if(window.cargarAdminLegal) cargarAdminLegal(); } if(name==='sesion'){ cargarSesion(); } if(name==='hoy'){ cargarSemana(); if(window._planHoy)window._planHoy(); } if(name==='dirigido'){ if(window._recDirigido)window._recDirigido(); } if(name==='libre'){ if(window._loadCond)window._loadCond(); } if(name==='calendario'){ cargarCalendario(); } if(name==='progreso'){ cargarProgreso(); } if(name==='perfil'){ cargarObjetivos(); if(window.cargarMiCuenta)cargarMiCuenta(); }
+  if(name==='admin'){ cargarAdmin(); if(window.cargarAdminLegal) cargarAdminLegal(); if(window.cargarInvitaciones) cargarInvitaciones(); } if(name==='sesion'){ cargarSesion(); } if(name==='hoy'){ cargarSemana(); if(window._planHoy)window._planHoy(); } if(name==='dirigido'){ if(window._recDirigido)window._recDirigido(); } if(name==='libre'){ if(window._loadCond)window._loadCond(); } if(name==='calendario'){ cargarCalendario(); } if(name==='progreso'){ cargarProgreso(); } if(name==='perfil'){ cargarObjetivos(); if(window.cargarMiCuenta)cargarMiCuenta(); }
 }
 var msg=document.getElementById('msg');
 function setMsg(t,ok){ if(!msg)return; msg.textContent=t||''; msg.className='msg '+(ok?'ok':'err'); }
@@ -1705,8 +1706,40 @@ async function crearInvitacion(){
     document.getElementById('iv-enlace').style.display='block';
     m.style.color='#2ECC71'; m.textContent='Enlace creado. Caduca en 7 días y solo sirve una vez.';
     document.getElementById('iv-nombre2').value=''; document.getElementById('iv-email2').value='';
+    if(window.cargarInvitaciones) cargarInvitaciones();
   }catch(e){ m.style.color='#ff6b6b'; m.textContent='Error al generar el enlace.'; }
   b.disabled=false;
+}
+function _fechaCorta(s){ return s? String(s).slice(0,10) : ''; }
+async function cargarInvitaciones(){
+  var box=document.getElementById('iv-lista'); if(!box) return;
+  try{
+    var r=await sb.from('invitaciones').select('id,email,rol,expira_en,usada_en,created_at').order('created_at',{ascending:false}).limit(30);
+    if(r&&r.error){ box.innerHTML=''; return; }
+    var rows=r.data||[];
+    if(!rows.length){ box.innerHTML='<div style="font-size:12px;color:var(--muted2);padding:4px 2px">No hay invitaciones generadas.</div>'; return; }
+    var ahora=new Date();
+    box.innerHTML='<div class="section-t" style="margin:6px 0 8px">Invitaciones</div>'+rows.map(function(x){
+      var estado, col;
+      if(x.usada_en){ estado='Usada'; col='#39b178'; }
+      else if(new Date(x.expira_en)<ahora){ estado='Caducada'; col='#ff8f8f'; }
+      else { estado='Pendiente'; col='#F3C969'; }
+      var accion=x.usada_en?'':'<button class="inv-revocar" data-id="'+x.id+'" style="background:#7a2323;color:#fff;border:1px solid #a34040;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;font-family:var(--font);flex:none">Revocar</button>';
+      return '<div class="admin-u"><div><div class="admin-u-n">'+(x.email||'')+' <span style="color:var(--muted2);font-weight:600">· '+x.rol+'</span></div>'+
+        '<div class="admin-u-e"><span style="color:'+col+';font-weight:700">'+estado+'</span> · caduca '+_fechaCorta(x.expira_en)+'</div></div>'+accion+'</div>';
+    }).join('');
+    box.querySelectorAll('.inv-revocar').forEach(function(bt){ bt.addEventListener('click',function(){ revocarInvitacion(bt.getAttribute('data-id')); }); });
+  }catch(e){ box.innerHTML=''; }
+}
+window.cargarInvitaciones=cargarInvitaciones;
+async function revocarInvitacion(id){
+  var m=document.getElementById('iv-msg2');
+  try{
+    var r=await sb.from('invitaciones').delete().eq('id',id);
+    if(r&&r.error){ if(m){ m.style.color='#ff6b6b'; m.textContent='No se pudo revocar.'; } return; }
+    if(m){ m.style.color='#2ECC71'; m.textContent='Invitación revocada. Ese enlace ya no funciona.'; }
+    cargarInvitaciones();
+  }catch(e){ if(m){ m.style.color='#ff6b6b'; m.textContent='Error al revocar.'; } }
 }
 async function aceptarInvitacion(){
   var m=document.getElementById('inv-msg'), b=document.getElementById('inv-aceptar');
@@ -1740,8 +1773,10 @@ async function aceptarInvitacion(){
   window.__invToken=tok;
   var mail=qs.get('e')||'';
   var abierto=false;
-  function abrir(){
+  async function abrir(){
     if(abierto) return; abierto=true;
+    /* Si hay una sesión abierta, la cerramos: el enlace es para una cuenta nueva. */
+    try{ var s=(await sb.auth.getSession()).data.session; if(s){ await sb.auth.signOut(); if(typeof go==='function') go('login'); } }catch(e){}
     var e=document.getElementById('inv-email'); if(e) e.textContent=mail?('Cuenta: '+mail):'';
     var ov=document.getElementById('ov-inv'); if(ov) ov.classList.add('open');
   }
