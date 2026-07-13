@@ -606,6 +606,15 @@ body{
 #pr-graf svg{display:block;width:100%;height:auto;margin-top:10px}
 @media(min-width:1024px){ #pr-graf .gt{font-size:16px} #pr-graf .gs{font-size:13px} }
 </style>
+<style id="tema-historial">
+#pr-hist .hist{display:flex;align-items:center;gap:12px;background:#2A2C33;border:1px solid #3A3D46;border-radius:12px;padding:11px 13px;margin-bottom:9px}
+#pr-hist .hist:last-child{margin-bottom:0}
+#pr-hist .hist-ic{width:40px;height:40px;border-radius:11px;background:#1c2027;border:1px solid #3A3D46;display:flex;align-items:center;justify-content:center;font-size:20px;flex:none}
+#pr-hist .hist-tx{flex:1;min-width:0}
+#pr-hist .hist-n{font-weight:700;font-size:14px;color:var(--text)}
+#pr-hist .hist-s{font-size:11.5px;color:var(--muted)}
+#pr-hist .hist-v{text-align:right;flex:none}
+</style>
 <style id="tema-esfuerzo">
 .esf-b{width:100%;padding:15px 14px;border-radius:12px;border:1px solid rgba(234,234,234,.14);background:rgba(28,36,32,.7);color:#e7eef7;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);text-align:left;transition:background .12s,border-color .12s}
 .esf-b:hover{background:rgba(230,92,0,.16);border-color:rgba(230,92,0,.4)}
@@ -842,6 +851,11 @@ body{
             <div class="section-t">Tus mediciones</div>
             <div id="pr-cont"></div>
             <div id="pr-graf"></div>
+          </div>
+          <div class="card pr-panel" style="margin-top:14px">
+            <div class="section-t">Tus entrenamientos</div>
+            <div id="pr-resumen" style="font-size:12.5px;color:var(--muted);margin:-2px 2px 10px;line-height:1.5"></div>
+            <div id="pr-hist"></div>
           </div>
         </div>
       </section>
@@ -1381,7 +1395,40 @@ async function cargarProgreso(){
     cont.innerHTML=h;
     try{ if(window.pintarGraficas) window.pintarGraficas(byT); }catch(e){}
   }catch(e){ cont.innerHTML=''; }
+  try{ if(window.cargarHistorial) cargarHistorial(); }catch(e){}
 }
+async function cargarHistorial(){
+  var box=document.getElementById('pr-hist'); if(!box) return;
+  var res=document.getElementById('pr-resumen');
+  try{
+    var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null; if(!uid){ box.innerHTML=''; return; }
+    var r=await sb.from('sesiones').select('titulo,notas,esfuerzo,duracion_min,fecha').eq('jugador_id',uid).eq('estado','completada').order('fecha',{ascending:false}).limit(15);
+    if(r&&r.error){ box.innerHTML=''; return; }
+    var rows=r.data||[];
+    if(!rows.length){ box.innerHTML='<div style="color:#7d8da6;font-size:13px;padding:4px 2px">Todavía no has completado ninguna sesión. Cuando entrenes, aparecerán aquí.</div>'; if(res) res.textContent=''; return; }
+    var TT={fuerza_gym:'💪',pliometria:'🦘',tecnica:'🏀',funcional:'🤸'};
+    var ESF={suave:{t:'Suave',c:'#39b178'},normal:{t:'Normal',c:'#F3C969'},dura:{t:'Dura',c:'#ff8f8f'}};
+    var hace30=new Date(); hace30.setDate(hace30.getDate()-30);
+    var cont30=0, porTipo={};
+    rows.forEach(function(s){
+      if(new Date(s.fecha)>=hace30) cont30++;
+      var k=s.notas||'otro'; porTipo[k]=(porTipo[k]||0)+1;
+    });
+    if(res){
+      var resumen=cont30+' sesión'+(cont30===1?'':'es')+' en los últimos 30 días';
+      var partes=[]; if(porTipo.fuerza_gym)partes.push(porTipo.fuerza_gym+' fuerza'); if(porTipo.pliometria)partes.push(porTipo.pliometria+' plio'); if(porTipo.tecnica)partes.push(porTipo.tecnica+' técnica'); if(porTipo.funcional)partes.push(porTipo.funcional+' funcional');
+      res.textContent=resumen+(partes.length?(' · '+partes.join(' · ')):'');
+    }
+    box.innerHTML=rows.map(function(s){
+      var ic=TT[s.notas]||'📋';
+      var esf=ESF[s.esfuerzo];
+      var badge=esf?'<span style="color:'+esf.c+';font-weight:700;font-size:11.5px">'+esf.t+'</span>':'<span style="color:var(--muted2);font-size:11.5px">—</span>';
+      var dur=s.duracion_min?(s.duracion_min+' min'):'';
+      return '<div class="hist"><div class="hist-ic">'+ic+'</div><div class="hist-tx"><div class="hist-n">'+(s.titulo||'Sesión')+'</div><div class="hist-s">'+String(s.fecha).slice(0,10)+(dur?(' · '+dur):'')+'</div></div><div class="hist-v">'+badge+'</div></div>';
+    }).join('');
+  }catch(e){ box.innerHTML=''; }
+}
+window.cargarHistorial=cargarHistorial;
 async function guardarTest(){
   var msg=document.getElementById('t-msg'), val=document.getElementById('t-valor').value;
   if(val===''||isNaN(parseFloat(val))){ msg.textContent='Escribe un valor numérico.'; return; }
