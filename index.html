@@ -1641,10 +1641,12 @@ async function cargarAdmin(){
     cont.innerHTML=rows.map(function(x){
       var yo=(x.id===me);
       var opts=['jugador','entrenador','admin'].map(function(rr){ return '<option value="'+rr+'"'+(x.rol===rr?' selected':'')+'>'+rr+'</option>'; }).join('');
+      var borrar=yo?'':'<button class="admin-borrar" data-uid="'+x.id+'" data-nom="'+((x.nombre||x.email||'este usuario').replace(/"/g,'&quot;'))+'" title="Borrar usuario" style="background:#7a2323;color:#fff;border:1px solid #a34040;border-radius:8px;padding:8px 10px;font-size:12px;cursor:pointer;font-family:var(--font);flex:none">Borrar</button>';
       return '<div class="admin-u"><div><div class="admin-u-n">'+(x.nombre||'(sin nombre)')+(yo?' <span style="color:#8A8D93">(t\u00fa)</span>':'')+'</div><div class="admin-u-e">'+(x.email||'')+'</div></div>'+
-             '<select class="admin-rol" data-uid="'+x.id+'"'+(yo?' disabled':'')+'>'+opts+'</select></div>';
+             '<div style="display:flex;gap:8px;align-items:center;flex:none"><select class="admin-rol" data-uid="'+x.id+'"'+(yo?' disabled':'')+'>'+opts+'</select>'+borrar+'</div></div>';
     }).join('');
     cont.querySelectorAll('.admin-rol').forEach(function(sel){ sel.addEventListener('change',function(){ guardarRol(sel.getAttribute('data-uid'), sel.value, sel); }); });
+    cont.querySelectorAll('.admin-borrar').forEach(function(bt){ bt.addEventListener('click',function(){ borrarUsuario(bt.getAttribute('data-uid'), bt.getAttribute('data-nom'), bt); }); });
   }catch(e){ cont.innerHTML='<div style="color:#ff6b6b;font-size:13px">Error al cargar.</div>'; }
 }
 async function guardarRol(uid, rol, sel){
@@ -1658,6 +1660,24 @@ async function guardarRol(uid, rol, sel){
   }
   if(m){ m.style.color='#2ECC71'; m.textContent='Rol actualizado.'; setTimeout(function(){ if(m) m.textContent=''; },2500); }
   if(sel){ sel.disabled=false; }
+}
+async function borrarUsuario(uid, nombre, bt){
+  var m=document.getElementById('admin-msg');
+  var ok=window.confirm('¿Seguro que quieres borrar a '+(nombre||'este usuario')+'?\n\nSe eliminarán su cuenta, sus sesiones, sus mediciones y sus eventos. No se puede deshacer.');
+  if(!ok) return;
+  if(bt) bt.disabled=true;
+  if(m){ m.style.color='#9AA8A0'; m.textContent='Borrando…'; }
+  try{
+    var r=await sb.functions.invoke('admin-borrar-usuario',{ body:{usuario_id:uid} });
+    var err=null;
+    if(r && r.error){
+      err='No se pudo borrar el usuario.';
+      try{ if(r.error.context && r.error.context.json){ var j=await r.error.context.json(); if(j&&j.error) err=j.error; } }catch(_){}
+    } else if(r && r.data && r.data.error){ err=r.data.error; }
+    if(err){ if(m){ m.style.color='#ff6b6b'; m.textContent=err; } if(bt) bt.disabled=false; return; }
+    if(m){ m.style.color='#2ECC71'; m.textContent='Usuario borrado.'; setTimeout(function(){ if(m&&m.textContent==='Usuario borrado.') m.textContent=''; },2500); }
+    cargarAdmin();
+  }catch(e){ if(m){ m.style.color='#ff6b6b'; m.textContent='Error al borrar el usuario.'; } if(bt) bt.disabled=false; }
 }
 </script>
 <script>
