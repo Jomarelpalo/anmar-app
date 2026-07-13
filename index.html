@@ -606,6 +606,10 @@ body{
 #pr-graf svg{display:block;width:100%;height:auto;margin-top:10px}
 @media(min-width:1024px){ #pr-graf .gt{font-size:16px} #pr-graf .gs{font-size:13px} }
 </style>
+<style id="tema-esfuerzo">
+.esf-b{width:100%;padding:15px 14px;border-radius:12px;border:1px solid rgba(234,234,234,.14);background:rgba(28,36,32,.7);color:#e7eef7;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);text-align:left;transition:background .12s,border-color .12s}
+.esf-b:hover{background:rgba(230,92,0,.16);border-color:rgba(230,92,0,.4)}
+</style>
 <style id="tema-recomendacion">
 .rec-box{border-radius:12px;padding:12px 14px;margin-top:12px;line-height:1.5;border:1px solid;font-size:13px}
 .rec-box b{display:block;font-size:10.5px;letter-spacing:.09em;margin-bottom:5px}
@@ -969,7 +973,16 @@ body{
         <button data-go="calendario"><span class="i">📅</span>Calendario</button>
         <button data-go="perfil"><span class="i">👤</span>Perfil</button>
       </nav>
-<div class="ovl" id="ov-inv"><div style="width:100%;max-width:360px">
+<div class="ovl" id="ov-esfuerzo"><div style="width:100%;max-width:340px;text-align:center">
+  <div style="font-size:20px;font-weight:800;margin-bottom:6px;color:#e7eef7">¡Sesión completada! 💪</div>
+  <div style="font-size:13.5px;color:#9AA8A0;margin-bottom:18px;line-height:1.5">¿Cómo te ha ido? Así ajusto la próxima a tu forma.</div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <button class="esf-b" data-esf="suave">🟢 Suave · me he quedado con ganas</button>
+    <button class="esf-b" data-esf="normal">🟠 Normal · el punto justo</button>
+    <button class="esf-b" data-esf="dura">🔴 Dura · me ha costado</button>
+  </div>
+  <button id="esf-saltar" style="background:none;border:none;color:var(--muted);font-size:12.5px;cursor:pointer;margin-top:14px;font-family:var(--font)">Saltar</button>
+</div></div><div class="ovl" id="ov-inv"><div style="width:100%;max-width:360px">
   <div style="font-size:18px;font-weight:700;margin-bottom:6px;color:#e7eef7">Te han invitado a ANMAR TRAINING</div>
   <div style="font-size:13px;color:#9AA8A0;margin-bottom:6px;line-height:1.5">Crea tu contraseña. Solo la sabrás tú.</div>
   <div id="inv-email" style="font-size:12.5px;color:#F3C969;margin-bottom:12px"></div>
@@ -1162,7 +1175,7 @@ function pickPonderado(rows,pesoCat,n){
 async function cargarSesion(){
   if(sesionEjercicios.length){ renderEjercicio(); return; }
   document.getElementById('se-steplabel').textContent='Preparando tu sesion...'; window.__sesionGuardada=false;
-  window.__tipoRutina=null;
+  window.__tipoRutina=null; window.__esfuerzoSesion=null;
   var dj={};
   try{ var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null;
     if(uid){ var d=await sb.from('datos_jugador').select('condicion_fisica,entorno_habitual,objetivo_principal,atributos_objetivo,modo_entreno,lesiones').eq('id',uid).maybeSingle(); if(d.data) dj=d.data; } }catch(e){}
@@ -1216,7 +1229,7 @@ function renderEjercicio(){
   document.getElementById('se-next').textContent=(sesionIdx<n-1)?'Siguiente →':'Terminar ✓';
 }
 document.addEventListener('click',function(e){
-  if(e.target&&e.target.id==='se-next'){ if(sesionIdx<sesionEjercicios.length-1){ sesionIdx++; renderEjercicio(); } else { registrarSesion(); go('hoy'); } }
+  if(e.target&&e.target.id==='se-next'){ if(sesionIdx<sesionEjercicios.length-1){ sesionIdx++; renderEjercicio(); } else { if(window.pedirEsfuerzo){ pedirEsfuerzo(); } else { registrarSesion(); go('hoy'); } } }
   if(e.target&&e.target.id==='se-prev'){ if(sesionIdx>0){ sesionIdx--; renderEjercicio(); } }
 });
 
@@ -1250,7 +1263,7 @@ async function registrarSesion(){
     var pilares=[]; (sesionEjercicios||[]).forEach(function(x){ if(x.pilar&&pilares.indexOf(x.pilar)<0)pilares.push(x.pilar); });
     var __TIT={fuerza_gym:'Fuerza en gimnasio',pliometria:'Pliometría',funcional:'Funcional y core',tecnica:'Técnica de baloncesto'};
     var __tr=window.__tipoRutina||null;
-    var __ins=await sb.from('sesiones').insert({jugador_id:uid, titulo:(__tr&&__TIT[__tr])||'Sesion de entrenamiento', notas:__tr, pilares:pilares, entorno:(window.__entornoSel||'sin_material'), estado:'completada', duracion_min:Math.max(10,Math.round((sesionEjercicios||[]).length*4))}).select('id').single();
+    var __ins=await sb.from('sesiones').insert({jugador_id:uid, titulo:(__tr&&__TIT[__tr])||'Sesion de entrenamiento', notas:__tr, pilares:pilares, entorno:(window.__entornoSel||'sin_material'), estado:'completada', esfuerzo:(window.__esfuerzoSesion||null), duracion_min:Math.max(10,Math.round((sesionEjercicios||[]).length*4))}).select('id').single();
     var __sid=(__ins&&__ins.data)?__ins.data.id:null;
     if(__sid&&sesionEjercicios&&sesionEjercicios.length){
       var __uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -1259,6 +1272,23 @@ async function registrarSesion(){
     }
   }catch(e){}
 }
+function pedirEsfuerzo(){
+  var ov=document.getElementById('ov-esfuerzo'); if(ov){ ov.classList.add('open'); }
+  else { registrarSesion(); go('hoy'); }
+}
+window.pedirEsfuerzo=pedirEsfuerzo;
+function _cerrarEsfuerzo(esf){
+  window.__esfuerzoSesion=esf||null;
+  var ov=document.getElementById('ov-esfuerzo'); if(ov) ov.classList.remove('open');
+  registrarSesion();
+  go('hoy');
+}
+(function(){
+  document.querySelectorAll('#ov-esfuerzo .esf-b').forEach(function(b){
+    b.addEventListener('click',function(){ _cerrarEsfuerzo(b.getAttribute('data-esf')); });
+  });
+  var s=document.getElementById('esf-saltar'); if(s) s.addEventListener('click',function(){ _cerrarEsfuerzo(null); });
+})();
 function __kfecha(d){ var m=d.getMonth()+1, day=d.getDate(); return d.getFullYear()+'-'+(m<10?'0'+m:m)+'-'+(day<10?'0'+day:day); }
 async function cargarSemana(){
   try{ var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null; if(!uid) return;
@@ -2205,7 +2235,7 @@ window.pedirFechaNacimiento=pedirFechaNacimiento;
 
     var dj={}, ses=[], evs=[];
     try{ var r1=await sb.from('datos_jugador').select('condicion_fisica,lesiones,objetivo_principal,fecha_nacimiento,atributos_objetivo,modo_entreno').eq('id',uid).maybeSingle(); dj=(r1&&r1.data)||{}; }catch(e){}
-    try{ var r2=await sb.from('sesiones').select('fecha,notas,pilares').eq('jugador_id',uid).eq('estado','completada').gte('fecha',_f(desde)).order('fecha',{ascending:false}); ses=(r2&&r2.data)||[]; }catch(e){}
+    try{ var r2=await sb.from('sesiones').select('fecha,notas,pilares,esfuerzo').eq('jugador_id',uid).eq('estado','completada').gte('fecha',_f(desde)).order('fecha',{ascending:false}); ses=(r2&&r2.data)||[]; }catch(e){}
     try{ var r3=await sb.from('eventos').select('tipo,titulo,fecha').eq('jugador_id',uid).gte('fecha',_f(hoy)).lte('fecha',_f(hasta)); evs=(r3&&r3.data)||[]; }catch(e){}
 
     var edad=_edad(dj.fecha_nacimiento);
@@ -2228,8 +2258,15 @@ window.pedirFechaNacimiento=pedirFechaNacimiento;
       if(d===0) pHoy=e; else if(d===1) pManana=e;
     });
 
+    var ultSes=ses.length?ses[0]:null;
+    var ultEsf=ultSes?ultSes.esfuerzo:null;
+    var ultDias=ultSes?_dd(hoy,_pd(ultSes.fecha)):999;
+    var notaEsf=false;
+
     var L=(cond==='baja')?0:((cond==='alta')?2:1);
     if(ultimo===0 || (ultimo===1 && ultimoTipo && RUT[ultimoTipo].carga==='alta')) L=Math.max(0,L-1);
+    if(ultDias<=2 && ultEsf==='dura'){ L=Math.max(0,L-1); notaEsf=true; }
+    if(ultDias<=3 && ultEsf==='suave' && ultimo>=1 && L<2){ L=L+1; }
 
     var tipo=null, porque='', para='', aviso='';
 
@@ -2291,6 +2328,8 @@ window.pedirFechaNacimiento=pedirFechaNacimiento;
       if(mf!=null && mf>=7) porque+=' Además encaja con lo que has marcado como prioritario en tu ficha.';
       para=RUT[tipo].para;
     }
+
+    if(notaEsf && !pHoy && !pManana && !lesion){ porque+=' La última la notaste dura, así que hoy bajamos un poco la intensidad.'; }
 
     if(edad!=null && edad<15 && L>1){ L=1; aviso=aviso||'Intensidad limitada por tu edad: primero técnica y prevención.'; }
 
