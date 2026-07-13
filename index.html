@@ -516,6 +516,15 @@ body{
 </style>
 <style id="tema-admin">
 .solo-admin{display:none}
+.solo-staff{display:none}
+#s-entrenador .ent-row{display:flex;align-items:center;gap:12px;background:#2A2C33;border:1px solid #3A3D46;border-radius:12px;padding:12px 13px;margin-bottom:9px;cursor:pointer}
+#s-entrenador .ent-row:hover{border-color:rgba(230,92,0,.4)}
+#s-entrenador .ent-ic{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--blue-l));display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;flex:none}
+#s-entrenador .ent-n{font-weight:700;font-size:14px;color:var(--text)}
+#s-entrenador .ent-s{font-size:11.5px;color:var(--muted)}
+#s-entrenador .kv{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid rgba(234,234,234,.07);font-size:13px}
+#s-entrenador .kv:last-child{border:none}
+#s-entrenador .kv span:first-child{color:var(--muted)}
 #s-admin .admin-u{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:12px;border-radius:12px;background:#2A2C33;border:1px solid #3A3D46;margin-bottom:10px}
 #s-admin .admin-u-n{font-weight:700;font-size:14px;color:var(--text)}
 #s-admin .admin-u-e{font-size:12px;color:var(--muted);margin-top:2px}
@@ -651,6 +660,7 @@ body{
   <button class="mlink" data-go="progreso"><span class="i">&#128200;</span> Progreso</button>
   <button class="mlink" data-go="calendario"><span class="i">&#128197;</span> Calendario</button>
   <button class="mlink" data-go="perfil"><span class="i">&#128100;</span> Perfil</button>
+  <button class="mlink solo-staff" data-go="entrenador"><span class="i">&#128101;</span> Jugadores</button>
   <button class="mlink solo-admin" data-go="admin"><span class="i">&#9881;</span> Admin</button>
 </aside>
 <div class="app-bg"></div>
@@ -929,7 +939,21 @@ body{
       </section>
 
       <!-- NAV -->
-      
+
+<section class="screen" id="s-entrenador">
+        <div class="pad pad-top">
+          <div class="prog-head">
+            <h2>Jugadores</h2>
+            <button class="admin-volver" id="ent-volver" style="display:none">&lsaquo; Volver</button>
+          </div>
+          <div id="ent-msg" style="font-size:13px;margin:0 2px 10px;min-height:16px"></div>
+          <div class="card pr-panel" id="ent-lista-wrap">
+            <div class="section-t">Todos los jugadores</div>
+            <div id="ent-lista"><div style="color:var(--muted);font-size:13px">Cargando&hellip;</div></div>
+          </div>
+          <div id="ent-detalle"></div>
+        </div>
+      </section>
 <section class="screen" id="s-admin">
         <div class="pad pad-top">
           <div class="prog-head">
@@ -1047,7 +1071,7 @@ body{
 const SUPABASE_URL="https://kbrvaawngeuuewplcwyn.supabase.co";
 const SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticnZhYXduZ2V1dWV3cGxjd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTA0MjIsImV4cCI6MjA5Nzg2NjQyMn0.9ys4m2OicbMq3cFyf0a2IA_eh3VspPJ3pYgjNkMO6WA";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
-const screens={login:'s-login',entrevista:'s-entrevista',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil',libre:'s-libre',dirigido:'s-dirigido',admin:'s-admin'};
+const screens={login:'s-login',entrevista:'s-entrevista',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil',libre:'s-libre',dirigido:'s-dirigido',admin:'s-admin',entrenador:'s-entrenador'};
 function go(name,isBack){
   if(!isBack&&window.__cur&&window.__cur!==name){(window.__hist=window.__hist||[]).push(window.__cur);} if(name==='hoy'){window.__hist=[];} window.__cur=name;
   Object.values(screens).forEach(function(id){var el=document.getElementById(id); if(el) el.classList.remove('active');});
@@ -1055,7 +1079,8 @@ function go(name,isBack){
   var nav=document.getElementById('nav');
   nav.classList.toggle('hidden', name==='login'||name==='sesion'||name==='entrevista'||name==='libre'||name==='dirigido');
   nav.querySelectorAll('button').forEach(function(b){b.classList.toggle('on', b.dataset.go===name);});
-  if(name==='admin'){ cargarAdmin(); if(window.cargarAdminLegal) cargarAdminLegal(); if(window.cargarInvitaciones) cargarInvitaciones(); } if(name==='sesion'){ cargarSesion(); } if(name==='hoy'){ cargarSemana(); if(window._planHoy)window._planHoy(); } if(name==='dirigido'){ if(window._recDirigido)window._recDirigido(); } if(name==='libre'){ if(window._loadCond)window._loadCond(); } if(name==='calendario'){ cargarCalendario(); } if(name==='progreso'){ cargarProgreso(); } if(name==='perfil'){ cargarObjetivos(); if(window.cargarMiCuenta)cargarMiCuenta(); }
+  if(name==='admin'){ cargarAdmin(); if(window.cargarAdminLegal) cargarAdminLegal(); if(window.cargarInvitaciones) cargarInvitaciones(); }
+  if(name==='entrenador'){ if(window.cargarEntrenador) cargarEntrenador(); } if(name==='sesion'){ cargarSesion(); } if(name==='hoy'){ cargarSemana(); if(window._planHoy)window._planHoy(); } if(name==='dirigido'){ if(window._recDirigido)window._recDirigido(); } if(name==='libre'){ if(window._loadCond)window._loadCond(); } if(name==='calendario'){ cargarCalendario(); } if(name==='progreso'){ cargarProgreso(); } if(name==='perfil'){ cargarObjetivos(); if(window.cargarMiCuenta)cargarMiCuenta(); }
 }
 var msg=document.getElementById('msg');
 function setMsg(t,ok){ if(!msg)return; msg.textContent=t||''; msg.className='msg '+(ok?'ok':'err'); }
@@ -1077,6 +1102,7 @@ async function loadProfileAndEnter(){
   var roles={admin:'Administrador',entrenador:'Entrenador',jugador:'Jugador'};
   var rolEl=document.getElementById('u-rol'); if(rolEl) rolEl.textContent=roles[role]||role;
   window.__role=role; if(role==='admin'){ document.querySelectorAll('.solo-admin').forEach(function(e){e.style.display='';}); }
+  if(role==='admin'||role==='entrenador'){ document.querySelectorAll('.solo-staff').forEach(function(e){e.style.display='';}); }
   setMsg('');
   if(p.data && p.data.debe_cambiar_password){ if(window.pedirNuevaPassword){ window.pedirNuevaPassword(); return; } }
   if(window.faltaConsentimiento){ var _fc=await window.faltaConsentimiento(user.id); if(_fc){ window.pedirConsentimiento(); return; } }
@@ -2402,6 +2428,69 @@ window.pedirFechaNacimiento=pedirFechaNacimiento;
     else { go('sesion'); }
   });
 })();
+</script>
+<script>
+/* PANEL ENTRENADOR: ver jugadores y su progreso (solo lectura) */
+async function cargarEntrenador(){
+  var box=document.getElementById('ent-lista'); if(!box) return;
+  var det=document.getElementById('ent-detalle'); if(det) det.innerHTML='';
+  var vb=document.getElementById('ent-volver'); if(vb) vb.style.display='none';
+  var wrap=document.getElementById('ent-lista-wrap'); if(wrap) wrap.style.display='';
+  var msg=document.getElementById('ent-msg'); if(msg) msg.textContent='';
+  box.innerHTML='<div style="color:var(--muted);font-size:13px">Cargando…</div>';
+  try{
+    var r=await sb.from('profiles').select('id,nombre,role').eq('role','jugador').order('nombre');
+    if(r&&r.error){ box.innerHTML='<div style="color:#ff6b6b;font-size:13px">No tienes permiso para ver los jugadores.</div>'; return; }
+    var rows=r.data||[];
+    if(!rows.length){ box.innerHTML='<div style="color:var(--muted);font-size:13px">Aún no hay jugadores.</div>'; return; }
+    var ids=rows.map(function(x){return x.id;});
+    var ult={};
+    try{ var rs=await sb.from('sesiones').select('jugador_id,fecha').in('jugador_id',ids).eq('estado','completada').order('fecha',{ascending:false}); (rs.data||[]).forEach(function(s){ if(!ult[s.jugador_id]) ult[s.jugador_id]=s.fecha; }); }catch(e){}
+    box.innerHTML=rows.map(function(x){
+      var ini=(x.nombre||'?').trim().charAt(0).toUpperCase();
+      var u=ult[x.id]?('Última sesión: '+String(ult[x.id]).slice(0,10)):'Sin sesiones aún';
+      return '<div class="ent-row" data-uid="'+x.id+'" data-nom="'+((x.nombre||'').replace(/"/g,'&quot;'))+'"><div class="ent-ic">'+ini+'</div><div style="flex:1;min-width:0"><div class="ent-n">'+(x.nombre||'(sin nombre)')+'</div><div class="ent-s">'+u+'</div></div><span style="color:var(--muted2);font-size:20px">›</span></div>';
+    }).join('');
+    box.querySelectorAll('.ent-row').forEach(function(rw){ rw.addEventListener('click',function(){ verJugador(rw.getAttribute('data-uid'), rw.getAttribute('data-nom')); }); });
+  }catch(e){ box.innerHTML='<div style="color:#ff6b6b;font-size:13px">Error al cargar.</div>'; }
+}
+window.cargarEntrenador=cargarEntrenador;
+async function verJugador(uid, nombre){
+  var det=document.getElementById('ent-detalle'); if(!det) return;
+  var wrap=document.getElementById('ent-lista-wrap'); if(wrap) wrap.style.display='none';
+  var vb=document.getElementById('ent-volver'); if(vb) vb.style.display='';
+  try{ window.scrollTo(0,0); }catch(e){}
+  det.innerHTML='<div class="card pr-panel"><div style="color:var(--muted);font-size:13px">Cargando…</div></div>';
+  try{
+    var dj=null, ses=[], tests=[];
+    try{ dj=(await sb.from('datos_jugador').select('*').eq('id',uid).maybeSingle()).data; }catch(e){}
+    try{ ses=(await sb.from('sesiones').select('titulo,notas,esfuerzo,fecha,duracion_min').eq('jugador_id',uid).eq('estado','completada').order('fecha',{ascending:false}).limit(10)).data||[]; }catch(e){}
+    try{ tests=(await sb.from('tests_progreso').select('tipo,valor,unidad,fecha').eq('jugador_id',uid).order('fecha',{ascending:false}).limit(50)).data||[]; }catch(e){}
+    var edad=(dj&&dj.fecha_nacimiento&&window.edadDeFecha)?window.edadDeFecha(dj.fecha_nacimiento):null;
+    var CAT={baja:'Baja',media:'Media',alta:'Alta'};
+    var kv=function(k,v){ return v?('<div class="kv"><span>'+k+'</span><span>'+v+'</span></div>'):''; };
+    var ficha='<div class="card pr-panel"><div class="section-t">'+(nombre||'Jugador')+'</div>'+
+      kv('Edad', edad!=null?(edad+' años'):null)+
+      kv('Posición', dj&&dj.posicion)+
+      kv('Objetivo', dj&&dj.objetivo_principal)+
+      kv('Condición física', dj&&CAT[dj.condicion_fisica])+
+      kv('Molestias / lesiones', dj&&dj.lesiones)+
+      (dj?'':'<div style="color:var(--muted);font-size:12.5px;padding-top:4px">Este jugador aún no ha hecho la entrevista.</div>')+
+      '</div>';
+    var TT={fuerza_gym:'💪',pliometria:'🦘',tecnica:'🏀',funcional:'🤸'};
+    var ESF={suave:{t:'Suave',c:'#39b178'},normal:{t:'Normal',c:'#F3C969'},dura:{t:'Dura',c:'#ff8f8f'}};
+    var histHtml = ses.length? ('<div id="pr-hist">'+ses.map(function(s){var ic=TT[s.notas]||'📋';var esf=ESF[s.esfuerzo];var badge=esf?'<span style="color:'+esf.c+';font-weight:700;font-size:11.5px">'+esf.t+'</span>':'<span style="color:var(--muted2);font-size:11.5px">—</span>';var dur=s.duracion_min?(s.duracion_min+' min'):'';return '<div class="hist"><div class="hist-ic">'+ic+'</div><div class="hist-tx"><div class="hist-n">'+(s.titulo||'Sesión')+'</div><div class="hist-s">'+String(s.fecha).slice(0,10)+(dur?(' · '+dur):'')+'</div></div><div class="hist-v">'+badge+'</div></div>';}).join('')+'</div>') : '<div style="color:var(--muted);font-size:13px">Sin entrenamientos registrados.</div>';
+    var entren='<div class="card pr-panel" style="margin-top:14px"><div class="section-t">Últimos entrenamientos</div>'+histHtml+'</div>';
+    var byT={}; tests.forEach(function(x){ if(!byT[x.tipo]) byT[x.tipo]=x; });
+    var TN={salto_vertical:'Salto vertical',velocidad_20m:'Velocidad 20 m',agilidad:'Agilidad',resistencia:'Resistencia',otro:'Otro'};
+    var medKeys=Object.keys(byT);
+    var medHtml = medKeys.length? medKeys.map(function(k){var m=byT[k];return '<div class="kv"><span>'+(TN[k]||k)+'</span><span>'+m.valor+' '+(m.unidad||'')+' · '+String(m.fecha).slice(0,10)+'</span></div>';}).join('') : '<div style="color:var(--muted);font-size:13px">Sin mediciones.</div>';
+    var med='<div class="card pr-panel" style="margin-top:14px"><div class="section-t">Mediciones</div>'+medHtml+'</div>';
+    det.innerHTML=ficha+entren+med;
+  }catch(e){ det.innerHTML='<div class="card pr-panel"><div style="color:#ff6b6b;font-size:13px">Error al cargar el jugador.</div></div>'; }
+}
+window.verJugador=verJugador;
+(function(){ var v=document.getElementById('ent-volver'); if(v) v.addEventListener('click',function(){ cargarEntrenador(); }); })();
 </script>
 </body>
 </html>
