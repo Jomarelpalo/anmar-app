@@ -1415,7 +1415,7 @@ async function cargarHistorial(){
       var k=s.notas||'otro'; porTipo[k]=(porTipo[k]||0)+1;
     });
     if(res){
-      var resumen=cont30+' sesión'+(cont30===1?'':'es')+' en los últimos 30 días';
+      var resumen=cont30+' '+(cont30===1?'sesión':'sesiones')+' en los últimos 30 días';
       var partes=[]; if(porTipo.fuerza_gym)partes.push(porTipo.fuerza_gym+' fuerza'); if(porTipo.pliometria)partes.push(porTipo.pliometria+' plio'); if(porTipo.tecnica)partes.push(porTipo.tecnica+' técnica'); if(porTipo.funcional)partes.push(porTipo.funcional+' funcional');
       res.textContent=resumen+(partes.length?(' · '+partes.join(' · ')):'');
     }
