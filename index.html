@@ -2554,10 +2554,12 @@ window.verJugador=verJugador;
     v.innerHTML='<div class="card pr-panel"><div class="section-t">Jugadores</div><div id="eq-jug"><div style="color:var(--muted);font-size:13px">Cargando…</div></div>'+
       '<button class="btn btn-primary" id="eq-add" style="margin-top:12px">+ Añadir jugador</button>'+
       '<button class="btn btn-ghost" id="eq-sesion-grupo" style="margin-top:10px">Generar sesión de grupo</button>'+
-      '<button class="btn btn-ghost" id="eq-nuevo-partido" style="margin-top:10px">Nuevo partido (estadísticas)</button></div>';
+      '<button class="btn btn-ghost" id="eq-nuevo-partido" style="margin-top:10px">Nuevo partido (estadísticas)</button>'+
+      '<button class="btn btn-ghost" id="eq-stats-equipo" style="margin-top:10px">Estadísticas del equipo</button></div>';
     document.getElementById('eq-add').addEventListener('click',function(){ fichaJugador(null); });
     var esg=document.getElementById('eq-sesion-grupo'); if(esg) esg.addEventListener('click',function(){ generarSesionGrupoUI(id, nombre); });
     var enp=document.getElementById('eq-nuevo-partido'); if(enp) enp.addEventListener('click',function(){ nuevoPartidoUI(id, nombre); });
+    var ese=document.getElementById('eq-stats-equipo'); if(ese) ese.addEventListener('click',function(){ abrirStatsEquipo(id, nombre); });
     cargarJugadores();
   }
 
@@ -2848,8 +2850,14 @@ window.verJugador=verJugador;
   }
   function facetBar(lab, score, val){ var s=Math.max(0,Math.min(100,score)); return '<div style="margin-top:8px"><div style="display:flex;justify-content:space-between;font-size:12px"><span>'+lab+'</span><span style="color:var(--muted2)">'+val+'</span></div><div style="height:7px;background:rgba(255,255,255,.06);border-radius:4px;margin-top:3px;overflow:hidden"><div style="height:100%;width:'+s.toFixed(0)+'%;background:#f2792b;border-radius:4px"></div></div></div>'; }
 
-  function renderStats(ov, j, rows){
+  function renderStats(ov, j, allRows, filter){
     var esc2=(typeof esc==='function')?esc:function(x){return (''+(x==null?'':x));};
+    filter=filter||'all';
+    var rows;
+    if(filter==='last3') rows=allRows.slice(0,3);
+    else if(filter==='last5') rows=allRows.slice(0,5);
+    else if(filter==='all') rows=allRows.slice();
+    else rows=allRows.filter(function(g){ return (''+g.partido_id)===(''+filter); });
     var n=rows.length, T=statsTot(rows);
     var ptsTot=2*T.t2m+3*T.t3m+T.tlm, valTot=rows.reduce(function(a,g){return a+valoracionDe(g);},0);
     var tca=T.t2a+T.t3a, tcm=T.t2m+T.t3m;
@@ -2885,21 +2893,16 @@ window.verJugador=verJugador;
         tile('Partidos', n)+ tile('Pts/partido', dec1(ptsTot/n))+ tile('Valoración', dec1(valTot/n))+
         tile('Acierto campo', pct1(efg))+ tile('Acierto real', pct1(ts))+ tile('Asist/Pérd', asper==null?'—':dec1(asper))+
       '</div><div style="font-size:11px;color:var(--muted2);margin-top:8px;line-height:1.5">Valoración = (puntos+rebotes+asistencias+robos+tapones+faltas recibidas) − (tiros fallados+pérdidas+tapones recibidos+faltas). Necesita 3-4 partidos para ser representativa.</div>')
-      : '<div style="color:var(--muted);font-size:13px">Aún no hay partidos. Añade el primero para ver los indicadores.</div>';
-    var campo=function(id,lab,val){ return '<div style="flex:1 1 46%"><div class="flab">'+lab+'</div><input class="field" id="'+id+'" type="number" min="0" inputmode="numeric" value="'+(val==null?'':val)+'" style="padding:9px 10px"></div>'; };
-    var hoy=(function(){ try{ return (new Date()).toISOString().slice(0,10); }catch(e){ return ''; } })();
-    var form='<div id="sf-form" style="display:none;margin-top:12px">'+
-      '<div style="display:flex;gap:10px;flex-wrap:wrap">'+campo('sf-fecha','Fecha','')+campo('sf-rival','Rival (opcional)','')+'</div>'+
-      '<div class="flab" style="margin-top:8px">Tiros de 2 (metidos / intentados)</div><div style="display:flex;gap:10px">'+campo('sf-t2m','',0)+campo('sf-t2a','',0)+'</div>'+
-      '<div class="flab" style="margin-top:8px">Tiros de 3 (metidos / intentados)</div><div style="display:flex;gap:10px">'+campo('sf-t3m','',0)+campo('sf-t3a','',0)+'</div>'+
-      '<div class="flab" style="margin-top:8px">Tiros libres (metidos / intentados)</div><div style="display:flex;gap:10px">'+campo('sf-tlm','',0)+campo('sf-tla','',0)+'</div>'+
-      '<div class="flab" style="margin-top:8px">Rebotes (ofensivos / defensivos)</div><div style="display:flex;gap:10px">'+campo('sf-rof','',0)+campo('sf-rdef','',0)+'</div>'+
-      '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">'+campo('sf-as','Asistencias',0)+campo('sf-rob','Robos',0)+campo('sf-tap','Tapones',0)+campo('sf-per','Pérdidas',0)+campo('sf-fal','Faltas cometidas',0)+campo('sf-min','Minutos','')+'</div>'+
-      '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">'+campo('sf-falr','Faltas recibidas',0)+campo('sf-tapr','Tapones recibidos',0)+'</div>'+
-      '<button class="btn btn-primary" id="sf-guardar" style="margin-top:12px">Guardar partido</button>'+
-      '<button class="btn btn-ghost" id="sf-cancelar" style="margin-top:8px">Cancelar</button>'+
-      '<div id="sf-msg" style="font-size:12px;margin-top:8px;min-height:14px"></div>'+
-    '</div>';
+      : '<div style="color:var(--muted);font-size:13px">Aún no hay partidos anotados. Anota uno desde el equipo para ver los indicadores.</div>';
+    var fmtF=function(g){ var f=(''+g.fecha).split('-'); var fm=(f.length===3)?(f[2]+'/'+f[1]):(''+g.fecha); return fm+(g.rival?(' · '+g.rival):''); };
+    var opt=function(v,lab){ return '<option value="'+v+'"'+(filter===v?' selected':'')+'>'+esc2(lab)+'</option>'; };
+    var filtroSel = allRows.length>1 ? ('<div style="margin-bottom:10px"><div class="flab">Ver</div><select class="field" id="st-filtro" style="padding:9px 10px">'+
+        opt('all','Toda la temporada ('+allRows.length+' part.)')+
+        (allRows.length>3?opt('last3','Últimos 3 partidos'):'')+
+        (allRows.length>5?opt('last5','Últimos 5 partidos'):'')+
+        '<option disabled>── un partido ──</option>'+
+        allRows.map(function(g){ return opt(''+g.partido_id, fmtF(g)); }).join('')+
+      '</select></div>') : '';
     var lista = rows.map(function(g){
       var f=(''+g.fecha).split('-'); var fm=f.length===3?(f[2]+'/'+f[1]+'/'+f[0]):g.fecha;
       var det='2P '+(g.t2m||0)+'/'+(g.t2a||0)+' · 3P '+(g.t3m||0)+'/'+(g.t3a||0)+' · TL '+(g.tlm||0)+'/'+(g.tla||0)+' · REB '+((g.reb_of||0)+(g.reb_def||0))+' · AS '+(g.asistencias||0)+' · ROB '+(g.robos||0)+' · TAP '+(g.tapones||0)+' · PER '+(g.perdidas||0)+' · FP '+(g.faltas||0)+(g.minutos?(' · '+g.minutos+' min'):'');
@@ -2914,18 +2917,15 @@ window.verJugador=verJugador;
     }).join('');
     ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding-bottom:32px">'+
       '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px"><h2 style="margin:0">Estadísticas · '+esc2(j.nombre)+'</h2><button class="btn btn-ghost" id="st-cerrar" style="max-width:100px;margin:0">Cerrar</button></div>'+
+      filtroSel+
       '<div class="card pr-panel">'+kpis+'</div>'+
       (rows.length?evol:'')+
-      '<button class="btn btn-primary" id="sf-add" style="margin-top:12px">+ Añadir partido</button>'+form+
-      (rows.length?'<div style="margin-top:16px"><div class="section-t">Partidos</div>'+lista+'</div>':'')+
+      (rows.length?'<div style="margin-top:16px"><div class="section-t">Partidos</div>'+lista+'</div>':(allRows.length?'':'<div style="color:var(--muted);font-size:13px;margin-top:14px">Aún no hay partidos anotados de este jugador. Anota un partido desde el equipo (botón «Nuevo partido») y aquí verás sus estadísticas de la temporada.</div>'))+
       '<button class="btn btn-ghost" id="st-cerrar2" style="margin-top:20px">Cerrar</button>'+
     '</div>';
     var cerrar=function(){ ov.style.display='none'; };
     var c1=document.getElementById('st-cerrar'), c2=document.getElementById('st-cerrar2'); if(c1)c1.addEventListener('click',cerrar); if(c2)c2.addEventListener('click',cerrar);
-    var add=document.getElementById('sf-add'), fm2=document.getElementById('sf-form');
-    if(add&&fm2){ add.addEventListener('click',function(){ fm2.style.display='block'; add.style.display='none'; var fx=document.getElementById('sf-fecha'); if(fx&&!fx.value) fx.value=hoy; }); }
-    var can=document.getElementById('sf-cancelar'); if(can) can.addEventListener('click',function(){ fm2.style.display='none'; add.style.display='block'; });
-    var gu=document.getElementById('sf-guardar'); if(gu) gu.addEventListener('click',function(){ guardarPartido(j, ov); });
+    var fsel=document.getElementById('st-filtro'); if(fsel) fsel.addEventListener('change',function(){ renderStats(ov, j, allRows, fsel.value); });
     ov.querySelectorAll('.st-item').forEach(function(it){ it.querySelector('.st-head').addEventListener('click',function(){ var b=it.querySelector('.st-body'); b.style.display=(b.style.display==='none'?'block':'none'); }); });
   }
   async function guardarPartido(j, ov){
@@ -2947,11 +2947,71 @@ window.verJugador=verJugador;
     if(!ov){ ov=document.createElement('div'); ov.id='stats-overlay'; ov.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(4,7,13,.96);overflow:auto;padding:16px;-webkit-overflow-scrolling:touch'; document.body.appendChild(ov); }
     ov.style.display='block';
     ov.innerHTML='<div style="max-width:560px;margin:0 auto"><div style="color:var(--muted);font-size:14px;padding:24px 4px">Cargando estadísticas…</div></div>';
-    try{ var r=await sb.from('estadisticas_partido').select('*').eq('jugador_id',j.id).order('fecha',{ascending:false});
-      if(r&&r.error) throw r.error; renderStats(ov, j, r.data||[]);
+    try{ var r=await sb.from('partido_stats').select('*, partido:partidos!inner(id,fecha,rival,tipo,nombre_local)').eq('jugador_id',j.id).eq('partido.tipo','temporada');
+      if(r&&r.error) throw r.error;
+      var rows=(r.data||[]).map(function(x){ var p=x.partido||{}; x.fecha=p.fecha; x.rival=p.rival; x.partido_id=p.id; return x; });
+      rows.sort(function(a,b){ return (''+(b.fecha||'')).localeCompare(''+(a.fecha||'')); });
+      renderStats(ov, j, rows, 'all');
     }catch(e){ ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding:24px 4px"><div style="color:#ff6b6b">No se pudieron cargar las estadísticas.</div><button class="btn btn-ghost" id="stx" style="margin-top:16px">Cerrar</button></div>'; var x=document.getElementById('stx'); if(x)x.addEventListener('click',function(){ov.style.display='none';}); }
   }
   window.abrirStats=abrirStats;
+
+  // ===== ESTADÍSTICAS DEL EQUIPO (agregado de partido_stats temporada) =====
+  async function abrirStatsEquipo(equipoId, nombreEq){
+    var ov=document.getElementById('stats-overlay');
+    if(!ov){ ov=document.createElement('div'); ov.id='stats-overlay'; ov.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(4,7,13,.96);overflow:auto;padding:16px;-webkit-overflow-scrolling:touch'; document.body.appendChild(ov); }
+    ov.style.display='block';
+    ov.innerHTML='<div style="max-width:560px;margin:0 auto"><div style="color:var(--muted);font-size:14px;padding:24px 4px">Cargando estadísticas del equipo…</div></div>';
+    try{
+      var pr=await sb.from('partidos').select('id,fecha,rival,tipo,puntos_local,puntos_rival').eq('equipo_id',equipoId).eq('tipo','temporada');
+      if(pr&&pr.error) throw pr.error;
+      var partidos=(pr.data||[]).slice().sort(function(a,b){ return (''+(b.fecha||'')).localeCompare(''+(a.fecha||'')); });
+      var sr=await sb.from('partido_stats').select('*, partido:partidos!inner(id,tipo,equipo_id)').eq('partido.equipo_id',equipoId).eq('partido.tipo','temporada').eq('lado','propio');
+      if(sr&&sr.error) throw sr.error;
+      renderStatsEquipo(ov, nombreEq, partidos, sr.data||[]);
+    }catch(e){ ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding:24px 4px"><div style="color:#ff6b6b">No se pudieron cargar las estadísticas del equipo.</div><button class="btn btn-ghost" id="stex" style="margin-top:16px">Cerrar</button></div>'; var x=document.getElementById('stex'); if(x)x.addEventListener('click',function(){ov.style.display='none';}); }
+  }
+  window.abrirStatsEquipo=abrirStatsEquipo;
+  function renderStatsEquipo(ov, nombreEq, partidos, rows){
+    var esc2=(typeof esc==='function')?esc:function(x){return (''+(x==null?'':x));};
+    var nP=partidos.length;
+    var gana=0,pierde=0,empata=0,pf=0,pc=0;
+    partidos.forEach(function(p){ var l=p.puntos_local||0, r=p.puntos_rival||0; pf+=l; pc+=r; if(l>r)gana++; else if(l<r)pierde++; else empata++; });
+    var T=statsTot(rows), tca=T.t2a+T.t3a, tcm=T.t2m+T.t3m;
+    var efg=tca>0?(tcm+0.5*T.t3m)/tca:null;
+    var ptsTot=2*T.t2m+3*T.t3m+T.tlm, tsDen=2*(tca+0.44*T.tla), ts=tsDen>0?ptsTot/tsDen:null;
+    // agregado por jugador
+    var byId={};
+    rows.forEach(function(g){ var k=g.jugador_id||g.jugador_nombre; if(!byId[k]) byId[k]={nombre:g.jugador_nombre||'Jugador', pj:{}, pts:0, val:0, as:0, reb:0, rob:0, tap:0}; var b=byId[k]; if(g.partido&&g.partido.id) b.pj[g.partido.id]=1; b.pts+=puntosDe(g); b.val+=valoracionDe(g); b.as+=(g.asistencias||0); b.reb+=((g.reb_of||0)+(g.reb_def||0)); b.rob+=(g.robos||0); b.tap+=(g.tapones||0); });
+    var jugs=Object.keys(byId).map(function(k){ var b=byId[k]; b.n=Object.keys(b.pj).length||1; return b; });
+    var tile=function(lab,val){ return '<div style="flex:1 1 90px;min-width:90px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:9px 11px"><div style="font-size:10.5px;color:var(--muted2);text-transform:uppercase;letter-spacing:.04em">'+lab+'</div><div style="font-size:19px;font-weight:700;margin-top:2px">'+val+'</div></div>'; };
+    var kpis = nP? ('<div style="display:flex;flex-wrap:wrap;gap:8px">'+
+        tile('Partidos', nP)+ tile('Balance', gana+'-'+pierde+(empata?('-'+empata):''))+ tile('Pts/partido', dec1(pf/nP))+
+        tile('Encajados/pp', dec1(pc/nP))+ tile('Acierto campo', pct1(efg))+ tile('Acierto real', pct1(ts))+
+      '</div>')
+      : '<div style="color:var(--muted);font-size:13px">Aún no hay partidos de temporada anotados para este equipo. Anota uno con «Nuevo partido».</div>';
+    var leaderRow=function(lab, arr, valf, unit){ if(!arr.length) return ''; var best=arr.slice().sort(function(a,b){return valf(b)-valf(a);})[0]; return '<div style="display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-top:1px solid rgba(255,255,255,.06)"><span style="color:var(--muted2)">'+lab+'</span><span><b>'+esc2(best.nombre)+'</b> · '+dec1(valf(best))+unit+'</span></div>'; };
+    var destaca = jugs.length? ('<div style="margin-top:16px"><div class="section-t">Quién destaca (por partido)</div>'+
+        leaderRow('Máximo anotador', jugs, function(b){return b.pts/b.n;}, ' pts')+
+        leaderRow('Mejor valoración', jugs, function(b){return b.val/b.n;}, '')+
+        leaderRow('Más asistencias', jugs, function(b){return b.as/b.n;}, '')+
+        leaderRow('Más rebotes', jugs, function(b){return b.reb/b.n;}, '')+
+        leaderRow('Mejor defensa (rob+tap)', jugs, function(b){return (b.rob+b.tap)/b.n;}, '')+
+      '</div>') : '';
+    var tabla = jugs.length? ('<div style="margin-top:16px"><div class="section-t">Jugadores</div>'+
+        '<div style="display:flex;font-size:11px;color:var(--muted2);padding:4px 0;font-weight:600"><span style="flex:1">Jugador</span><span style="width:38px;text-align:right">PJ</span><span style="width:60px;text-align:right">Pts/pp</span><span style="width:60px;text-align:right">Val/pp</span></div>'+
+        jugs.slice().sort(function(a,b){return (b.pts/b.n)-(a.pts/a.n);}).map(function(b){ return '<div style="display:flex;font-size:13px;padding:6px 0;border-top:1px solid rgba(255,255,255,.06)"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc2(b.nombre)+'</span><span style="width:38px;text-align:right">'+b.n+'</span><span style="width:60px;text-align:right;font-weight:700">'+dec1(b.pts/b.n)+'</span><span style="width:60px;text-align:right;color:#f2a06b">'+dec1(b.val/b.n)+'</span></div>'; }).join('')+
+      '</div>') : '';
+    ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding-bottom:32px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px"><h2 style="margin:0">Equipo · '+esc2(nombreEq||'Equipo')+'</h2><button class="btn btn-ghost" id="ste-cerrar" style="max-width:100px;margin:0">Cerrar</button></div>'+
+      '<div class="card pr-panel">'+kpis+'</div>'+
+      destaca+tabla+
+      '<div style="font-size:11px;color:var(--muted2);margin-top:12px;line-height:1.5">Solo partidos de temporada (los de scouting no cuentan aquí). «pp» = por partido.</div>'+
+      '<button class="btn btn-ghost" id="ste-cerrar2" style="margin-top:20px">Cerrar</button>'+
+    '</div>';
+    var cerrar=function(){ ov.style.display='none'; };
+    var c1=document.getElementById('ste-cerrar'), c2=document.getElementById('ste-cerrar2'); if(c1)c1.addEventListener('click',cerrar); if(c2)c2.addEventListener('click',cerrar);
+  }
 
   // ===== NUEVO PARTIDO: captura ágil en directo (guarda en partidos + partido_stats) =====
   function ensureOverlay(id){ var ov=document.getElementById(id); if(!ov){ ov=document.createElement('div'); ov.id=id; ov.style.cssText='position:fixed;inset:0;z-index:9999;background:#04070d;overflow:auto;padding:16px;-webkit-overflow-scrolling:touch'; document.body.appendChild(ov); } ov.style.display='block'; return ov; }
