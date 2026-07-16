@@ -2552,8 +2552,10 @@ window.verJugador=verJugador;
     setTitulo(nombre||'Equipo'); volverBtn(true, cargarEquipos); msg('');
     var v=document.getElementById('eq-vista');
     v.innerHTML='<div class="card pr-panel"><div class="section-t">Jugadores</div><div id="eq-jug"><div style="color:var(--muted);font-size:13px">Cargando…</div></div>'+
-      '<button class="btn btn-primary" id="eq-add" style="margin-top:12px">+ Añadir jugador</button></div>';
+      '<button class="btn btn-primary" id="eq-add" style="margin-top:12px">+ Añadir jugador</button>'+
+      '<button class="btn btn-ghost" id="eq-sesion-grupo" style="margin-top:10px">Generar sesión de grupo</button></div>';
     document.getElementById('eq-add').addEventListener('click',function(){ fichaJugador(null); });
+    var esg=document.getElementById('eq-sesion-grupo'); if(esg) esg.addEventListener('click',function(){ generarSesionGrupoUI(id, nombre); });
     cargarJugadores();
   }
 
@@ -2612,6 +2614,14 @@ window.verJugador=verJugador;
       (nuevo?'':'<button class="btn" id="f-borrar" style="width:100%;margin-top:10px;background:#7a2323;color:#fff;border:1px solid #a34040">Borrar jugador</button>')+
       '<div id="f-msg" style="text-align:center;font-size:12px;margin-top:10px;min-height:16px"></div>'+
       '</div>'+
+      (nuevo?'':('<div class="card pr-panel" style="margin-top:14px">'+
+        '<div class="section-t">Sesión de entrenamiento</div>'+
+        '<div style="font-size:12px;color:var(--muted2);margin:-2px 2px 10px;line-height:1.5">Genera una sesión personalizada y segura para este jugador: excluye las zonas lesionadas, ajusta por edad y condición física, y añade avisos.</div>'+
+        '<button class="btn btn-primary" id="f-gen-sesion">Generar sesión de hoy</button></div>'))+
+      (nuevo?'':('<div class="card pr-panel" style="margin-top:14px">'+
+        '<div class="section-t">Estadísticas de partido</div>'+
+        '<div style="font-size:12px;color:var(--muted2);margin:-2px 2px 10px;line-height:1.5">Registra los partidos y consulta los indicadores (valoración, acierto de tiro, evolución).</div>'+
+        '<button class="btn btn-ghost" id="f-stats">Ver estadísticas y KPIs</button></div>'))+
       (nuevo?'':(
       '<div class="card pr-panel" style="margin-top:14px">'+
         '<div class="prog-head" style="margin-bottom:8px"><div class="section-t" style="margin:0">Diario de notas</div><span id="f-notas-cont" style="font-size:12px;color:var(--muted2)"></span></div>'+
@@ -2644,6 +2654,8 @@ window.verJugador=verJugador;
     document.getElementById('f-guardar').addEventListener('click',function(){ guardarJugador(j.id||null); });
     var bd=document.getElementById('f-borrar'); if(bd) bd.addEventListener('click',function(){ borrarJugador(j.id, j.nombre); });
     if(!nuevo){
+      var gs=document.getElementById('f-gen-sesion'); if(gs) gs.addEventListener('click',function(){ generarSesionJugador(j); });
+      var stb=document.getElementById('f-stats'); if(stb) stb.addEventListener('click',function(){ abrirStats(j); });
       cargarNotas(j.id);
       var nf=document.getElementById('nota-fecha'); if(nf){ try{ nf.value=(new Date()).toISOString().slice(0,10); }catch(e){} }
       var af=document.getElementById('f-nota-add'), fm=document.getElementById('f-nota-form');
@@ -2693,6 +2705,251 @@ window.verJugador=verJugador;
     }catch(e){ if(m){m.style.color='#ff6b6b';m.textContent='No se pudo guardar la nota.';} }
   }
   window.guardarNota=guardarNota;
+
+  // ===== GENERADOR DE SESIÓN INDIVIDUAL (seguridad: lesiones + edad + condición) =====
+  var ZONA_MUSC={rodilla:['Cuádriceps','Cuadriceps','Isquiotibiales','Rodilla'],tobillo:['Gemelos','Sóleo','Soleo','Tobillo'],isquiotibiales:['Isquiotibiales'],cuadriceps:['Cuádriceps','Cuadriceps'],cadera:['Glúteos','Gluteos','Glúteo medio','Gluteo medio','Cadera','Aductores'],espalda_baja:['Espalda baja','Core','Abdominales','Oblicuos','Espalda','Espalda media'],hombro:['Hombros (deltoides anterior)','Hombros','Trapecio','Serrato anterior','Deltoides'],codo_brazo:['Bíceps','Biceps','Tríceps','Triceps','Braquial','Antebrazo'],muneca:['Antebrazo'],gemelo:['Gemelos','Sóleo','Soleo']};
+  var ZONA_NOM={rodilla:'rodilla',tobillo:'tobillo',isquiotibiales:'isquiotibiales',cuadriceps:'cuádriceps',cadera:'cadera',espalda_baja:'espalda baja',hombro:'hombro',codo_brazo:'codo/brazo',muneca:'muñeca/mano',gemelo:'gemelo'};
+  var NIV_ORD={iniciacion:1,medio:2,avanzado:3};
+  function catEdad(ed){ if(ed==null)return{cat:'edad no indicada',series:3,maxNivel:'medio',plio:'suave',nMain:5}; if(ed<10)return{cat:'menor de 10 (minibasket)',series:2,maxNivel:'iniciacion',plio:'no',nMain:4}; if(ed<=12)return{cat:'10-12 años',series:2,maxNivel:'medio',plio:'suave',nMain:5}; if(ed<=14)return{cat:'13-14 años',series:3,maxNivel:'medio',plio:'si',nMain:5}; if(ed<=16)return{cat:'15-16 años',series:3,maxNivel:'avanzado',plio:'si',nMain:6}; return{cat:'17+ años',series:4,maxNivel:'avanzado',plio:'si',nMain:6}; }
+  function muscsDe(e){ return [].concat(e.musculos_primarios||[],e.musculos_secundarios||[]); }
+  function interseca(m,l){ return m.some(function(x){return l.indexOf(x)>=0;}); }
+  function pasaLes(e,act,rec){ var M=muscsDe(e); for(var i=0;i<act.length;i++){ if(interseca(M,ZONA_MUSC[act[i]]||[]))return false; } for(var j2=0;j2<rec.length;j2++){ if(interseca(M,ZONA_MUSC[rec[j2]]||[])){ var suave=(e.pilar==='recuperacion'||e.pilar==='calentamiento'||(e.nivel==='iniciacion'&&e.pilar!=='pliometria')); if(!suave)return false; } } return true; }
+  function hashStr(s){ s=''+(s||''); var h=5381; for(var i=0;i<s.length;i++){ h=((h*33)^s.charCodeAt(i))>>>0; } return h; }
+  function barajar(arr,seed){ var a=arr.slice(),s=(seed>>>0)||1; for(var i=a.length-1;i>0;i--){ s=(s*1103515245+12345)&0x7fffffff; var j=s%(i+1),t=a[i];a[i]=a[j];a[j]=t; } return a; }
+  function generarSesion(f,ejs){
+    var cat=catEdad(f.edad), ser=Math.max(2,Math.min(4,cat.series+(f.condicion_fisica==='baja'?-1:f.condicion_fisica==='alta'?1:0)));
+    var zonas=f.lesiones_zonas||[], fase=f.lesiones_fase||'';
+    var act=(fase==='activa'||fase==='')?zonas.slice():[]; var rec=(fase==='recuperacion')?zonas.slice():[];
+    var nivelOk=function(e){return NIV_ORD[e.nivel]<=NIV_ORD[cat.maxNivel];};
+    var plioOk=function(e){return e.pilar!=='pliometria'?true:(cat.plio==='si'?true:cat.plio==='suave'?e.nivel==='iniciacion':false);};
+    var elig=ejs.filter(function(e){return e.activo!==false && pasaLes(e,act,rec) && nivelOk(e) && plioOk(e);});
+    var base=hashStr(f.id||f.nombre);
+    var pick=function(pilares,n,seed){ var pool=barajar(elig.filter(function(e){return pilares.indexOf(e.pilar)>=0;}),seed); var out=[],us={}; for(var i=0;i<pool.length;i++){ if(out.length>=n)break; var k=(pool[i].musculos_primarios||['?'])[0]; if(us[k])continue; us[k]=1; out.push(pool[i]); } for(var j=0;j<pool.length;j++){ if(out.length>=n)break; if(out.indexOf(pool[j])<0)out.push(pool[j]); } return out; };
+    var calent=pick(['calentamiento'],3,base+1), princ=pick(['fuerza','pliometria','acondicionamiento'],cat.nMain,base+3), estir=pick(['recuperacion'],3,base+5);
+    // Recuperación: incluir a propósito trabajo suave de la zona lesionada
+    var rehab=[];
+    rec.forEach(function(z){ var cand=elig.filter(function(e){ return (e.pilar==='recuperacion'||e.pilar==='calentamiento') && interseca(muscsDe(e),ZONA_MUSC[z]||[]); }); if(cand.length){ var e=barajar(cand,base+hashStr(z))[0]; if(rehab.indexOf(e)<0 && estir.indexOf(e)<0) rehab.push(e); } });
+    var avisos=[]; avisos.push('Categoría por edad: '+cat.cat+' → '+ser+' series por ejercicio; intensidad máxima "'+cat.maxNivel+'".');
+    act.forEach(function(z){ avisos.push('⚠ Lesión ACTIVA en '+ZONA_NOM[z]+': excluidos los ejercicios que cargan esa zona. Reposo de la zona y consulta con el médico o fisio.'); });
+    rec.forEach(function(z){ avisos.push('↻ '+ZONA_NOM[z]+' en recuperación: solo trabajo suave sobre esa zona, bajo supervisión.'); });
+    if(princ.length<cat.nMain) avisos.push('Sesión reducida por seguridad (pocos ejercicios disponibles tras los filtros).');
+    var conS=function(e){ return {nombre:e.nombre,pilar:e.pilar,nivel:e.nivel,instrucciones:e.instrucciones||'',series:(e.pilar==='calentamiento'||e.pilar==='recuperacion')?(e.series_def||1):ser,reps:e.reps_def||(f.edad&&f.edad<=12?12:10),descanso:e.descanso_seg_def||60,musc:(e.musculos_primarios||[]).join(', ')}; };
+    return {cat:cat.cat,series:ser,avisos:avisos,calentamiento:calent.map(conS),principal:princ.map(conS),rehab:rehab.map(conS),estiramientos:estir.map(conS)};
+  }
+  async function generarSesionJugador(j){
+    var ov=document.getElementById('sesion-overlay');
+    if(!ov){ ov=document.createElement('div'); ov.id='sesion-overlay'; ov.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(4,7,13,.96);overflow:auto;padding:16px;-webkit-overflow-scrolling:touch'; document.body.appendChild(ov); }
+    ov.style.display='block';
+    ov.innerHTML='<div style="max-width:560px;margin:0 auto"><div style="color:var(--muted);font-size:14px;padding:24px 4px">Generando sesión…</div></div>';
+    try{
+      var r=await sb.from('ejercicios').select('nombre,pilar,nivel,musculos_primarios,musculos_secundarios,series_def,reps_def,descanso_seg_def,instrucciones,imagen_url,activo').eq('activo',true);
+      if(r&&r.error) throw r.error;
+      var ejs=r.data||[];
+      var edad=(typeof edadDe==='function')?edadDe(j.fecha_nacimiento):null;
+      var f={id:j.id,nombre:j.nombre,edad:edad,posicion:j.posicion,condicion_fisica:j.condicion_fisica,objetivo:j.objetivo,lesiones_zonas:j.lesiones_zonas||[],lesiones_fase:j.lesiones_fase||''};
+      var S=generarSesion(f,ejs);
+      var esc2=(typeof esc==='function')?esc:function(x){return (''+(x==null?'':x));};
+      var sub=[]; if(j.posicion)sub.push(esc2(j.posicion)); if(edad!=null)sub.push(edad+' años'); if(j.objetivo)sub.push('objetivo: '+esc2(j.objetivo));
+      var av=S.avisos.map(function(a){ var col=a.indexOf('⚠')>=0?'#F3C969':(a.indexOf('↻')>=0?'#5fb0e6':'var(--muted)'); return '<div style="font-size:12.5px;line-height:1.5;color:'+col+';margin-bottom:6px">'+esc2(a)+'</div>'; }).join('');
+      var bloque=function(tit,arr,color){ if(!arr.length)return ''; var items=arr.map(function(e){ return '<div style="border-top:1px solid rgba(255,255,255,.07);padding:8px 0"><div style="display:flex;gap:8px;align-items:baseline"><span style="flex:1;font-weight:600">'+esc2(e.nombre)+'</span><span style="font-size:12px;color:var(--muted2);white-space:nowrap">'+e.series+'x'+e.reps+(e.pilar!=='calentamiento'&&e.pilar!=='recuperacion'?' · '+e.descanso+'s':'')+'</span></div>'+(e.musc?'<div style="font-size:11px;color:var(--muted2)">'+esc2(e.musc)+'</div>':'')+'</div>'; }).join(''); return '<div style="margin-top:16px"><div style="text-transform:uppercase;letter-spacing:.06em;font-size:12px;font-weight:700;color:'+color+'">'+tit+'</div>'+items+'</div>'; };
+      ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding-bottom:32px">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:4px"><h2 style="margin:0">Sesión · '+esc2(j.nombre)+'</h2><button class="btn btn-ghost" id="ov-cerrar" style="max-width:110px;margin:0">Cerrar</button></div>'+
+        (sub.length?'<div style="color:var(--muted2);font-size:13px;margin-bottom:12px">'+sub.join(' · ')+'</div>':'')+
+        '<div class="card pr-panel" style="background:rgba(214,167,67,.08);border-color:rgba(214,167,67,.28)">'+av+'</div>'+
+        bloque('Calentamiento',S.calentamiento,'#5fb0e6')+
+        bloque('Parte principal',S.principal,'#f2792b')+
+        (S.rehab.length?bloque('Recuperación de la zona (suave)',S.rehab,'#7bd88f'):'')+
+        bloque('Estiramientos',S.estiramientos,'#9aa8a0')+
+        '<button class="btn btn-ghost" id="ov-cerrar2" style="margin-top:20px">Cerrar</button>'+
+      '</div>';
+      var cerrar=function(){ ov.style.display='none'; };
+      var c1=document.getElementById('ov-cerrar'), c2=document.getElementById('ov-cerrar2');
+      if(c1)c1.addEventListener('click',cerrar); if(c2)c2.addEventListener('click',cerrar);
+    }catch(e){ ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding:24px 4px"><div style="color:#ff6b6b">No se pudo generar la sesión.</div><button class="btn btn-ghost" id="ov-cerrar3" style="margin-top:16px">Cerrar</button></div>'; var c3=document.getElementById('ov-cerrar3'); if(c3)c3.addEventListener('click',function(){ov.style.display='none';}); }
+  }
+  window.generarSesionJugador=generarSesionJugador;
+
+  // ===== SESIÓN DE GRUPO (común segura para todos + avisos por jugador) =====
+  function condPeor(list){ var ord={baja:1,media:2,buena:3,alta:4},min=null,minv=99; (list||[]).forEach(function(c){ var v=ord[c]||2; if(v<minv){minv=v;min=c;} }); return min; }
+  function generarSesionGrupo(players, ejs){
+    var edades=players.map(function(p){return (typeof edadDe==='function')?edadDe(p.fecha_nacimiento):null;}).filter(function(e){return e!=null;});
+    var minAge=edades.length?Math.min.apply(null,edades):null;
+    var activeZones=[];
+    players.forEach(function(p){ var z=p.lesiones_zonas||[],f=p.lesiones_fase||''; if(f!=='recuperacion'){ z.forEach(function(x){ if(activeZones.indexOf(x)<0)activeZones.push(x); }); } });
+    var fSint={id:'grupo',nombre:'grupo',edad:minAge,condicion_fisica:condPeor(players.map(function(p){return p.condicion_fisica;})),lesiones_zonas:activeZones,lesiones_fase:'activa'};
+    var comun=generarSesion(fSint,ejs);
+    var porJ=players.map(function(p){
+      var edad=(typeof edadDe==='function')?edadDe(p.fecha_nacimiento):null, av=[], z=p.lesiones_zonas||[], f=p.lesiones_fase||'';
+      if(z.length && (f==='activa'||f==='')) av.push({t:'act',txt:'Lesión activa en '+z.map(function(x){return ZONA_NOM[x]||x;}).join(', ')+': ya excluida de la sesión común. Reposo y supervisión.'});
+      if(z.length && f==='recuperacion'){ var rehab=[]; z.forEach(function(zz){ var cand=ejs.filter(function(e){return e.activo!==false && (e.pilar==='recuperacion'||e.pilar==='calentamiento') && interseca(muscsDe(e),ZONA_MUSC[zz]||[]);}); if(cand.length){ var ex=barajar(cand,hashStr((p.id||'')+zz))[0]; if(rehab.indexOf(ex.nombre)<0)rehab.push(ex.nombre); } }); av.push({t:'rec',txt:'En recuperación ('+z.map(function(x){return ZONA_NOM[x]||x;}).join(', ')+'): añadir trabajo suave individual'+(rehab.length?' ('+rehab.join(', ')+')':'')+', bajo supervisión.'}); }
+      if(edad!=null && minAge!=null && edad===minAge && players.length>1) av.push({t:'edad',txt:'De los más jóvenes: la intensidad del grupo se ha ajustado a su edad.'});
+      return {nombre:p.nombre,edad:edad,avisos:av};
+    }).filter(function(x){return x.avisos.length;});
+    return {comun:comun,minAge:minAge,activeZones:activeZones,nJugadores:players.length,porJugador:porJ};
+  }
+  async function generarSesionGrupoUI(equipoId, nombreEq){
+    var ov=document.getElementById('sesion-overlay');
+    if(!ov){ ov=document.createElement('div'); ov.id='sesion-overlay'; ov.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(4,7,13,.96);overflow:auto;padding:16px;-webkit-overflow-scrolling:touch'; document.body.appendChild(ov); }
+    ov.style.display='block';
+    ov.innerHTML='<div style="max-width:560px;margin:0 auto"><div style="color:var(--muted);font-size:14px;padding:24px 4px">Generando sesión de grupo…</div></div>';
+    try{
+      var rp=await sb.from('jugadores_equipo').select('*').eq('equipo_id',equipoId);
+      if(rp&&rp.error) throw rp.error;
+      var players=rp.data||[];
+      if(!players.length){ ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding:24px 4px"><div style="color:var(--muted)">Este equipo no tiene jugadores todavía.</div><button class="btn btn-ghost" id="ovg-x" style="margin-top:16px">Cerrar</button></div>'; document.getElementById('ovg-x').addEventListener('click',function(){ov.style.display='none';}); return; }
+      var re=await sb.from('ejercicios').select('nombre,pilar,nivel,musculos_primarios,musculos_secundarios,series_def,reps_def,descanso_seg_def,activo').eq('activo',true);
+      if(re&&re.error) throw re.error;
+      var G=generarSesionGrupo(players, re.data||[]);
+      var esc2=(typeof esc==='function')?esc:function(x){return (''+(x==null?'':x));};
+      var bloque=function(tit,arr,color){ if(!arr.length)return ''; var items=arr.map(function(e){ return '<div style="border-top:1px solid rgba(255,255,255,.07);padding:8px 0"><div style="display:flex;gap:8px;align-items:baseline"><span style="flex:1;font-weight:600">'+esc2(e.nombre)+'</span><span style="font-size:12px;color:var(--muted2);white-space:nowrap">'+e.series+'x'+e.reps+(e.pilar!=='calentamiento'&&e.pilar!=='recuperacion'?' · '+e.descanso+'s':'')+'</span></div>'+(e.musc?'<div style="font-size:11px;color:var(--muted2)">'+esc2(e.musc)+'</div>':'')+'</div>'; }).join(''); return '<div style="margin-top:16px"><div style="text-transform:uppercase;letter-spacing:.06em;font-size:12px;font-weight:700;color:'+color+'">'+tit+'</div>'+items+'</div>'; };
+      var zonasTxt=G.activeZones.length?G.activeZones.map(function(z){return ZONA_NOM[z]||z;}).join(', '):'ninguna';
+      var banner='<div style="font-size:12.5px;line-height:1.5;color:var(--muted)">Sesión común para <b>'+G.nJugadores+'</b> jugador'+(G.nJugadores===1?'':'es')+'. Intensidad ajustada al más joven'+(G.minAge!=null?' ('+G.minAge+' años)':'')+': '+G.comun.series+' series, máximo "'+esc2(G.comun.cat)+'".</div>'+
+        '<div style="font-size:12.5px;line-height:1.5;color:#F3C969;margin-top:6px">⚠ Zonas lesionadas evitadas en todo el grupo: <b>'+esc2(zonasTxt)+'</b>.</div>'+
+        '<div style="font-size:12px;color:var(--muted2);margin-top:6px">La app no diagnostica ni sustituye a un médico o fisioterapeuta.</div>';
+      var porJugHtml='';
+      if(G.porJugador.length){ porJugHtml='<div style="margin-top:18px"><div style="text-transform:uppercase;letter-spacing:.06em;font-size:12px;font-weight:700;color:#e6884a">Avisos por jugador</div>'+
+        G.porJugador.map(function(p){ return '<div style="border-top:1px solid rgba(255,255,255,.07);padding:8px 0"><div style="font-weight:600">'+esc2(p.nombre)+(p.edad!=null?' <span style=\"font-weight:400;color:var(--muted2);font-size:12px\">('+p.edad+' años)</span>':'')+'</div>'+
+          p.avisos.map(function(a){ var col=a.t==='act'?'#F3C969':a.t==='rec'?'#7bd88f':'var(--muted2)'; return '<div style="font-size:12.5px;line-height:1.5;color:'+col+';margin-top:3px">'+esc2(a.txt)+'</div>'; }).join('')+'</div>'; }).join('')+'</div>'; }
+      else { porJugHtml='<div style="margin-top:18px;font-size:13px;color:var(--muted)">Ningún jugador tiene lesiones ni avisos: todos pueden hacer la sesión común.</div>'; }
+      ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding-bottom:32px">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px"><h2 style="margin:0">Sesión de grupo · '+esc2(nombreEq||'Equipo')+'</h2><button class="btn btn-ghost" id="ovg-cerrar" style="max-width:110px;margin:0">Cerrar</button></div>'+
+        '<div class="card pr-panel" style="background:rgba(214,167,67,.06);border-color:rgba(214,167,67,.24)">'+banner+'</div>'+
+        bloque('Calentamiento',G.comun.calentamiento,'#5fb0e6')+
+        bloque('Parte principal',G.comun.principal,'#f2792b')+
+        bloque('Estiramientos',G.comun.estiramientos,'#9aa8a0')+
+        porJugHtml+
+        '<button class="btn btn-ghost" id="ovg-cerrar2" style="margin-top:20px">Cerrar</button>'+
+      '</div>';
+      var cerrar=function(){ ov.style.display='none'; };
+      var c1=document.getElementById('ovg-cerrar'),c2=document.getElementById('ovg-cerrar2'); if(c1)c1.addEventListener('click',cerrar); if(c2)c2.addEventListener('click',cerrar);
+    }catch(e){ ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding:24px 4px"><div style="color:#ff6b6b">No se pudo generar la sesión de grupo.</div><button class="btn btn-ghost" id="ovg-e" style="margin-top:16px">Cerrar</button></div>'; var ce=document.getElementById('ovg-e'); if(ce)ce.addEventListener('click',function(){ov.style.display='none';}); }
+  }
+  window.generarSesionGrupoUI=generarSesionGrupoUI;
+
+  // ===== ESTADÍSTICAS DE PARTIDO + KPIs =====
+  function puntosDe(g){ return 2*(g.t2m||0)+3*(g.t3m||0)+(g.tlm||0); }
+  function valoracionDe(g){ var pts=puntosDe(g), reb=(g.reb_of||0)+(g.reb_def||0);
+    return (pts+reb+(g.asistencias||0)+(g.robos||0)+(g.tapones||0)+(g.faltas_recibidas||0)) - (((g.t2a||0)-(g.t2m||0))+((g.t3a||0)-(g.t3m||0))+((g.tla||0)-(g.tlm||0))+(g.perdidas||0)+(g.tapones_recibidos||0)+(g.faltas||0)); }
+  function statsTot(rows){ var T={t2m:0,t2a:0,t3m:0,t3a:0,tlm:0,tla:0,rof:0,rdef:0,as:0,rob:0,tap:0,per:0,fal:0,min:0}; rows.forEach(function(g){ T.t2m+=g.t2m||0;T.t2a+=g.t2a||0;T.t3m+=g.t3m||0;T.t3a+=g.t3a||0;T.tlm+=g.tlm||0;T.tla+=g.tla||0;T.rof+=g.reb_of||0;T.rdef+=g.reb_def||0;T.as+=g.asistencias||0;T.rob+=g.robos||0;T.tap+=g.tapones||0;T.per+=g.perdidas||0;T.fal+=g.faltas||0;T.min+=g.minutos||0; }); return T; }
+  function pct1(x){ return x==null?'—':Math.round(x*100)+'%'; }
+  function dec1(x){ return (Math.round(x*10)/10).toString().replace('.',','); }
+  function nInt(id){ var el=document.getElementById(id); var v=parseInt(el?el.value:'',10); return isNaN(v)?0:Math.max(0,v); }
+  function miniBars(vals, color){
+    if(!vals||!vals.length) return '';
+    var W=Math.max(vals.length*24,60), H=64, pad=6;
+    var maxV=Math.max.apply(null,vals.concat([0])), minV=Math.min.apply(null,vals.concat([0])), range=(maxV-minV)||1;
+    var y0=pad+(maxV/range)*(H-2*pad);
+    var bw=Math.max(9,(W-(vals.length+1)*4)/vals.length);
+    var bars=vals.map(function(v,i){ var x=4+i*(bw+4); var h=Math.abs(v)/range*(H-2*pad); var y=v>=0?(y0-h):y0; return '<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(1,h).toFixed(1)+'" rx="2" fill="'+color+'"></rect>'; }).join('');
+    return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="'+H+'" preserveAspectRatio="none" style="max-width:100%;display:block">'+
+      '<line x1="0" y1="'+y0.toFixed(1)+'" x2="'+W+'" y2="'+y0.toFixed(1)+'" stroke="rgba(255,255,255,.15)" stroke-width="1"></line>'+bars+'</svg>';
+  }
+  function facetBar(lab, score, val){ var s=Math.max(0,Math.min(100,score)); return '<div style="margin-top:8px"><div style="display:flex;justify-content:space-between;font-size:12px"><span>'+lab+'</span><span style="color:var(--muted2)">'+val+'</span></div><div style="height:7px;background:rgba(255,255,255,.06);border-radius:4px;margin-top:3px;overflow:hidden"><div style="height:100%;width:'+s.toFixed(0)+'%;background:#f2792b;border-radius:4px"></div></div></div>'; }
+
+  function renderStats(ov, j, rows){
+    var esc2=(typeof esc==='function')?esc:function(x){return (''+(x==null?'':x));};
+    var n=rows.length, T=statsTot(rows);
+    var ptsTot=2*T.t2m+3*T.t3m+T.tlm, valTot=rows.reduce(function(a,g){return a+valoracionDe(g);},0);
+    var tca=T.t2a+T.t3a, tcm=T.t2m+T.t3m;
+    var efg=tca>0?(tcm+0.5*T.t3m)/tca:null;
+    var tsDen=2*(tca+0.44*T.tla), ts=tsDen>0?ptsTot/tsDen:null;
+    var asper=T.per>0?(T.as/T.per):(T.as>0?null:0);
+    var ppg=n?ptsTot/n:0, apg=n?T.as/n:0, rpg=n?(T.rof+T.rdef)/n:0, dpg=n?(T.rob+T.tap)/n:0;
+    var scaleF=function(v,lo,hi){ return Math.max(0,Math.min(100,(v-lo)/(hi-lo)*100)); };
+    var astoR=T.per>0?(T.as/T.per):(T.as>0?2:0);
+    var facets=[
+      {k:'Anotación', s:scaleF(ppg,0,20), v:dec1(ppg)+' pts'},
+      {k:'Acierto real', s:(ts==null?0:scaleF(ts,0.35,0.60)), v:pct1(ts)},
+      {k:'Creación (asistencias)', s:scaleF(apg,0,8), v:dec1(apg)},
+      {k:'Rebote', s:scaleF(rpg,0,12), v:dec1(rpg)},
+      {k:'Defensa (robos+tapones)', s:scaleF(dpg,0,5), v:dec1(dpg)},
+      {k:'Cuidado del balón', s:scaleF(Math.min(astoR,2),0,2), v:(T.per>0?('AS/PÉR '+dec1(T.as/T.per)):'—')}
+    ];
+    var fsorted=facets.slice().sort(function(a,b){return b.s-a.s;});
+    var fFort=fsorted[0], fMej=fsorted[fsorted.length-1];
+    var chron=rows.slice().reverse();
+    var evol='<div style="margin-top:16px"><div class="section-t">Evolución</div>'+
+      '<div style="font-size:12px;color:var(--muted2);margin-bottom:2px">Valoración por partido (antiguo → reciente)</div>'+miniBars(chron.map(valoracionDe),'#f2a06b')+
+      '<div style="font-size:12px;color:var(--muted2);margin:8px 0 2px">Puntos por partido</div>'+miniBars(chron.map(puntosDe),'#5fb0e6')+
+      '<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">'+
+        '<div style="flex:1 1 46%;background:rgba(123,216,143,.10);border:1px solid rgba(123,216,143,.3);border-radius:10px;padding:8px 10px"><div style="font-size:11px;color:var(--muted2);text-transform:uppercase">Destaca en</div><div style="font-weight:700;color:#7bd88f">'+fFort.k+'</div></div>'+
+        '<div style="flex:1 1 46%;background:rgba(243,201,105,.10);border:1px solid rgba(243,201,105,.3);border-radius:10px;padding:8px 10px"><div style="font-size:11px;color:var(--muted2);text-transform:uppercase">A mejorar</div><div style="font-weight:700;color:#F3C969">'+fMej.k+'</div></div>'+
+      '</div>'+
+      '<div style="margin-top:12px">'+facets.map(function(f){return facetBar(f.k,f.s,f.v);}).join('')+'</div>'+
+      '<div style="font-size:11px;color:var(--muted2);margin-top:8px;line-height:1.5">Perfil orientativo (escala 0-100 con referencias del baloncesto de formación); no es una nota oficial. Fiable a partir de 3-4 partidos.</div>'+
+    '</div>';
+    var tile=function(lab,val){ return '<div style="flex:1 1 90px;min-width:90px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:9px 11px"><div style="font-size:10.5px;color:var(--muted2);text-transform:uppercase;letter-spacing:.04em">'+lab+'</div><div style="font-size:19px;font-weight:700;margin-top:2px">'+val+'</div></div>'; };
+    var kpis = n? ('<div style="display:flex;flex-wrap:wrap;gap:8px">'+
+        tile('Partidos', n)+ tile('Pts/partido', dec1(ptsTot/n))+ tile('Valoración', dec1(valTot/n))+
+        tile('Acierto campo', pct1(efg))+ tile('Acierto real', pct1(ts))+ tile('Asist/Pérd', asper==null?'—':dec1(asper))+
+      '</div><div style="font-size:11px;color:var(--muted2);margin-top:8px;line-height:1.5">Valoración = (puntos+rebotes+asistencias+robos+tapones+faltas recibidas) − (tiros fallados+pérdidas+tapones recibidos+faltas). Necesita 3-4 partidos para ser representativa.</div>')
+      : '<div style="color:var(--muted);font-size:13px">Aún no hay partidos. Añade el primero para ver los indicadores.</div>';
+    var campo=function(id,lab,val){ return '<div style="flex:1 1 46%"><div class="flab">'+lab+'</div><input class="field" id="'+id+'" type="number" min="0" inputmode="numeric" value="'+(val==null?'':val)+'" style="padding:9px 10px"></div>'; };
+    var hoy=(function(){ try{ return (new Date()).toISOString().slice(0,10); }catch(e){ return ''; } })();
+    var form='<div id="sf-form" style="display:none;margin-top:12px">'+
+      '<div style="display:flex;gap:10px;flex-wrap:wrap">'+campo('sf-fecha','Fecha','')+campo('sf-rival','Rival (opcional)','')+'</div>'+
+      '<div class="flab" style="margin-top:8px">Tiros de 2 (metidos / intentados)</div><div style="display:flex;gap:10px">'+campo('sf-t2m','',0)+campo('sf-t2a','',0)+'</div>'+
+      '<div class="flab" style="margin-top:8px">Tiros de 3 (metidos / intentados)</div><div style="display:flex;gap:10px">'+campo('sf-t3m','',0)+campo('sf-t3a','',0)+'</div>'+
+      '<div class="flab" style="margin-top:8px">Tiros libres (metidos / intentados)</div><div style="display:flex;gap:10px">'+campo('sf-tlm','',0)+campo('sf-tla','',0)+'</div>'+
+      '<div class="flab" style="margin-top:8px">Rebotes (ofensivos / defensivos)</div><div style="display:flex;gap:10px">'+campo('sf-rof','',0)+campo('sf-rdef','',0)+'</div>'+
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">'+campo('sf-as','Asistencias',0)+campo('sf-rob','Robos',0)+campo('sf-tap','Tapones',0)+campo('sf-per','Pérdidas',0)+campo('sf-fal','Faltas cometidas',0)+campo('sf-min','Minutos','')+'</div>'+
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">'+campo('sf-falr','Faltas recibidas',0)+campo('sf-tapr','Tapones recibidos',0)+'</div>'+
+      '<button class="btn btn-primary" id="sf-guardar" style="margin-top:12px">Guardar partido</button>'+
+      '<button class="btn btn-ghost" id="sf-cancelar" style="margin-top:8px">Cancelar</button>'+
+      '<div id="sf-msg" style="font-size:12px;margin-top:8px;min-height:14px"></div>'+
+    '</div>';
+    var lista = rows.map(function(g){
+      var f=(''+g.fecha).split('-'); var fm=f.length===3?(f[2]+'/'+f[1]+'/'+f[0]):g.fecha;
+      var det='2P '+(g.t2m||0)+'/'+(g.t2a||0)+' · 3P '+(g.t3m||0)+'/'+(g.t3a||0)+' · TL '+(g.tlm||0)+'/'+(g.tla||0)+' · REB '+((g.reb_of||0)+(g.reb_def||0))+' · AS '+(g.asistencias||0)+' · ROB '+(g.robos||0)+' · TAP '+(g.tapones||0)+' · PER '+(g.perdidas||0)+' · FP '+(g.faltas||0)+(g.minutos?(' · '+g.minutos+' min'):'');
+      return '<div class="st-item" style="border-top:1px solid rgba(255,255,255,.07);padding:8px 0">'+
+        '<div class="st-head" style="display:flex;align-items:center;gap:8px;cursor:pointer">'+
+          '<span style="font-size:12px;color:var(--muted2);white-space:nowrap">'+fm+'</span>'+
+          '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(g.rival?esc2(g.rival):'Partido')+'</span>'+
+          '<span style="font-weight:700">'+puntosDe(g)+' pts</span>'+
+          '<span style="font-size:12px;color:#f2a06b;white-space:nowrap">Val '+valoracionDe(g)+'</span>'+
+        '</div><div class="st-body" style="display:none;font-size:12px;color:var(--muted);padding-top:6px;line-height:1.6">'+det+'</div>'+
+      '</div>';
+    }).join('');
+    ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding-bottom:32px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px"><h2 style="margin:0">Estadísticas · '+esc2(j.nombre)+'</h2><button class="btn btn-ghost" id="st-cerrar" style="max-width:100px;margin:0">Cerrar</button></div>'+
+      '<div class="card pr-panel">'+kpis+'</div>'+
+      (rows.length?evol:'')+
+      '<button class="btn btn-primary" id="sf-add" style="margin-top:12px">+ Añadir partido</button>'+form+
+      (rows.length?'<div style="margin-top:16px"><div class="section-t">Partidos</div>'+lista+'</div>':'')+
+      '<button class="btn btn-ghost" id="st-cerrar2" style="margin-top:20px">Cerrar</button>'+
+    '</div>';
+    var cerrar=function(){ ov.style.display='none'; };
+    var c1=document.getElementById('st-cerrar'), c2=document.getElementById('st-cerrar2'); if(c1)c1.addEventListener('click',cerrar); if(c2)c2.addEventListener('click',cerrar);
+    var add=document.getElementById('sf-add'), fm2=document.getElementById('sf-form');
+    if(add&&fm2){ add.addEventListener('click',function(){ fm2.style.display='block'; add.style.display='none'; var fx=document.getElementById('sf-fecha'); if(fx&&!fx.value) fx.value=hoy; }); }
+    var can=document.getElementById('sf-cancelar'); if(can) can.addEventListener('click',function(){ fm2.style.display='none'; add.style.display='block'; });
+    var gu=document.getElementById('sf-guardar'); if(gu) gu.addEventListener('click',function(){ guardarPartido(j, ov); });
+    ov.querySelectorAll('.st-item').forEach(function(it){ it.querySelector('.st-head').addEventListener('click',function(){ var b=it.querySelector('.st-body'); b.style.display=(b.style.display==='none'?'block':'none'); }); });
+  }
+  async function guardarPartido(j, ov){
+    var m=document.getElementById('sf-msg');
+    var reg={ jugador_id:j.id, fecha:(document.getElementById('sf-fecha').value||null), rival:((document.getElementById('sf-rival').value||'').trim()||null),
+      minutos:(function(){ var v=parseInt(document.getElementById('sf-min').value,10); return isNaN(v)?null:v; })(),
+      t2m:nInt('sf-t2m'),t2a:nInt('sf-t2a'),t3m:nInt('sf-t3m'),t3a:nInt('sf-t3a'),tlm:nInt('sf-tlm'),tla:nInt('sf-tla'),
+      reb_of:nInt('sf-rof'),reb_def:nInt('sf-rdef'),asistencias:nInt('sf-as'),robos:nInt('sf-rob'),tapones:nInt('sf-tap'),
+      perdidas:nInt('sf-per'),faltas:nInt('sf-fal'),faltas_recibidas:nInt('sf-falr'),tapones_recibidos:nInt('sf-tapr') };
+    if(!reg.fecha){ if(m){m.style.color='#ff6b6b';m.textContent='Pon la fecha del partido.';} return; }
+    if(m){m.style.color='#9AA8A0';m.textContent='Guardando…';}
+    try{ var r=await sb.from('estadisticas_partido').insert(reg); if(r&&r.error) throw r.error;
+      var rr=await sb.from('estadisticas_partido').select('*').eq('jugador_id',j.id).order('fecha',{ascending:false});
+      renderStats(ov, j, (rr&&rr.data)||[]);
+    }catch(e){ if(m){m.style.color='#ff6b6b';m.textContent='No se pudo guardar el partido.';} }
+  }
+  async function abrirStats(j){
+    var ov=document.getElementById('stats-overlay');
+    if(!ov){ ov=document.createElement('div'); ov.id='stats-overlay'; ov.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(4,7,13,.96);overflow:auto;padding:16px;-webkit-overflow-scrolling:touch'; document.body.appendChild(ov); }
+    ov.style.display='block';
+    ov.innerHTML='<div style="max-width:560px;margin:0 auto"><div style="color:var(--muted);font-size:14px;padding:24px 4px">Cargando estadísticas…</div></div>';
+    try{ var r=await sb.from('estadisticas_partido').select('*').eq('jugador_id',j.id).order('fecha',{ascending:false});
+      if(r&&r.error) throw r.error; renderStats(ov, j, r.data||[]);
+    }catch(e){ ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding:24px 4px"><div style="color:#ff6b6b">No se pudieron cargar las estadísticas.</div><button class="btn btn-ghost" id="stx" style="margin-top:16px">Cerrar</button></div>'; var x=document.getElementById('stx'); if(x)x.addEventListener('click',function(){ov.style.display='none';}); }
+  }
+  window.abrirStats=abrirStats;
 
   async function guardarJugador(id){
     var m=document.getElementById('f-msg'), b=document.getElementById('f-guardar');
