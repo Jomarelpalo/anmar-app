@@ -373,9 +373,9 @@ body{
   .appwrap .screen .pad{max-width:1080px;margin:0 auto;width:100%}
   .appwrap .screen .sess-head,.appwrap .screen .ex-card,.appwrap .screen .sess-actions{max-width:1080px;margin-left:auto;margin-right:auto}
   .hoy-grid{display:grid;grid-template-columns:1.2fr .85fr;gap:24px;align-items:start}
-  body:has(#s-login.active) .side,body:has(#s-entrevista.active) .side{display:none}
-  body:has(#s-login.active) .appwrap .screen,body:has(#s-entrevista.active) .appwrap .screen{left:0}
-  #s-login,#s-entrevista{left:0!important}
+  body:has(#s-login.active) .side,body:has(#s-entrevista.active) .side,body:has(#s-modo.active) .side{display:none}
+  body:has(#s-login.active) .appwrap .screen,body:has(#s-entrevista.active) .appwrap .screen,body:has(#s-modo.active) .appwrap .screen{left:0}
+  #s-login,#s-entrevista,#s-modo{left:0!important}
 }
 </style>
 <style id="tema-cristal-polish">
@@ -694,6 +694,28 @@ body{
     </div>
   </div>
 </section>
+<section class="screen" id="s-modo">
+        <div class="pad pad-top" style="max-width:520px;margin:0 auto;width:100%">
+          <div class="section-t">Has entrado como administrador</div>
+          <h2 style="font-size:23px;font-weight:800;margin-bottom:4px">¿Cómo quieres entrar?</h2>
+          <p style="color:var(--muted);font-size:13.5px;margin-bottom:14px">Puedes cambiar de modo cuando quieras desde el menú o desde tu perfil.</p>
+          <div class="card modo-card mc-naranja" id="modo-jugador" style="cursor:pointer">
+            <div class="mc-tx"><div class="mc-h">Entrenamiento personal</div><div class="mc-p">Tus sesiones, tu progreso y tu calendario como jugador</div></div>
+            <span class="mc-fl">&rsaquo;</span>
+          </div>
+          <div class="card modo-card mc-azul" data-go="entrenador" style="cursor:pointer">
+            <div class="mc-tx"><div class="mc-h">Modo entrenador</div><div class="mc-p">Equipos, jugadores, partidos, estrategia e informes</div></div>
+            <span class="mc-fl">&rsaquo;</span>
+          </div>
+          <div class="card modo-card" style="opacity:.55">
+            <div class="mc-tx"><div class="mc-h">Campeonatos</div><div class="mc-p">En construcción: llegará con la capa de club. Todavía no se puede entrar.</div></div>
+          </div>
+          <div class="card modo-card" data-go="admin" style="cursor:pointer">
+            <div class="mc-tx"><div class="mc-h">Administración</div><div class="mc-p">Usuarios, cuentas y ajustes del sistema</div></div>
+            <span class="mc-fl">&rsaquo;</span>
+          </div>
+        </div>
+      </section>
 <section class="screen" id="s-entrevista">
         <div class="pad pad-top">
           <div class="section-t">Cuéntanos sobre ti</div>
@@ -910,12 +932,13 @@ body{
             <div style="font-size:13px;color:var(--muted)"><span id="u-rol">Jugador</span></div>
             <div id="av-msg" style="font-size:12px;min-height:15px;margin-top:5px"></div>
           </div>
-          <div class="card">
-            <div class="prow"><span>Objetivo</span><span>Saltar más alto</span></div>
-            <div class="prow"><span>Material habitual</span><span>Sin material</span></div>
-            <div class="prow"><span>Club</span><span>Club Anmar</span></div>
-            <div class="prow"><span>Mentoría (bienestar)</span><span>Activada</span></div>
-            <div class="prow" style="border:none"><span>Compartir con entrenador</span><span style="color:var(--orange)">Sí</span></div>
+          <div class="card" id="perfil-resumen">
+            <div class="prow"><span>Objetivo</span><span id="pr-obj">—</span></div>
+            <div class="prow"><span>Posición</span><span id="pr-pos">—</span></div>
+            <div class="prow"><span>Condición física</span><span id="pr-cond">—</span></div>
+            <div class="prow"><span>Material habitual</span><span id="pr-ent">—</span></div>
+            <div class="prow"><span>¿Compite en partidos?</span><span id="pr-comp">—</span></div>
+            <div class="prow" style="border:none"><span>Lesiones indicadas</span><span id="pr-les">—</span></div>
           </div>
           <div class="section-t">Mi objetivo (ficha del jugador)</div>
           <div id="modo-tabs" style="display:flex;gap:8px;margin-bottom:12px"><button class="modo-b" data-m="fisico" style="flex:1;border:none;border-radius:10px;padding:9px;font-size:13px;cursor:pointer;font-family:var(--font);background:#16213a;color:#cdd8e8">Físico</button><button class="modo-b" data-m="tecnico" style="flex:1;border:none;border-radius:10px;padding:9px;font-size:13px;cursor:pointer;font-family:var(--font);background:#16213a;color:#cdd8e8">Técnico</button><button class="modo-b" data-m="conjunto" style="flex:1;border:none;border-radius:10px;padding:9px;font-size:13px;cursor:pointer;font-family:var(--font);background:#16213a;color:#cdd8e8">Conjunto</button></div>
@@ -942,6 +965,7 @@ body{
             <p id="dg-msg" style="text-align:center;font-size:12px;margin-top:10px;min-height:16px;line-height:1.45"></p>
           </div>
           <button class="btn btn-primary solo-admin" style="margin-top:18px" data-go="admin">Administración</button>
+          <button class="btn btn-ghost solo-admin" style="margin-top:12px" data-go="modo">Cambiar de modo</button>
           <button class="btn btn-ghost" style="margin-top:12px" data-go="login">Cerrar sesión</button>
         </div>
       </section>
@@ -1075,7 +1099,7 @@ body{
 const SUPABASE_URL="https://kbrvaawngeuuewplcwyn.supabase.co";
 const SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticnZhYXduZ2V1dWV3cGxjd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTA0MjIsImV4cCI6MjA5Nzg2NjQyMn0.9ys4m2OicbMq3cFyf0a2IA_eh3VspPJ3pYgjNkMO6WA";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
-const screens={login:'s-login',entrevista:'s-entrevista',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil',libre:'s-libre',dirigido:'s-dirigido',admin:'s-admin',entrenador:'s-entrenador'};
+const screens={login:'s-login',entrevista:'s-entrevista',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil',libre:'s-libre',dirigido:'s-dirigido',admin:'s-admin',entrenador:'s-entrenador',modo:'s-modo'};
 function go(name,isBack){
   if(!isBack&&window.__cur&&window.__cur!==name){(window.__hist=window.__hist||[]).push(window.__cur);} if(name==='hoy'){window.__hist=[];} window.__cur=name;
   Object.values(screens).forEach(function(id){var el=document.getElementById(id); if(el) el.classList.remove('active');});
@@ -1105,20 +1129,45 @@ async function loadProfileAndEnter(){
   if(window.renderAvatar) renderAvatar((p.data&&p.data.avatar_url)||null);
   var roles={admin:'Administrador',entrenador:'Entrenador',jugador:'Jugador'};
   var rolEl=document.getElementById('u-rol'); if(rolEl) rolEl.textContent=roles[role]||role;
-  window.__role=role; if(role==='admin'){ document.querySelectorAll('.solo-admin').forEach(function(e){e.style.display='';}); }
-  if(role==='admin'||role==='entrenador'){ document.querySelectorAll('.solo-staff').forEach(function(e){e.style.display='';}); }
+  window.__role=role;
+  function _muestra(e){ e.style.display=e.classList.contains('mlink')?'flex':'block'; }
+  if(role==='admin'){ document.querySelectorAll('.solo-admin').forEach(_muestra); }
+  if(role==='admin'||role==='entrenador'){ document.querySelectorAll('.solo-staff').forEach(_muestra); }
   setMsg('');
   if(p.data && p.data.debe_cambiar_password){ if(window.pedirNuevaPassword){ window.pedirNuevaPassword(); return; } }
   if(window.faltaConsentimiento){ var _fc=await window.faltaConsentimiento(user.id); if(_fc){ window.pedirConsentimiento(); return; } }
-  var dj=await sb.from('datos_jugador').select('entrevista_completada,fecha_nacimiento').eq('id',user.id).maybeSingle();
-  if(!dj.data || !dj.data.entrevista_completada){ go('entrevista'); return; }
-  if(!dj.data.fecha_nacimiento){ if(window.pedirFechaNacimiento){ window.pedirFechaNacimiento(); return; } }
-  window.__edad=(window.edadDeFecha?window.edadDeFecha(dj.data.fecha_nacimiento):null);
+  var dj=await sb.from('datos_jugador').select('entrevista_completada,fecha_nacimiento,posicion,compite,condicion_fisica,objetivo_principal,entorno_habitual,lesiones').eq('id',user.id).maybeSingle();
+  window.__dj=dj.data||null;
+  if(window.cargarResumenPerfil) cargarResumenPerfil(window.__dj);
+  if(role==='admin'){ go('modo'); return; }
+  entrarModoJugador();
+}
+function cargarResumenPerfil(dj){
+  dj=dj||{};
+  var entMap={sin_material:'Sin material (en casa)',kit_minimo:'Kit mínimo (balón, banda…)',gimnasio:'Gimnasio'};
+  var condMap={baja:'Baja',media:'Media',alta:'Alta'};
+  function pon(id,val){ var el=document.getElementById(id); if(el) el.textContent=(val==null||val==='')?'—':val; }
+  pon('pr-obj', dj.objetivo_principal);
+  pon('pr-pos', dj.posicion);
+  pon('pr-cond', condMap[dj.condicion_fisica]||dj.condicion_fisica);
+  pon('pr-ent', entMap[dj.entorno_habitual]||dj.entorno_habitual);
+  pon('pr-comp', (dj.compite===true)?'Sí':((dj.compite===false)?'No':null));
+  pon('pr-les', dj.lesiones?dj.lesiones:'Ninguna');
+}
+window.cargarResumenPerfil=cargarResumenPerfil;
+async function entrarModoJugador(){
+  var dj=window.__dj;
+  if(!dj || !dj.entrevista_completada){ go('entrevista'); return; }
+  if(!dj.fecha_nacimiento){ if(window.pedirFechaNacimiento){ window.pedirFechaNacimiento(); return; } }
+  window.__edad=(window.edadDeFecha?window.edadDeFecha(dj.fecha_nacimiento):null);
   window.__categoria=(window.categoriaEdad?window.categoriaEdad(window.__edad):null);
-  if(window.__edad!=null && window.__edad<14){ try{await sb.auth.signOut();}catch(e){} go('login'); setMsg('Este entrenamiento auto-guiado es para 14 años en adelante. Los más jóvenes entrenan con su entrenador.'); return; }
+  if(window.__edad!=null && window.__edad<14 && window.__role==='jugador'){ try{await sb.auth.signOut();}catch(e){} go('login'); setMsg('Este entrenamiento auto-guiado es para 14 años en adelante. Los más jóvenes entrenan con su entrenador.'); return; }
   go('hoy');
   try{ var _hb=document.querySelector('#s-hoy .hello'); if(_hb && !document.getElementById('u-cat')){ var _ce=document.createElement('div'); _ce.id='u-cat'; _ce.style.cssText='font-size:11px;color:#8aa0bd;margin-top:3px;font-weight:600'; _hb.appendChild(_ce); } var _cx=document.getElementById('u-cat'); if(_cx) _cx.textContent=window.__categoria?('Categoría: '+window.__categoria+(window.__edad!=null?(' · '+window.__edad+' años'):'')):''; }catch(e){}
 }
+window.entrarModoJugador=entrarModoJugador;
+var _mj=document.getElementById('modo-jugador');
+if(_mj) _mj.addEventListener('click', function(){ entrarModoJugador(); });
 function showSetPass(){ go('login'); document.getElementById('loginForm').hidden=true; document.getElementById('setPassForm').hidden=false; setMsg('Crea tu contraseña para activar tu cuenta.',true); }
 
 var hash=new URLSearchParams(location.hash.replace(/^#/,''));
@@ -1197,6 +1246,8 @@ if(_iv){ _iv.addEventListener('click', async function(){
   m.textContent='Guardando…'; m.className='msg ok';
   var r=await sb.from('datos_jugador').upsert(row);
   if(r.error){ m.textContent='No se pudo guardar: '+r.error.message; m.className='msg err'; return; }
+  window.__dj=row;
+  if(window.cargarResumenPerfil) cargarResumenPerfil(row);
   go('hoy');
 }); }
 var sesionEjercicios=[], sesionIdx=0;
