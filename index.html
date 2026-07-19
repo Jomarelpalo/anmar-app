@@ -2976,7 +2976,8 @@ window.verJugador=verJugador;
   function pasaLes(e,act,rec){ var M=muscsDe(e); for(var i=0;i<act.length;i++){ if(interseca(M,ZONA_MUSC[act[i]]||[]))return false; } for(var j2=0;j2<rec.length;j2++){ if(interseca(M,ZONA_MUSC[rec[j2]]||[])){ var suave=(e.pilar==='recuperacion'||e.pilar==='calentamiento'||(e.nivel==='iniciacion'&&e.pilar!=='pliometria')); if(!suave)return false; } } return true; }
   function hashStr(s){ s=''+(s||''); var h=5381; for(var i=0;i<s.length;i++){ h=((h*33)^s.charCodeAt(i))>>>0; } return h; }
   function barajar(arr,seed){ var a=arr.slice(),s=(seed>>>0)||1; for(var i=a.length-1;i>0;i--){ s=(s*1103515245+12345)&0x7fffffff; var j=s%(i+1),t=a[i];a[i]=a[j];a[j]=t; } return a; }
-  function generarSesion(f,ejs){
+  var PRI_CLAVES={tiro:['tiro'],bote:['bote','manejo','dribbling'],pase:['pase'],finalizacion:['entrada','finalizacion','bandeja'],rebote:['rebote','box'],defensa_individual:['defensa'],transicion:['contraataque','transicion','paso cero'],fisico:[]};
+  function generarSesion(f,ejs,estr){
     var cat=catEdad(f.edad), ser=Math.max(2,Math.min(4,cat.series+(f.condicion_fisica==='baja'?-1:f.condicion_fisica==='alta'?1:0)));
     var zonas=f.lesiones_zonas||[], fase=f.lesiones_fase||'';
     var act=(fase==='activa'||fase==='')?zonas.slice():[]; var rec=(fase==='recuperacion')?zonas.slice():[];
@@ -2985,11 +2986,41 @@ window.verJugador=verJugador;
     var elig=ejs.filter(function(e){return e.activo!==false && pasaLes(e,act,rec) && nivelOk(e) && plioOk(e);});
     var base=hashStr(f.id||f.nombre);
     var pick=function(pilares,n,seed){ var pool=barajar(elig.filter(function(e){return pilares.indexOf(e.pilar)>=0;}),seed); var out=[],us={}; for(var i=0;i<pool.length;i++){ if(out.length>=n)break; var k=(pool[i].musculos_primarios||['?'])[0]; if(us[k])continue; us[k]=1; out.push(pool[i]); } for(var j=0;j<pool.length;j++){ if(out.length>=n)break; if(out.indexOf(pool[j])<0)out.push(pool[j]); } return out; };
-    var calent=pick(['calentamiento'],3,base+1), princ=pick(['fuerza','pliometria','acondicionamiento'],cat.nMain,base+3), estir=pick(['recuperacion'],3,base+5);
+    var calent=pick(['calentamiento'],3,base+1), estir=pick(['recuperacion'],3,base+5);
+    var princ=null, estrAviso=null;
+    // Con estrategia del equipo: repartir la parte principal entre físico/técnica/táctica según los pesos
+    if(estr && estr.pesos){
+      var pes=estr.pesos, grupos=[['fisico',['fuerza','pliometria','acondicionamiento']],['tecnica',['tecnica']],['tactica',['tactica']]];
+      var tot=0; grupos.forEach(function(g){ tot+=(pes[g[0]]||0); });
+      if(tot>0){
+        var claves=[]; (estr.prioridades||[]).forEach(function(p){ (PRI_CLAVES[p]||[]).forEach(function(k){ claves.push(k); }); });
+        var norm=function(s){ return (''+(s||'')).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); };
+        var esPrio=function(e){ if(!claves.length) return false; var txt=norm((e.subapartado||'')+' '+(e.nombre||'')); return claves.some(function(k){ return txt.indexOf(k)>=0; }); };
+        var asig=grupos.map(function(g){ return {g:g, n:Math.round(cat.nMain*(pes[g[0]]||0)/tot)}; });
+        var suma=asig.reduce(function(a,x){ return a+x.n; },0);
+        var mayor=asig.slice().sort(function(a,b){ return (pes[b.g[0]]||0)-(pes[a.g[0]]||0); })[0];
+        while(suma>cat.nMain){ for(var ai=asig.length-1; ai>=0 && suma>cat.nMain; ai--){ if(asig[ai].n>0 && asig[ai]!==mayor){ asig[ai].n--; suma--; } } if(suma>cat.nMain){ mayor.n--; suma--; } }
+        while(suma<cat.nMain){ mayor.n++; suma++; }
+        princ=[]; var repartoTxt=[];
+        asig.forEach(function(a,i){
+          if(a.n<=0) return;
+          var pool=barajar(elig.filter(function(e){ return a.g[1].indexOf(e.pilar)>=0; }),base+7+i);
+          pool.sort(function(x,y){ return (esPrio(y)?1:0)-(esPrio(x)?1:0); });
+          var out=[],us={};
+          for(var k2=0;k2<pool.length&&out.length<a.n;k2++){ var e=pool[k2]; if(us[e.nombre])continue; us[e.nombre]=1; out.push(e); }
+          princ=princ.concat(out);
+          repartoTxt.push({fisico:'Físico',tecnica:'Técnica',tactica:'Táctica'}[a.g[0]]+' '+out.length);
+        });
+        if(princ.length) estrAviso='Parte principal repartida según la estrategia del equipo: '+repartoTxt.join(' · ')+'.';
+        else princ=null;
+      }
+    }
+    if(!princ) princ=pick(['fuerza','pliometria','acondicionamiento'],cat.nMain,base+3);
     // Recuperación: incluir a propósito trabajo suave de la zona lesionada
     var rehab=[];
     rec.forEach(function(z){ var cand=elig.filter(function(e){ return (e.pilar==='recuperacion'||e.pilar==='calentamiento') && interseca(muscsDe(e),ZONA_MUSC[z]||[]); }); if(cand.length){ var e=barajar(cand,base+hashStr(z))[0]; if(rehab.indexOf(e)<0 && estir.indexOf(e)<0) rehab.push(e); } });
     var avisos=[]; avisos.push('Categoría por edad: '+cat.cat+' → '+ser+' series por ejercicio; intensidad máxima "'+cat.maxNivel+'".');
+    if(estrAviso) avisos.push('🎯 '+estrAviso);
     act.forEach(function(z){ avisos.push('⚠ Lesión ACTIVA en '+ZONA_NOM[z]+': excluidos los ejercicios que cargan esa zona. Reposo de la zona y consulta con el médico o fisio.'); });
     rec.forEach(function(z){ avisos.push('↻ '+ZONA_NOM[z]+' en recuperación: solo trabajo suave sobre esa zona, bajo supervisión.'); });
     if(princ.length<cat.nMain) avisos.push('Sesión reducida por seguridad (pocos ejercicios disponibles tras los filtros).');
@@ -3031,13 +3062,13 @@ window.verJugador=verJugador;
 
   // ===== SESIÓN DE GRUPO (común segura para todos + avisos por jugador) =====
   function condPeor(list){ var ord={baja:1,media:2,buena:3,alta:4},min=null,minv=99; (list||[]).forEach(function(c){ var v=ord[c]||2; if(v<minv){minv=v;min=c;} }); return min; }
-  function generarSesionGrupo(players, ejs){
+  function generarSesionGrupo(players, ejs, estr){
     var edades=players.map(function(p){return (typeof edadDe==='function')?edadDe(p.fecha_nacimiento):null;}).filter(function(e){return e!=null;});
     var minAge=edades.length?Math.min.apply(null,edades):null;
     var activeZones=[];
     players.forEach(function(p){ var z=p.lesiones_zonas||[],f=p.lesiones_fase||''; if(f!=='recuperacion'){ z.forEach(function(x){ if(activeZones.indexOf(x)<0)activeZones.push(x); }); } });
     var fSint={id:'grupo',nombre:'grupo',edad:minAge,condicion_fisica:condPeor(players.map(function(p){return p.condicion_fisica;})),lesiones_zonas:activeZones,lesiones_fase:'activa'};
-    var comun=generarSesion(fSint,ejs);
+    var comun=generarSesion(fSint,ejs,estr||null);
     var porJ=players.map(function(p){
       var edad=(typeof edadDe==='function')?edadDe(p.fecha_nacimiento):null, av=[], z=p.lesiones_zonas||[], f=p.lesiones_fase||'';
       if(z.length && (f==='activa'||f==='')) av.push({t:'act',txt:'Lesión activa en '+z.map(function(x){return ZONA_NOM[x]||x;}).join(', ')+': ya excluida de la sesión común. Reposo y supervisión.'});
@@ -3057,13 +3088,20 @@ window.verJugador=verJugador;
       if(rp&&rp.error) throw rp.error;
       var players=rp.data||[];
       if(!players.length){ ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding:24px 4px"><div style="color:var(--muted)">Este equipo no tiene jugadores todavía.</div><button class="btn btn-ghost" id="ovg-x" style="margin-top:16px">Cerrar</button></div>'; document.getElementById('ovg-x').addEventListener('click',function(){ov.style.display='none';}); return; }
-      var re=await sb.from('ejercicios').select('nombre,pilar,nivel,musculos_primarios,musculos_secundarios,series_def,reps_def,descanso_seg_def,activo').eq('activo',true);
+      var re=await sb.from('ejercicios').select('nombre,pilar,nivel,subapartado,musculos_primarios,musculos_secundarios,series_def,reps_def,descanso_seg_def,activo').eq('activo',true);
       if(re&&re.error) throw re.error;
-      var G=generarSesionGrupo(players, re.data||[]);
+      var estr=null;
+      try{ var rE=await sb.from('estrategia_equipo').select('pesos,prioridades,psico_prioridad').eq('equipo_id',equipoId).maybeSingle(); if(rE&&!rE.error) estr=rE.data||null; }catch(e2){}
+      var G=generarSesionGrupo(players, re.data||[], estr);
       var esc2=(typeof esc==='function')?esc:function(x){return (''+(x==null?'':x));};
       var bloque=function(tit,arr,color){ if(!arr.length)return ''; var items=arr.map(function(e){ return '<div style="border-top:1px solid rgba(255,255,255,.07);padding:8px 0"><div style="display:flex;gap:8px;align-items:baseline"><span style="flex:1;font-weight:600">'+esc2(e.nombre)+'</span><span style="font-size:12px;color:var(--muted2);white-space:nowrap">'+e.series+'x'+e.reps+(e.pilar!=='calentamiento'&&e.pilar!=='recuperacion'?' · '+e.descanso+'s':'')+'</span></div>'+(e.musc?'<div style="font-size:11px;color:var(--muted2)">'+esc2(e.musc)+'</div>':'')+'</div>'; }).join(''); return '<div style="margin-top:16px"><div style="text-transform:uppercase;letter-spacing:.06em;font-size:12px;font-weight:700;color:'+color+'">'+tit+'</div>'+items+'</div>'; };
       var zonasTxt=G.activeZones.length?G.activeZones.map(function(z){return ZONA_NOM[z]||z;}).join(', '):'ninguna';
-      var banner='<div style="font-size:12.5px;line-height:1.5;color:var(--muted)">Sesión común para <b>'+G.nJugadores+'</b> jugador'+(G.nJugadores===1?'':'es')+'. Intensidad ajustada al más joven'+(G.minAge!=null?' ('+G.minAge+' años)':'')+': '+G.comun.series+' series, máximo "'+esc2(G.comun.cat)+'".</div>'+
+      var estrLinea='';
+      if(estr&&estr.pesos){ var avE=(G.comun.avisos||[]).filter(function(a){return a.indexOf('🎯')===0;})[0];
+        estrLinea=avE?('<div style="font-size:12.5px;line-height:1.5;color:#8fd0a0;margin-top:6px">'+esc2(avE)+'</div>'):'';
+        var PSI_NOM={cohesion:'cohesión (que sean un equipo)',confianza:'confianza individual',concentracion:'concentración y atención',gestion_errores:'gestión de errores y frustración',competitividad:'mentalidad competitiva'};
+        if(estr.psico_prioridad&&(estr.pesos.psico||0)>0) estrLinea+='<div style="font-size:12.5px;line-height:1.5;color:#b9a7e0;margin-top:6px">🧠 Foco psicológico de tu estrategia: <b>'+esc2(PSI_NOM[estr.psico_prioridad]||estr.psico_prioridad)+'</b>. Trabájalo de forma transversal (charla inicial, refuerzos, cierre de sesión).</div>'; }
+      var banner='<div style="font-size:12.5px;line-height:1.5;color:var(--muted)">Sesión común para <b>'+G.nJugadores+'</b> jugador'+(G.nJugadores===1?'':'es')+'. Intensidad ajustada al más joven'+(G.minAge!=null?' ('+G.minAge+' años)':'')+': '+G.comun.series+' series, máximo "'+esc2(G.comun.cat)+'".</div>'+estrLinea+
         '<div style="font-size:12.5px;line-height:1.5;color:#F3C969;margin-top:6px">⚠ Zonas lesionadas evitadas en todo el grupo: <b>'+esc2(zonasTxt)+'</b>.</div>'+
         '<div style="font-size:12px;color:var(--muted2);margin-top:6px">La app no diagnostica ni sustituye a un médico o fisioterapeuta.</div>';
       var porJugHtml='';
