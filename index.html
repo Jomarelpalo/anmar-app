@@ -2613,6 +2613,9 @@ window.verJugador=verJugador;
       '<div class="flab">Fase de la lesión</div><select class="field" id="f-fase"><option value="">Sin lesión / no aplica</option><option value="activa"'+(fase==='activa'?' selected':'')+'>Activa (en curso)</option><option value="recuperacion"'+(fase==='recuperacion'?' selected':'')+'>En recuperación (dado de alta para fortalecer)</option></select>'+
       '<div class="flab">Detalle del diagnóstico (opcional)</div><textarea class="field" id="f-detalle" rows="2" placeholder="Ej. rotura de cruzado, operado, alta del fisio para fortalecer">'+esc(j.lesiones_detalle||'')+'</textarea>'+
       '<div class="flab">Comentarios (generales)</div><textarea class="field" id="f-coment" rows="2" placeholder="Notas generales del jugador (car&aacute;cter, disponibilidad, contexto&hellip;)">'+esc(j.comentarios||'')+'</textarea>'+
+      '<div class="flab">Fortalezas (sale en el informe)</div><textarea class="field" id="f-fort" rows="2" placeholder="Ej. buen tiro exterior, lectura de juego">'+esc(j.fortalezas||'')+'</textarea>'+
+      '<div class="flab">A mejorar (sale en el informe)</div><textarea class="field" id="f-deb" rows="2" placeholder="Ej. bote con la mano izquierda">'+esc(j.debilidades||'')+'</textarea>'+
+      '<div class="flab">Foco de trabajo (sale en el informe)</div><textarea class="field" id="f-foco" rows="2" placeholder="Ej. este mes: defensa del bloqueo directo">'+esc(j.foco_trabajo||'')+'</textarea>'+
       '<div class="aviso-med">La app no diagnostica ni sustituye a un médico o fisioterapeuta. Ante dolor o molestias, para el entrenamiento y consulta con un especialista.</div>'+
       '<button class="btn btn-primary" id="f-guardar" style="margin-top:14px">'+(nuevo?'Añadir jugador':'Guardar cambios')+'</button>'+
       (nuevo?'':'<button class="btn" id="f-borrar" style="width:100%;margin-top:10px;background:#7a2323;color:#fff;border:1px solid #a34040">Borrar jugador</button>')+
@@ -2965,7 +2968,7 @@ window.verJugador=verJugador;
     ov.style.display='block';
     ov.innerHTML='<div style="max-width:560px;margin:0 auto"><div style="color:var(--muted);font-size:14px;padding:24px 4px">Cargando estadísticas del equipo…</div></div>';
     try{
-      var pr=await sb.from('partidos').select('id,fecha,rival,tipo,puntos_local,puntos_rival').eq('equipo_id',equipoId).eq('tipo','temporada');
+      var pr=await sb.from('partidos').select('id,fecha,rival,tipo,lugar,puntos_local,puntos_rival').eq('equipo_id',equipoId).eq('tipo','temporada');
       if(pr&&pr.error) throw pr.error;
       var partidos=(pr.data||[]).slice().sort(function(a,b){ return (''+(b.fecha||'')).localeCompare(''+(a.fecha||'')); });
       var sr=await sb.from('partido_stats').select('*, partido:partidos!inner(id,tipo,equipo_id)').eq('partido.equipo_id',equipoId).eq('partido.tipo','temporada').eq('lado','propio');
@@ -3064,7 +3067,15 @@ window.verJugador=verJugador;
     "#informe-overlay .if-tbl td.v{color:#d9781f;font-weight:700}"+
     "#informe-overlay .if-tbl tr.tot td{border-top:2px solid #17222e;border-bottom:none;font-weight:800}"+
     "#informe-overlay .if-foot{margin-top:14px;padding-top:8px;border-top:1px solid #e6eaee;font-size:9px;color:#8b96a3;line-height:1.5;display:flex;justify-content:space-between;gap:14px}"+
-    "@media print{body{background:#fff !important}body>*:not(#informe-overlay){display:none !important}#informe-overlay{position:static !important;inset:auto !important;overflow:visible !important;background:#fff !important;padding:0 !important;display:block !important}#informe-overlay .inf-bar{display:none !important}#informe-overlay .informe{max-width:none !important;border-radius:0 !important;padding:0 !important;margin:0 !important}@page{size:A4;margin:12mm}}";
+    "#informe-overlay .if-sub{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#8390a0;margin:10px 0 3px}"+
+    "#informe-overlay .if-trow{display:flex;justify-content:space-between;gap:10px;font-size:12px;padding:4px 0;border-top:1px solid #eef1f4}"+
+    "#informe-overlay .if-trow .l2{color:#6a7684}"+
+    "#informe-overlay .if-up{color:#1f9d52;font-weight:800}#informe-overlay .if-dn{color:#c0392b;font-weight:800}#informe-overlay .if-eq2{color:#8390a0;font-weight:800}"+
+    "#informe-overlay .if-badge{display:inline-block;background:#fdeeee;border:1px solid #f0c8c8;color:#a33b3b;border-radius:8px;padding:2px 8px;font-size:11px;margin:2px 5px 2px 0;font-weight:600}"+
+    "#informe-overlay .if-badge.rec{background:#eaf7ee;border-color:#bfe6cb;color:#1f7a43}"+
+    "#informe-overlay .if-edit{border:1px dashed #cfd6dd;border-radius:8px;padding:8px 10px;font-size:12px;line-height:1.55;min-height:34px;white-space:pre-wrap}"+
+    "#informe-overlay .if-edit:focus{outline:2px solid #f2792b;border-color:transparent}"+
+    "@media print{body{background:#fff !important}body>*:not(#informe-overlay){display:none !important}#informe-overlay{position:static !important;inset:auto !important;overflow:visible !important;background:#fff !important;padding:0 !important;display:block !important}#informe-overlay .inf-bar{display:none !important}#informe-overlay .if-noprint{display:none !important}#informe-overlay .if-edit{border:none !important;padding:0 !important;min-height:0 !important}#informe-overlay .informe{max-width:none !important;border-radius:0 !important;padding:0 !important;margin:0 !important}@page{size:A4;margin:12mm}}";
     document.head.appendChild(s); }
   function abrirInforme(inner){
     ensureInformeCSS();
@@ -3095,35 +3106,133 @@ window.verJugador=verJugador;
   function infTile(l,v){ return '<div class="if-kpi"><div class="l">'+l+'</div><div class="v">'+v+'</div></div>'; }
   function infFacet(lab,pct,val){ return '<div class="if-facet"><div class="r"><span>'+lab+'</span><span class="v">'+val+'</span></div><div class="if-bar"><i style="width:'+Math.max(0,Math.min(100,pct)).toFixed(0)+'%"></i></div></div>'; }
   function infClab(arr){ return '<div class="if-clab">'+arr.map(function(x){return '<span>'+esc2f(shortLbl(x))+'</span>';}).join('')+'</div>'; }
+  function infTiro(lab,m,a){ var p=a>0?m/a:null; return '<div class="if-facet"><div class="r"><span>'+lab+'</span><span class="v">'+m+'/'+a+' &middot; '+pct1(p)+'</span></div><div class="if-bar"><i style="width:'+(p==null?0:Math.max(0,Math.min(100,p*100))).toFixed(0)+'%"></i></div></div>'; }
+  function infFlecha(rec, base, umbral){ if(rec==null||base==null) return '<span class="if-eq2">&rarr;</span>'; var d=rec-base; if(d>umbral) return '<span class="if-up">&#9650;</span>'; if(d<-umbral) return '<span class="if-dn">&#9660;</span>'; return '<span class="if-eq2">&rarr;</span>'; }
+  function infTrow(lab, izq, der){ return '<div class="if-trow"><span class="l2">'+lab+'</span><span>'+izq+(der!=null?(' '+der):'')+'</span></div>'; }
 
-  function informeJugador(j, rows){
+  async function informeJugador(j, rows){
+    // ---- datos extra (ficha fresca, filas del equipo, posiciones, últimas notas); si algo falla, el informe sale igual ----
+    var jj=j, teamRows=[], posMap={}, notas=[];
+    try{ var fr=await sb.from('jugadores_equipo').select('*').eq('id',j.id).maybeSingle(); if(fr&&fr.data) jj=fr.data; }catch(e){}
+    var eqId=jj.equipo_id||(window.__eq&&window.__eq.id)||null;
+    if(eqId){
+      try{ var tr=await sb.from('partido_stats').select('*, partido:partidos!inner(id,tipo,equipo_id)').eq('partido.equipo_id',eqId).eq('partido.tipo','temporada').eq('lado','propio'); if(tr&&!tr.error) teamRows=tr.data||[]; }catch(e){}
+      try{ var prq=await sb.from('jugadores_equipo').select('id,posicion').eq('equipo_id',eqId); if(prq&&!prq.error) (prq.data||[]).forEach(function(x){ posMap[x.id]=x.posicion||null; }); }catch(e){}
+    }
+    try{ var nr=await sb.from('notas_jugador').select('fecha,titulo,etiqueta').eq('jugador_id',j.id).order('fecha',{ascending:false}).order('created_at',{ascending:false}).limit(3); if(nr&&!nr.error) notas=nr.data||[]; }catch(e){}
+    // ---- cálculos base ----
     var n=rows.length, T=statsTot(rows);
     var ptsTot=2*T.t2m+3*T.t3m+T.tlm, valTot=rows.reduce(function(a,g){return a+valoracionDe(g);},0);
     var tca=T.t2a+T.t3a, tcm=T.t2m+T.t3m;
     var efg=tca>0?(tcm+0.5*T.t3m)/tca:null, tsDen=2*(tca+0.44*T.tla), ts=tsDen>0?ptsTot/tsDen:null;
+    var falrTot=rows.reduce(function(a,g){return a+(g.faltas_recibidas||0);},0);
     var ppg=n?ptsTot/n:0, apg=n?T.as/n:0, rpg=n?(T.rof+T.rdef)/n:0, dpg=n?(T.rob+T.tap)/n:0, asper=T.per>0?(T.as/T.per):null;
     var scaleF=function(v,lo,hi){ return Math.max(0,Math.min(100,(v-lo)/(hi-lo)*100)); };
     var astoR=T.per>0?(T.as/T.per):(T.as>0?2:0);
     var facets=[ {k:'Anotación',s:scaleF(ppg,0,20),v:dec1(ppg)+' pts'}, {k:'Acierto real',s:(ts==null?0:scaleF(ts,0.35,0.60)),v:pct1(ts)}, {k:'Creación (asistencias)',s:scaleF(apg,0,8),v:dec1(apg)}, {k:'Rebote',s:scaleF(rpg,0,12),v:dec1(rpg)}, {k:'Defensa (robos+tapones)',s:scaleF(dpg,0,5),v:dec1(dpg)}, {k:'Cuidado del balón',s:scaleF(Math.min(astoR,2),0,2),v:(T.per>0?('AS/PÉR '+dec1(T.as/T.per)):'—')} ];
     var fs=facets.slice().sort(function(a,b){return b.s-a.s;}), fFort=fs[0], fMej=fs[fs.length-1];
     var chron=rows.slice().reverse();
-    var eq=(window.__eq&&window.__eq.nombre)||'', ed=edadDe(j.fecha_nacimiento);
-    var meta=[eq, j.posicion||null, (ed!=null?ed+' años':null), (j.altura_cm?(String(j.altura_cm).replace('.',',')+' cm'):null), (j.peso_kg?(String(j.peso_kg).replace('.',',')+' kg'):null)].filter(Boolean).join(' · ');
-    var ini=((j.nombre||'?').trim()[0]||'?').toUpperCase();
+    var eq=(window.__eq&&window.__eq.nombre)||'', ed=edadDe(jj.fecha_nacimiento);
+    var meta=[eq, jj.posicion||null, (ed!=null?ed+' años':null), (jj.altura_cm?(String(jj.altura_cm).replace('.',',')+' cm'):null), (jj.peso_kg?(String(jj.peso_kg).replace('.',',')+' kg'):null)].filter(Boolean).join(' · ');
+    var ini=((jj.nombre||'?').trim()[0]||'?').toUpperCase();
+    // ---- tendencia: últimos 3 vs temporada (solo con más de 3 partidos) ----
+    var tendencia='';
+    if(n>3){
+      var l3=rows.slice(0,3), T3=statsTot(l3), n3=l3.length;
+      var pts3=(2*T3.t2m+3*T3.t3m+T3.tlm), ppg3=pts3/n3;
+      var val3=l3.reduce(function(a,g){return a+valoracionDe(g);},0)/n3, valS=n?valTot/n:0;
+      var tca3=T3.t2a+T3.t3a, tsDen3=2*(tca3+0.44*T3.tla), ts3=tsDen3>0?pts3/tsDen3:null;
+      var reb3=(T3.rof+T3.rdef)/n3;
+      tendencia='<div class="if-st" style="margin-top:0">Tendencia · últimos 3 vs temporada</div>'+
+        infTrow('Puntos / partido', dec1(ppg)+' &rarr; <b>'+dec1(ppg3)+'</b>', infFlecha(ppg3,ppg,1.5))+
+        infTrow('Valoración', dec1(valS)+' &rarr; <b>'+dec1(val3)+'</b>', infFlecha(val3,valS,1.5))+
+        infTrow('Acierto real', pct1(ts)+' &rarr; <b>'+pct1(ts3)+'</b>', infFlecha(ts3,ts,0.02))+
+        infTrow('Rebotes / partido', dec1(rpg)+' &rarr; <b>'+dec1(reb3)+'</b>', infFlecha(reb3,rpg,1))+
+        '<div class="if-cap" style="margin-top:6px">&#9650; mejora clara &middot; &rarr; estable &middot; &#9660; baja respecto a su temporada</div>';
+    } else {
+      tendencia='<div class="if-st" style="margin-top:0">Tendencia · últimos 3 vs temporada</div><div class="if-cap">Con más de 3 partidos anotados aparecerá aquí la comparación de la forma reciente con la temporada.</div>';
+    }
+    // ---- contexto: comparado con la media del equipo y de su posición ----
+    var ctx='';
+    if(teamRows.length){
+      var mediaDe=function(arr){ var m=arr.length, Tt=statsTot(arr); if(!m) return null;
+        var pt=2*Tt.t2m+3*Tt.t3m+Tt.tlm, vl=arr.reduce(function(a,g){return a+valoracionDe(g);},0), den=2*((Tt.t2a+Tt.t3a)+0.44*Tt.tla);
+        return { pts:pt/m, val:vl/m, reb:(Tt.rof+Tt.rdef)/m, as:Tt.as/m, ts:den>0?pt/den:null }; };
+      var mEq=mediaDe(teamRows);
+      var posRows=jj.posicion?teamRows.filter(function(r){ return r.jugador_id && posMap[r.jugador_id]===jj.posicion; }):[];
+      var mPos=(posRows.length&&jj.posicion)?mediaDe(posRows):null;
+      var cRow=function(lab, vJ, vE, vP){ return '<tr><td class="l">'+lab+'</td><td class="p">'+vJ+'</td><td>'+vE+'</td><td>'+(mPos?vP:'—')+'</td></tr>'; };
+      ctx='<div class="if-st" style="margin-top:0">Contexto en el equipo</div>'+
+        '<table class="if-tbl"><thead><tr><th class="l">Media por partido</th><th>Jugador</th><th>Equipo</th><th>'+(jj.posicion?('Posición ('+esc2f(jj.posicion)+')'):'Posición')+'</th></tr></thead><tbody>'+
+        cRow('Puntos', dec1(ppg), dec1(mEq.pts), mPos?dec1(mPos.pts):'—')+
+        cRow('Valoración', dec1(n?valTot/n:0), dec1(mEq.val), mPos?dec1(mPos.val):'—')+
+        cRow('Rebotes', dec1(rpg), dec1(mEq.reb), mPos?dec1(mPos.reb):'—')+
+        cRow('Asistencias', dec1(apg), dec1(mEq.as), mPos?dec1(mPos.as):'—')+
+        cRow('Acierto real', pct1(ts), pct1(mEq.ts), mPos?pct1(mPos.ts):'—')+
+        '</tbody></table><div class="if-cap" style="margin-top:4px">Media del equipo = media por jugador y partido de todo el equipo esta temporada'+(mPos?('; posición = solo jugadores que juegan de '+esc2f(jj.posicion)):'')+'.</div>';
+    }
+    // ---- estado físico y lesiones (de la ficha) ----
+    var condLab='—'; try{ (COND||[]).forEach(function(c){ if(c[0]===(jj.condicion_fisica||'')) condLab=c[1]; }); }catch(e){}
+    var zonasNom=[]; try{ (jj.lesiones_zonas||[]).forEach(function(z){ var nomz=z; (ZONAS||[]).forEach(function(x){ if(x[0]===z) nomz=x[1]; }); zonasNom.push(nomz); }); }catch(e){}
+    var faseLab=jj.lesiones_fase==='activa'?'Lesión activa':(jj.lesiones_fase==='recuperacion'?'En recuperación':'');
+    var fisico='<div class="if-st" style="margin-top:0">Estado físico</div>'+
+      infTrow('Condición física', '<b>'+esc2f(condLab)+'</b>','')+
+      (zonasNom.length?
+        ('<div class="if-sub">Lesiones registradas'+(faseLab?(' · '+faseLab):'')+'</div><div>'+zonasNom.map(function(z){ return '<span class="if-badge'+(jj.lesiones_fase==='recuperacion'?' rec':'')+'">'+esc2f(z)+'</span>'; }).join('')+'</div>'+
+          (jj.lesiones_detalle?('<div class="if-cap" style="margin-top:4px">'+esc2f(jj.lesiones_detalle)+'</div>'):'')+
+          (jj.lesiones_fase==='activa'?'<div class="if-cap" style="margin-top:4px;color:#a33b3b">Lesión en curso: cargas ajustadas y seguimiento médico.</div>':''))
+        :'<div class="if-cap" style="margin-top:4px">Sin lesiones registradas en la ficha.</div>');
+    // ---- bloque escrito del entrenador (editable; se guarda en la ficha) ----
+    var sugFort='Destaca en '+fFort.k.toLowerCase()+' ('+fFort.v+').';
+    var sugDeb='Puede crecer en '+fMej.k.toLowerCase()+' ('+fMej.v+').';
+    var sugFoco=jj.objetivo?('Trabajar su objetivo: '+jj.objetivo+'.'):'';
+    var notasHtml=notas.length?('<div class="if-sub">Últimas notas del diario</div>'+notas.map(function(nt){ var et=''; try{ (ETIQ||[]).forEach(function(x){ if(x[0]===(nt.etiqueta||'')) et=x[1]; }); }catch(e){} return infTrow(fechaCorta(nt.fecha)+(et&&et!=='—'?(' &middot; '+esc2f(et)):''), '<b>'+esc2f(nt.titulo||'Nota')+'</b>',''); }).join('')):'';
+    var valoracion='<div class="if-st">Valoración del entrenador</div>'+
+      '<div class="if-cap if-noprint">Texto editable: toca sobre cada apartado para escribirlo a tu manera y pulsa «Guardar texto». Queda guardado en la ficha del jugador.</div>'+
+      '<div class="if-cols" style="margin-top:6px"><div>'+
+        '<div class="if-sub">Fortalezas</div><div class="if-edit" id="ifw-fort" contenteditable="true">'+esc2f(jj.fortalezas||sugFort)+'</div>'+
+        '<div class="if-sub">A mejorar</div><div class="if-edit" id="ifw-deb" contenteditable="true">'+esc2f(jj.debilidades||sugDeb)+'</div>'+
+        '<div class="if-sub">Foco de trabajo</div><div class="if-edit" id="ifw-foco" contenteditable="true">'+esc2f(jj.foco_trabajo||sugFoco)+'</div>'+
+        '<div class="if-noprint" style="margin-top:8px"><button class="btn btn-primary" id="ifw-save" style="margin:0;max-width:190px;font-size:13px;padding:9px 12px">Guardar texto</button><span id="ifw-msg" style="font-size:12px;margin-left:10px"></span></div>'+
+      '</div><div>'+
+        (jj.objetivo?(infTrow('Objetivo del jugador (ficha)','<b>'+esc2f(jj.objetivo)+'</b>','')):'')+
+        notasHtml+
+        ((jj.objetivo||notas.length)?'':'<div class="if-cap">Añade un objetivo y notas del diario en la ficha para verlos aquí.</div>')+
+      '</div></div>';
+    // ---- tabla de partidos ----
     var filas=rows.map(function(g){ return '<tr><td class="l">'+fechaCorta(g.fecha)+'</td><td class="l">'+(g.rival?esc2f(g.rival):'Partido')+'</td><td class="p">'+puntosDe(g)+'</td><td class="v">'+valoracionDe(g)+'</td><td>'+(g.t2m||0)+'/'+(g.t2a||0)+'</td><td>'+(g.t3m||0)+'/'+(g.t3a||0)+'</td><td>'+(g.tlm||0)+'/'+(g.tla||0)+'</td><td>'+((g.reb_of||0)+(g.reb_def||0))+'</td><td>'+(g.asistencias||0)+'</td><td>'+(g.robos||0)+'</td><td>'+(g.perdidas||0)+'</td></tr>'; }).join('');
     var totFila='<tr class="tot"><td class="l">Totales</td><td class="l">'+n+' partido'+(n===1?'':'s')+'</td><td class="p">'+ptsTot+'</td><td class="v">'+valTot+'</td><td>'+T.t2m+'/'+T.t2a+'</td><td>'+T.t3m+'/'+T.t3a+'</td><td>'+T.tlm+'/'+T.tla+'</td><td>'+(T.rof+T.rdef)+'</td><td>'+T.as+'</td><td>'+T.rob+'</td><td>'+T.per+'</td></tr>';
     var inner=infHead('Informe del jugador')+
-      '<div class="if-id"><div class="if-av">'+ini+'</div><div><div class="if-nm">'+esc2f(j.nombre||'Jugador')+'</div><div class="if-meta">'+esc2f(meta||'—')+'</div></div><div class="if-right"><span>Partidos jugados</span><b>'+n+' de temporada</b></div></div>'+
+      '<div class="if-id"><div class="if-av">'+ini+'</div><div><div class="if-nm">'+esc2f(jj.nombre||'Jugador')+'</div><div class="if-meta">'+esc2f(meta||'—')+'</div></div><div class="if-right"><span>Partidos jugados</span><b>'+n+' de temporada</b></div></div>'+
       '<div class="if-st">Resumen de la temporada</div><div class="if-kpis">'+infTile('Pts / partido',dec1(ppg))+infTile('Valoración',dec1(n?valTot/n:0))+infTile('Acierto campo',pct1(efg))+infTile('Acierto real',pct1(ts))+infTile('Asist / Pérd',asper==null?'—':dec1(asper))+infTile('Rebotes / part.',dec1(rpg))+'</div>'+
+      '<div class="if-kpis" style="margin-top:7px">'+infTile('Reb. ofensivo /p',dec1(n?T.rof/n:0))+infTile('Reb. defensivo /p',dec1(n?T.rdef/n:0))+infTile('Robos / part.',dec1(n?T.rob/n:0))+infTile('Tapones / part.',dec1(n?T.tap/n:0))+infTile('Faltas / part.',dec1(n?T.fal/n:0))+infTile('F. recibidas /p',dec1(n?falrTot/n:0))+'</div>'+
+      '<div class="if-cols"><div><div class="if-st" style="margin-top:0">Desglose de tiro</div>'+
+        infTiro('Tiros de 2',T.t2m,T.t2a)+infTiro('Tiros de 3',T.t3m,T.t3a)+infTiro('Tiros libres',T.tlm,T.tla)+
+        '<div class="if-cap" style="margin-top:4px">Aciertos/intentos de toda la temporada.</div></div>'+
+      '<div>'+tendencia+'</div></div>'+
       '<div class="if-cols"><div><div class="if-st" style="margin-top:0">Perfil del jugador</div>'+facets.map(function(f){return infFacet(f.k,f.s,f.v);}).join('')+
         '<div class="if-flags"><div class="if-flag g"><div class="l">Destaca en</div><div class="n">'+fFort.k+'</div></div><div class="if-flag b"><div class="l">A mejorar</div><div class="n">'+fMej.k+'</div></div></div></div>'+
         '<div><div class="if-st" style="margin-top:0">Evolución (antiguo → reciente)</div>'+
           '<div class="if-cap">Valoración por partido</div>'+infChart(chron.map(valoracionDe),'#f0a35f')+infClab(chron.map(function(g){return g.rival;}))+
           '<div class="if-cap">Puntos por partido</div>'+infChart(chron.map(puntosDe),'#5aa9dd')+infClab(chron.map(function(g){return g.rival;}))+
         '</div></div>'+
+      '<div class="if-cols">'+(ctx?('<div>'+ctx+'</div>'):'<div></div>')+'<div>'+fisico+'</div></div>'+
+      valoracion+
       '<div class="if-st">Partidos de la temporada</div><table class="if-tbl"><thead><tr><th class="l">Fecha</th><th class="l">Rival</th><th>Pts</th><th>Val</th><th>2P</th><th>3P</th><th>TL</th><th>REB</th><th>AS</th><th>ROB</th><th>PÉR</th></tr></thead><tbody>'+filas+totFila+'</tbody></table>'+
       '<div class="if-foot"><div>Perfil orientativo (escala 0–100 con referencias del baloncesto de formación); no es una nota oficial. Más fiable a partir de 3–4 partidos.<br>Valoración = (puntos + rebotes + asistencias + robos + tapones + faltas recibidas) − (tiros fallados + pérdidas + tapones recibidos + faltas cometidas).</div><div style="text-align:right;white-space:nowrap"><b style="color:#17222e">ANMAR TRAINING</b><br>Club · uso interno</div></div>';
     abrirInforme(inner);
+    // guardar el bloque escrito en la ficha
+    var sv=document.getElementById('ifw-save');
+    if(sv) sv.addEventListener('click', async function(){
+      var m=document.getElementById('ifw-msg');
+      var gv=function(id){ var el=document.getElementById(id); var t=el?(el.innerText||el.textContent||''):''; t=t.replace(/ /g,' ').trim(); return t||null; };
+      var upd={ fortalezas:gv('ifw-fort'), debilidades:gv('ifw-deb'), foco_trabajo:gv('ifw-foco') };
+      if(m){ m.style.color='#6a7684'; m.textContent='Guardando…'; }
+      try{ var r=await sb.from('jugadores_equipo').update(upd).eq('id',j.id); if(r&&r.error) throw r.error;
+        j.fortalezas=upd.fortalezas; j.debilidades=upd.debilidades; j.foco_trabajo=upd.foco_trabajo;
+        if(m){ m.style.color='#1f9d52'; m.textContent='Guardado en la ficha ✓'; }
+      }catch(e){ if(m){ m.style.color='#c0392b'; m.textContent='No se pudo guardar.'; } }
+    });
   }
   window.informeJugador=informeJugador;
 
@@ -3132,16 +3241,36 @@ window.verJugador=verJugador;
     partidos.forEach(function(p){ var l=p.puntos_local||0,r=p.puntos_rival||0; pf+=l; pc+=r; if(l>r)gana++; else if(l<r)pierde++; else empata++; });
     var T=statsTot(rows), tca=T.t2a+T.t3a, tcm=T.t2m+T.t3m;
     var efg=tca>0?(tcm+0.5*T.t3m)/tca:null, ptsTot=2*T.t2m+3*T.t3m+T.tlm, tsDen=2*(tca+0.44*T.tla), ts=tsDen>0?ptsTot/tsDen:null;
+    // diferencial
+    var dif=pf-pc, difpp=nP?dif/nP:0, difLab=(dif>0?'+':'')+dif+' ('+(difpp>0?'+':'')+dec1(difpp)+'/pp)';
+    // racha actual (partidos vienen ordenados del más reciente al más antiguo)
+    var resDe=function(p){ var l=p.puntos_local||0,r=p.puntos_rival||0; return l>r?'V':(l<r?'D':'E'); };
+    var racha='—';
+    if(nP){ var r0=resDe(partidos[0]), c=0; for(var ri=0;ri<partidos.length;ri++){ if(resDe(partidos[ri])===r0) c++; else break; }
+      racha=c+' '+(r0==='V'?(c===1?'victoria':'victorias'):(r0==='D'?(c===1?'derrota':'derrotas'):(c===1?'empate':'empates'))); }
+    // casa / fuera (solo partidos con el dato registrado)
+    var bal=function(arr){ var g=0,p2=0,e=0; arr.forEach(function(p){ var x=resDe(p); if(x==='V')g++; else if(x==='D')p2++; else e++; }); return arr.length?(g+'-'+p2+(e?('-'+e):'')):'—'; };
+    var casa=partidos.filter(function(p){return p.lugar==='casa';}), fuera=partidos.filter(function(p){return p.lugar==='fuera';});
+    var sinLugar=nP-casa.length-fuera.length;
     var byId={};
     rows.forEach(function(g){ var k=g.jugador_id||g.jugador_nombre; if(!byId[k]) byId[k]={nombre:g.jugador_nombre||'Jugador',pj:{},pts:0,val:0,as:0,reb:0,rob:0,tap:0}; var b=byId[k]; if(g.partido&&g.partido.id) b.pj[g.partido.id]=1; b.pts+=puntosDe(g); b.val+=valoracionDe(g); b.as+=(g.asistencias||0); b.reb+=((g.reb_of||0)+(g.reb_def||0)); b.rob+=(g.robos||0); b.tap+=(g.tapones||0); });
     var jugs=Object.keys(byId).map(function(k){ var b=byId[k]; b.n=Object.keys(b.pj).length||1; return b; });
-    var lead=function(lab,valf,unit){ if(!jugs.length) return ''; var best=jugs.slice().sort(function(a,b){return valf(b)-valf(a);})[0]; return '<div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-top:1px solid #eef1f4"><span style="color:#6a7684">'+lab+'</span><span><b>'+esc2f(best.nombre)+'</b> · '+dec1(valf(best))+unit+'</span></div>'; };
+    // mínimo de partidos para salir en "quién destaca": la mitad de los del equipo (mín. 1)
+    var minPJ=Math.max(1,Math.ceil(nP/2));
+    var jugsDest=jugs.filter(function(b){ return b.n>=minPJ; });
+    if(!jugsDest.length) jugsDest=jugs;
+    var lead=function(lab,valf,unit){ if(!jugsDest.length) return ''; var best=jugsDest.slice().sort(function(a,b){return valf(b)-valf(a);})[0]; return '<div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-top:1px solid #eef1f4"><span style="color:#6a7684">'+lab+'</span><span><b>'+esc2f(best.nombre)+'</b> · '+dec1(valf(best))+unit+'</span></div>'; };
     var chron=partidos.slice().reverse();
     var filas=jugs.slice().sort(function(a,b){return (b.pts/b.n)-(a.pts/a.n);}).map(function(b){ return '<tr><td class="l">'+esc2f(b.nombre)+'</td><td>'+b.n+'</td><td class="p">'+dec1(b.pts/b.n)+'</td><td class="v">'+dec1(b.val/b.n)+'</td><td>'+dec1(b.as/b.n)+'</td><td>'+dec1(b.reb/b.n)+'</td></tr>'; }).join('');
     var inner=infHead('Informe del equipo')+
       '<div class="if-id"><div class="if-av">'+((nombreEq||'?').trim()[0]||'?').toUpperCase()+'</div><div><div class="if-nm">'+esc2f(nombreEq||'Equipo')+'</div><div class="if-meta">Resumen de la temporada · solo partidos oficiales</div></div><div class="if-right"><span>Partidos</span><b>'+nP+' jugados</b></div></div>'+
       '<div class="if-st">Resumen del equipo</div><div class="if-kpis">'+infTile('Partidos',nP)+infTile('Balance',gana+'-'+pierde+(empata?('-'+empata):''))+infTile('Pts / partido',dec1(nP?pf/nP:0))+infTile('Encajados / pp',dec1(nP?pc/nP:0))+infTile('Acierto campo',pct1(efg))+infTile('Acierto real',pct1(ts))+'</div>'+
-      '<div class="if-cols"><div><div class="if-st" style="margin-top:0">Quién destaca (por partido)</div>'+
+      '<div class="if-kpis" style="margin-top:7px">'+infTile('Diferencial',difLab)+infTile('Racha actual',racha)+infTile('En casa',bal(casa))+infTile('Fuera',bal(fuera))+infTile('Reb. of. / pp',dec1(nP?T.rof/nP:0))+infTile('Reb. def. / pp',dec1(nP?T.rdef/nP:0))+'</div>'+
+      (sinLugar>0?('<div class="if-cap" style="margin-top:5px">'+sinLugar+' partido'+(sinLugar===1?'':'s')+' sin lugar registrado (casa/fuera): no entra'+(sinLugar===1?'':'n')+' en ese desglose. Al anotar un partido nuevo ya se pregunta dónde se juega.</div>'):'')+
+      '<div class="if-cols"><div><div class="if-st" style="margin-top:0">Perfil de tiro del equipo</div>'+
+        infTiro('Tiros de 2',T.t2m,T.t2a)+infTiro('Tiros de 3',T.t3m,T.t3a)+infTiro('Tiros libres',T.tlm,T.tla)+
+        '<div class="if-st">Quién destaca (por partido)</div>'+
+        '<div class="if-cap">Mínimo '+minPJ+' partido'+(minPJ===1?'':'s')+' jugado'+(minPJ===1?'':'s')+' para aparecer.</div>'+
         lead('Máximo anotador',function(b){return b.pts/b.n;},' pts')+lead('Mejor valoración',function(b){return b.val/b.n;},'')+lead('Más asistencias',function(b){return b.as/b.n;},'')+lead('Más rebotes',function(b){return b.reb/b.n;},'')+lead('Mejor defensa (rob+tap)',function(b){return (b.rob+b.tap)/b.n;},'')+
         '</div><div><div class="if-st" style="margin-top:0">Puntos por partido (antiguo → reciente)</div><div class="if-cap">Tu equipo</div>'+infChart(chron.map(function(p){return p.puntos_local||0;}),'#f2792b')+infClab(chron.map(function(p){return p.rival;}))+
         '<div class="if-cap">Rival</div>'+infChart(chron.map(function(p){return p.puntos_rival||0;}),'#8390a0')+infClab(chron.map(function(p){return p.rival;}))+'</div></div>'+
@@ -3165,7 +3294,7 @@ window.verJugador=verJugador;
     try{
       var jr=await sb.from('jugadores_equipo').select('id,nombre').eq('equipo_id',equipoId).order('nombre');
       if(jr&&jr.error) throw jr.error;
-      window.__np={equipoId:equipoId, nombreEq:nombreEq, tipo:'temporada', mis:(jr.data||[]), adhoc:[], players:[], activeKey:null, log:[], rival:'', fecha:''};
+      window.__np={equipoId:equipoId, nombreEq:nombreEq, tipo:'temporada', lugar:'casa', mis:(jr.data||[]), adhoc:[], players:[], activeKey:null, log:[], rival:'', fecha:''};
       renderNPSetup(ov);
     }catch(e){ ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding:24px 4px"><div style="color:#ff6b6b">No se pudo abrir el partido.</div><button class="btn btn-ghost" id="np-x" style="margin-top:14px">Cerrar</button></div>'; var x=document.getElementById('np-x'); if(x)x.addEventListener('click',function(){ov.style.display='none';}); }
   }
@@ -3186,6 +3315,9 @@ window.verJugador=verJugador;
       '<div class="flab" style="margin-top:12px">Tu equipo</div><input class="field" id="np-local" value="'+esc2f(np.nombreEq||'')+'">'+
       '<div class="flab">Rival</div><input class="field" id="np-rival" placeholder="Nombre del rival" value="'+esc2f(np.rival||'')+'">'+
       '<div class="flab">Fecha</div><input class="field" id="np-fecha" type="date" value="'+(np.fecha||hoy)+'">'+
+      '<div class="flab">¿Dónde se juega?</div><div style="display:flex;gap:8px">'+
+        ['casa','fuera'].map(function(v){ var on=np.lugar===v; return '<button type="button" class="np-lug" data-l="'+v+'" style="flex:1;background:'+(on?'rgba(242,121,43,.18)':'rgba(255,255,255,.03)')+';border:1px solid '+(on?'#f2792b':'rgba(255,255,255,.1)')+';border-radius:10px;padding:9px 12px;cursor:pointer;color:inherit;font-weight:700">'+(v==='casa'?'En casa':'Fuera')+'</button>'; }).join('')+
+      '</div>'+
       pArea+
       '<button class="btn btn-primary" id="np-empezar" style="margin-top:16px">Empezar a anotar</button>'+
       '<div id="np-msg" style="font-size:12px;color:#ff6b6b;margin-top:8px;min-height:14px"></div>'+
@@ -3193,6 +3325,7 @@ window.verJugador=verJugador;
     document.getElementById('np-cerrar').addEventListener('click',function(){ ov.style.display='none'; });
     var keep=function(){ np.rival=(document.getElementById('np-rival')||{}).value||''; np.fecha=(document.getElementById('np-fecha')||{}).value||''; };
     [].slice.call(ov.querySelectorAll('.np-tipo')).forEach(function(b){ b.addEventListener('click',function(){ keep(); np.tipo=b.getAttribute('data-t'); renderNPSetup(ov); }); });
+    [].slice.call(ov.querySelectorAll('.np-lug')).forEach(function(b){ b.addEventListener('click',function(){ keep(); np.lugar=b.getAttribute('data-l'); renderNPSetup(ov); }); });
     var addb=document.getElementById('np-ad-add'); if(addb) addb.addEventListener('click',function(){ keep(); var nom=(document.getElementById('np-ad-nombre').value||'').trim(), dor=(document.getElementById('np-ad-dorsal').value||'').trim(); if(!nom&&!dor)return; np.adhoc.push({nombre:nom||('Jugador '+(np.adhoc.length+1)), dorsal:dor}); renderNPSetup(ov); });
     document.getElementById('np-empezar').addEventListener('click',function(){ npEmpezar(ov); });
   }
@@ -3315,7 +3448,7 @@ window.verJugador=verJugador;
     var np=window.__np, msg=document.getElementById('cap-msg');
     if(msg){msg.style.color='#9AA8A0';msg.textContent='Guardando…';}
     try{
-      var pr=await sb.from('partidos').insert({ equipo_id:np.equipoId, nombre_local:np.nombreLocal||null, rival:np.rival||null, fecha:np.fecha, tipo:np.tipo, puntos_local:scoreLocal(np), puntos_rival:np.rivalScore||0 }).select('id').single();
+      var pr=await sb.from('partidos').insert({ equipo_id:np.equipoId, nombre_local:np.nombreLocal||null, rival:np.rival||null, fecha:np.fecha, tipo:np.tipo, lugar:np.lugar||null, puntos_local:scoreLocal(np), puntos_rival:np.rivalScore||0 }).select('id').single();
       if(pr&&pr.error) throw pr.error; var pid=pr.data.id;
       var rows=np.players.map(function(p){ var r={ partido_id:pid, jugador_id:p.jugador_id, jugador_nombre:p.nombre, dorsal:p.dorsal||null, lado:p.lado }; for(var k in p.st){ r[k]=p.st[k]; } return r; });
       var ir=await sb.from('partido_stats').insert(rows); if(ir&&ir.error) throw ir.error;
@@ -3339,7 +3472,10 @@ window.verJugador=verJugador;
       lesiones_zonas:zonas,
       lesiones_fase:(document.getElementById('f-fase').value||null),
       lesiones_detalle:((document.getElementById('f-detalle').value||'').trim()||null),
-      comentarios:((document.getElementById('f-coment').value||'').trim()||null)
+      comentarios:((document.getElementById('f-coment').value||'').trim()||null),
+      fortalezas:((document.getElementById('f-fort').value||'').trim()||null),
+      debilidades:((document.getElementById('f-deb').value||'').trim()||null),
+      foco_trabajo:((document.getElementById('f-foco').value||'').trim()||null)
     };
     if(b) b.disabled=true; if(m){m.style.color='#9AA8A0';m.textContent='Guardando…';}
     try{
