@@ -1102,7 +1102,7 @@ const SUPABASE_URL="https://kbrvaawngeuuewplcwyn.supabase.co";
 const SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticnZhYXduZ2V1dWV3cGxjd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTA0MjIsImV4cCI6MjA5Nzg2NjQyMn0.9ys4m2OicbMq3cFyf0a2IA_eh3VspPJ3pYgjNkMO6WA";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
 const screens={login:'s-login',entrevista:'s-entrevista',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil',libre:'s-libre',dirigido:'s-dirigido',admin:'s-admin',entrenador:'s-entrenador',modo:'s-modo'};
-const APP_VERSION='v1.1 · 19/07/2026';
+const APP_VERSION='v1.2 · 19/07/2026';
 document.querySelectorAll('#app-version,#app-version-2').forEach(function(el){ el.textContent='ANMAR TRAINING '+APP_VERSION; });
 window.APP_VERSION=APP_VERSION;
 function go(name,isBack){
@@ -2701,6 +2701,7 @@ window.verJugador=verJugador;
       '<button class="btn btn-ghost" id="eq-nuevo-partido" style="margin-top:10px">Nuevo partido (estadísticas)</button>'+
       '<button class="btn btn-ghost" id="eq-stats-equipo" style="margin-top:10px">Estadísticas del equipo</button>'+
       '<button class="btn btn-ghost" id="eq-estrategia" style="margin-top:10px">Estrategia de temporada</button>'+
+      '<button class="btn btn-ghost" id="eq-scouting" style="margin-top:10px">Scouting de rivales</button>'+
       '<div class="flab" style="margin-top:12px">Categoría del equipo</div><select class="field" id="eq-cat-edit">'+catOpts+'</select>'+
       '<div id="eq-cat-msg" style="font-size:12px;color:var(--muted2);min-height:14px;margin-top:2px"></div></div>';
     var ce=document.getElementById('eq-cat-edit');
@@ -2716,6 +2717,7 @@ window.verJugador=verJugador;
     var enp=document.getElementById('eq-nuevo-partido'); if(enp) enp.addEventListener('click',function(){ nuevoPartidoUI(id, nombre); });
     var ese=document.getElementById('eq-stats-equipo'); if(ese) ese.addEventListener('click',function(){ abrirStatsEquipo(id, nombre); });
     var eest=document.getElementById('eq-estrategia'); if(eest) eest.addEventListener('click',function(){ estrategiaEquipoUI(id, nombre); });
+    var esct=document.getElementById('eq-scouting'); if(esct) esct.addEventListener('click',function(){ scoutingUI(id, nombre); });
     cargarJugadores();
   }
   window.abrirEquipo=abrirEquipo;
@@ -2893,6 +2895,190 @@ window.verJugador=verJugador;
       '</div>';
   }
   window.guiaTemporadaUI=guiaTemporadaUI;
+
+  /* ====== SCOUTING DE RIVALES (datos públicos de la federación; solo por EQUIPOS — la web FAB no publica jugadores) ====== */
+  function normNom(s){ return (''+(s||'')).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[´'`’]/g,"'").replace(/\s+/g,' ').trim(); }
+  function parseScouting(txt){
+    var lineas=(''+(txt||'')).split(/\r?\n/).map(function(l){return l.replace(/ /g,' ').trim();}).filter(function(l){return l!=='';});
+    function esNum(x){ return /^\d{1,3}$/.test(x); }
+    function esFecha(x){ var m=(''+x).match(/(\d{2})\/(\d{2})\/(\d{4})/); return m? (m[3]+'-'+m[2]+'-'+m[1]) : null; }
+    function malTxt(x){ if(!x) return true; var u=x.toUpperCase(); return esNum(x)||u==='LOCAL'||u==='VISITANTE'||u==='FECHA'||u==='CAMPO'||u==='DESCANSA'||u.indexOf('PUBLICIDAD')===0||u==='CLASIFICACION'||u==='CALENDARIO'||u==='EQUIPOS'; }
+    var partidos=[];
+    // modo tabla (celdas separadas por tabulador en la misma línea)
+    lineas.forEach(function(l){
+      if(l.indexOf('\t')<0) return;
+      var c=l.split('\t').map(function(x){return x.trim();});
+      for(var j=0;j+3<c.length;j++){
+        if(!malTxt(c[j]) && esNum(c[j+1]) && esNum(c[j+2]) && !malTxt(c[j+3])){
+          partidos.push({local:c[j], pl:parseInt(c[j+1],10), pv:parseInt(c[j+2],10), visitante:c[j+3], fecha:esFecha(c[j+4]||'')});
+          j+=3;
+        }
+      }
+    });
+    // modo columna (texto copiado línea a línea)
+    var solo=lineas.filter(function(l){return l.indexOf('\t')<0;});
+    for(var k=0;k+3<solo.length;k++){
+      if(!malTxt(solo[k]) && esNum(solo[k+1]) && esNum(solo[k+2]) && !malTxt(solo[k+3])){
+        partidos.push({local:solo[k], pl:parseInt(solo[k+1],10), pv:parseInt(solo[k+2],10), visitante:solo[k+3], fecha:esFecha(solo[k+4]||'')});
+        k+=3;
+      }
+    }
+    var vis={}, out=[];
+    partidos.forEach(function(p){ var kk=normNom(p.local)+'|'+p.pl+'|'+p.pv+'|'+normNom(p.visitante)+'|'+(p.fecha||''); if(vis[kk])return; vis[kk]=1; out.push(p); });
+    return out;
+  }
+  function equiposDeGrupo(partidos){ var m={}; partidos.forEach(function(p){ m[normNom(p.local)]=p.local; m[normNom(p.visitante)]=p.visitante; }); return Object.keys(m).sort().map(function(k){return m[k];}); }
+  function analizaRival(partidos, rival){
+    var R=normNom(rival);
+    var ps=partidos.filter(function(p){ return normNom(p.local)===R||normNom(p.visitante)===R; });
+    ps.sort(function(a,b){ return (''+(a.fecha||'')).localeCompare(''+(b.fecha||'')); });
+    var st={pj:0,g:0,p:0,pf:0,pc:0,casa:{g:0,p:0},fuera:{g:0,p:0},lista:[],racha:0,mejor:null,peor:null};
+    ps.forEach(function(p){
+      var esLocal=normNom(p.local)===R;
+      var mf=esLocal?p.pl:p.pv, mc=esLocal?p.pv:p.pl, gana=mf>mc, dif=mf-mc;
+      st.pj++; st.pf+=mf; st.pc+=mc;
+      if(gana){ st.g++; (esLocal?st.casa:st.fuera).g++; } else { st.p++; (esLocal?st.casa:st.fuera).p++; }
+      if(st.mejor==null||dif>st.mejor.dif) st.mejor={dif:dif,contra:esLocal?p.visitante:p.local,marcador:mf+'-'+mc};
+      if(st.peor==null||dif<st.peor.dif) st.peor={dif:dif,contra:esLocal?p.visitante:p.local,marcador:mf+'-'+mc};
+      st.lista.push({fecha:p.fecha,contra:esLocal?p.visitante:p.local,casa:esLocal,mf:mf,mc:mc,gana:gana});
+    });
+    var r=0;
+    for(var i=st.lista.length-1;i>=0;i--){
+      if(i===st.lista.length-1) r=st.lista[i].gana?1:-1;
+      else if(st.lista[i].gana&&r>0) r++;
+      else if(!st.lista[i].gana&&r<0) r--;
+      else break;
+    }
+    st.racha=r;
+    return st;
+  }
+  window.parseScouting=parseScouting; window.analizaRival=analizaRival;
+  async function scoutingUI(id, nombre){
+    setTitulo('Scouting · '+(nombre||'Equipo'));
+    volverBtn(true, function(){ abrirEquipo(window.__eq.id, window.__eq.nombre, window.__eq.categoria); });
+    msg('');
+    var v=document.getElementById('eq-vista'); if(!v) return;
+    v.innerHTML='<div class="card pr-panel"><div class="section-t">Scouting de rivales</div>'+
+      '<div style="font-size:12px;color:var(--muted2);margin:-2px 2px 10px;line-height:1.5">Con los datos públicos de la federación (resultados por equipos). Importa el grupo de tu rival y el sistema lo analiza. La web de la FAB no publica estadísticas de jugadores: aquí no se inventa nada.</div>'+
+      '<button class="btn btn-primary" id="sc-importar">+ Importar grupo (pegar desde la web FAB)</button>'+
+      '<div class="section-t" style="margin-top:16px">Grupos guardados</div><div id="sc-lista"><div style="color:var(--muted);font-size:13px">Cargando…</div></div></div>';
+    document.getElementById('sc-importar').addEventListener('click',function(){ scoutingImportUI(id, nombre); });
+    var box=document.getElementById('sc-lista');
+    try{
+      var r=await sb.from('scouting_grupos').select('id,nombre,partidos,updated_at').eq('equipo_id',id).order('updated_at',{ascending:false});
+      if(r&&r.error) throw r.error;
+      var rows=r.data||[];
+      if(!rows.length){ box.innerHTML='<div style="color:var(--muted);font-size:13px">Aún no hay grupos importados.</div>'; return; }
+      box.innerHTML=rows.map(function(g){ var n=(g.partidos||[]).length; return '<div class="ent-row" data-id="'+g.id+'"><div style="flex:1;min-width:0"><div class="ent-n">'+esc(g.nombre)+'</div><div class="ent-s">'+n+' partidos importados</div></div><span style="color:var(--muted2);font-size:20px">›</span></div>'; }).join('');
+      box.querySelectorAll('.ent-row').forEach(function(rw){ rw.addEventListener('click',function(){ var g=rows.filter(function(x){return x.id===rw.getAttribute('data-id');})[0]; if(g) scoutingGrupoUI(id, nombre, g); }); });
+    }catch(e){ box.innerHTML='<div style="color:#ff6b6b;font-size:13px">Error al cargar.</div>'; }
+  }
+  window.scoutingUI=scoutingUI;
+  function scoutingImportUI(id, nombre){
+    setTitulo('Importar grupo'); volverBtn(true, function(){ scoutingUI(id, nombre); }); msg('');
+    var v=document.getElementById('eq-vista');
+    v.innerHTML='<div class="card pr-panel"><div class="section-t">Importar grupo de la federación</div>'+
+      '<div style="font-size:12px;color:var(--muted2);margin:-2px 2px 10px;line-height:1.6">1) Abre la web de la FAB (Resultados o Temporadas anteriores) y elige competición, categoría, fase y grupo.<br>2) Selecciona con el ratón la página (clasificación y calendario), cópiala (Ctrl+C) y pégala aquí (Ctrl+V).<br>3) Ponle un nombre y pulsa Analizar.</div>'+
+      '<div class="flab">Nombre del grupo</div><input class="field" id="sc-nom" placeholder="Ej. Cadete Masc. ORO 25/26">'+
+      '<div class="flab">Pega aquí la página</div><textarea class="field" id="sc-txt" rows="8" placeholder="Pega aquí todo el texto copiado de la web"></textarea>'+
+      '<button class="btn btn-primary" id="sc-analizar" style="margin-top:8px">Analizar y guardar</button>'+
+      '<div id="sc-msg" style="font-size:12px;margin-top:10px;min-height:16px"></div></div>';
+    document.getElementById('sc-analizar').addEventListener('click', async function(){
+      var m=document.getElementById('sc-msg');
+      var nom=(document.getElementById('sc-nom').value||'').trim();
+      var txt=document.getElementById('sc-txt').value||'';
+      if(nom.length<2){ m.style.color='#ff6b6b'; m.textContent='Ponle un nombre al grupo (ej. la categoría y fase).'; return; }
+      var ps=parseScouting(txt);
+      if(!ps.length){ m.style.color='#ff6b6b'; m.textContent='No he reconocido ningún partido con marcador en lo pegado. Copia la página del grupo entera (con el calendario) e inténtalo de nuevo.'; return; }
+      m.style.color='var(--muted2)'; m.textContent='Reconocidos '+ps.length+' partidos. Guardando…';
+      try{
+        var r=await sb.from('scouting_grupos').insert({equipo_id:id, nombre:nom, partidos:ps});
+        if(r&&r.error) throw r.error;
+        m.style.color='#7ee29a'; m.textContent='Grupo guardado con '+ps.length+' partidos.';
+        setTimeout(function(){ scoutingUI(id, nombre); }, 600);
+      }catch(e){ m.style.color='#ff6b6b'; m.textContent='No se pudo guardar. Inténtalo de nuevo.'; }
+    });
+  }
+  async function scoutingGrupoUI(id, nombre, grupo){
+    setTitulo(grupo.nombre||'Grupo'); volverBtn(true, function(){ scoutingUI(id, nombre); }); msg('');
+    var v=document.getElementById('eq-vista');
+    var partidos=grupo.partidos||[];
+    var equipos=equiposDeGrupo(partidos);
+    var opts='<option value="">Elige al rival…</option>'+equipos.map(function(e){return '<option value="'+esc(e)+'">'+esc(e)+'</option>';}).join('');
+    v.innerHTML='<div class="card pr-panel"><div class="section-t">'+esc(grupo.nombre)+'</div>'+
+      '<div style="font-size:12px;color:var(--muted2);margin:-2px 2px 8px">'+partidos.length+' partidos · '+equipos.length+' equipos. Fuente: web pública de la FAB (importado por el entrenador).</div>'+
+      '<div class="flab">¿A quién quieres estudiar?</div><select class="field" id="sc-rival">'+opts+'</select>'+
+      '<button class="btn" id="sc-borrar" style="width:100%;margin-top:10px;background:#7a2323;color:#fff;border:1px solid #a34040">Borrar este grupo importado</button>'+
+      '<div id="sc-bmsg" style="font-size:12px;min-height:14px;margin-top:6px"></div></div>'+
+      '<div id="sc-analisis"></div>';
+    document.getElementById('sc-rival').addEventListener('change', function(){ pintaAnalisis(this.value); });
+    var delArmed=false;
+    document.getElementById('sc-borrar').addEventListener('click', async function(){
+      var bm=document.getElementById('sc-bmsg');
+      if(!delArmed){ delArmed=true; bm.style.color='#ffb454'; bm.textContent='¿Seguro? Pulsa otra vez para borrar. (Siempre puedes volver a importarlo de la web.)'; return; }
+      try{ var r=await sb.from('scouting_grupos').delete().eq('id',grupo.id); if(r&&r.error) throw r.error; scoutingUI(id, nombre); }
+      catch(e){ bm.style.color='#ff6b6b'; bm.textContent='No se pudo borrar.'; }
+    });
+    async function pintaAnalisis(rival){
+      var box=document.getElementById('sc-analisis');
+      if(!rival){ box.innerHTML=''; return; }
+      var st=analizaRival(partidos, rival);
+      if(!st.pj){ box.innerHTML='<div class="card pr-panel" style="margin-top:14px"><div style="color:var(--muted);font-size:13px">Sin partidos de ese equipo en lo importado.</div></div>'; return; }
+      var d1=function(x){ return (Math.round(x*10)/10).toLocaleString('es-ES'); };
+      // medias del grupo para contexto
+      var tot={pf:0,n:0}; partidos.forEach(function(p){ tot.pf+=p.pl+p.pv; tot.n++; });
+      var mediaGrupo=tot.n? tot.pf/(2*tot.n) : 0;
+      var pfm=st.pf/st.pj, pcm=st.pc/st.pj;
+      var kpi=function(l,val){ return '<div style="flex:1;min-width:110px;background:var(--surface2);border-radius:12px;padding:10px 12px"><div style="font-size:11px;color:var(--muted2);text-transform:uppercase;letter-spacing:.05em">'+l+'</div><div style="font-size:17px;font-weight:800">'+val+'</div></div>'; };
+      var rachaTxt=st.racha>0?(st.racha+' victorias seguidas'):(st.racha<0?((-st.racha)+' derrotas seguidas'):'—');
+      // lectura de datos (sugerencias basadas SOLO en lo importado)
+      var sug=[];
+      if(pcm>mediaGrupo) sug.push('Encaja '+d1(pcm)+' puntos por partido, por encima de la media de su grupo ('+d1(mediaGrupo)+'): los datos dicen que se le puede anotar.');
+      if(pfm>mediaGrupo) sug.push('Anota '+d1(pfm)+' por partido, por encima de la media del grupo ('+d1(mediaGrupo)+'): prioriza el balance defensivo y controlar el ritmo.');
+      if(pfm<mediaGrupo) sug.push('Anota '+d1(pfm)+' por partido, por debajo de la media del grupo ('+d1(mediaGrupo)+'): una defensa sólida puede dejarle muy corto.');
+      var cg=st.casa.g+st.casa.p, fg=st.fuera.g+st.fuera.p;
+      if(cg&&fg){ var pcasa=st.casa.g/cg, pfuera=st.fuera.g/fg; if(pcasa-pfuera>=0.3) sug.push('Rinde mucho mejor en casa ('+st.casa.g+'-'+st.casa.p+') que fuera ('+st.fuera.g+'-'+st.fuera.p+').'); if(pfuera-pcasa>=0.3) sug.push('Rinde mejor fuera ('+st.fuera.g+'-'+st.fuera.p+') que en casa ('+st.casa.g+'-'+st.casa.p+').'); }
+      if(st.racha<=-2) sug.push('Llega en mala dinámica ('+(-st.racha)+' derrotas seguidas).');
+      if(st.racha>=3) sug.push('Llega lanzado ('+st.racha+' victorias seguidas): prepara el partido para frenar su inercia inicial.');
+      // rivales comunes con nuestro equipo
+      var comunes='';
+      try{
+        var rp=await sb.from('partidos').select('rival,puntos_local,puntos_rival,fecha').eq('equipo_id',id).eq('tipo','temporada');
+        var mios=(rp.data||[]).filter(function(x){return x.puntos_local!=null&&x.puntos_rival!=null;});
+        var filas=[], directos=[];
+        mios.forEach(function(pMio){
+          if(normNom(pMio.rival)===normNom(rival)){
+            directos.push('<div style="font-size:12.5px;padding:6px 0;border-top:1px solid var(--line)">Precedente directo: tú '+pMio.puntos_local+'-'+pMio.puntos_rival+(pMio.puntos_local>pMio.puntos_rival?' (GANASTE)':' (perdiste)')+(pMio.fecha?(' · '+pMio.fecha):'')+'</div>');
+          }
+        });
+        st.lista.forEach(function(pRival){
+          mios.forEach(function(pMio){
+            if(normNom(pMio.rival)===normNom(pRival.contra)){
+              filas.push('<div style="font-size:12.5px;padding:6px 0;border-top:1px solid var(--line)">Contra <b>'+esc(pRival.contra)+'</b>: tú '+pMio.puntos_local+'-'+pMio.puntos_rival+(pMio.puntos_local>pMio.puntos_rival?' (G)':' (P)')+' · el rival '+pRival.mf+'-'+pRival.mc+(pRival.gana?' (G)':' (P)')+'</div>');
+            }
+          });
+        });
+        var trozos=[];
+        if(directos.length) trozos.push('<div class="section-t" style="font-size:14px;margin-top:16px">Contra tu equipo</div>'+directos.join(''));
+        if(filas.length) trozos.push('<div class="section-t" style="font-size:14px;margin-top:16px">Rivales comunes</div>'+filas.join(''));
+        comunes=trozos.join('');
+      }catch(e){}
+      box.innerHTML='<div class="card pr-panel" style="margin-top:14px">'+
+        '<div class="section-t">'+esc(rival)+'</div>'+
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+        kpi('Balance', st.g+'-'+st.p)+kpi('Puntos/pp', d1(pfm))+kpi('Encajados/pp', d1(pcm))+
+        kpi('Diferencial', (st.pf-st.pc>0?'+':'')+(st.pf-st.pc))+kpi('Racha', rachaTxt)+
+        kpi('Casa', st.casa.g+'-'+st.casa.p)+kpi('Fuera', st.fuera.g+'-'+st.fuera.p)+'</div>'+
+        (st.mejor?('<div style="font-size:12.5px;color:var(--muted);margin-top:10px">Mejor resultado: '+esc(st.mejor.marcador)+' contra '+esc(st.mejor.contra)+' · Peor: '+esc(st.peor.marcador)+' contra '+esc(st.peor.contra)+'</div>'):'')+
+        '<div class="section-t" style="font-size:14px;margin-top:16px">Sus partidos</div>'+
+        st.lista.map(function(p){ return '<div style="display:flex;gap:8px;font-size:12.5px;padding:5px 0;border-top:1px solid var(--line)"><span style="width:78px;color:var(--muted2)">'+(p.fecha||'—')+'</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(p.casa?'vs':'en casa de')+' '+esc(p.contra)+'</span><span style="font-weight:700;color:'+(p.gana?'#7ee29a':'#ff8f8f')+'">'+p.mf+'-'+p.mc+'</span></div>'; }).join('')+
+        (sug.length?('<div class="section-t" style="font-size:14px;margin-top:16px">Lectura de los datos</div>'+sug.map(function(s2){ return '<div style="font-size:12.5px;line-height:1.55;padding:5px 0;border-top:1px solid var(--line)">'+s2+'</div>'; }).join('')+
+          '<div style="font-size:11px;color:var(--muted2);margin-top:8px">Sugerencias calculadas solo con los resultados importados. La decisión táctica es del entrenador.</div>'):'')+
+        comunes+
+        '</div>';
+    }
+  }
+  window.scoutingGrupoUI=scoutingGrupoUI;
 
   async function cargarJugadores(){
     var box=document.getElementById('eq-jug'); if(!box||!window.__eq) return;
