@@ -373,9 +373,9 @@ body{
   .appwrap .screen .pad{max-width:1080px;margin:0 auto;width:100%}
   .appwrap .screen .sess-head,.appwrap .screen .ex-card,.appwrap .screen .sess-actions{max-width:1080px;margin-left:auto;margin-right:auto}
   .hoy-grid{display:grid;grid-template-columns:1.2fr .85fr;gap:24px;align-items:start}
-  body:has(#s-login.active) .side,body:has(#s-entrevista.active) .side,body:has(#s-modo.active) .side{display:none}
-  body:has(#s-login.active) .appwrap .screen,body:has(#s-entrevista.active) .appwrap .screen,body:has(#s-modo.active) .appwrap .screen{left:0}
-  #s-login,#s-entrevista,#s-modo{left:0!important}
+  body:has(#s-login.active) .side,body:has(#s-entrevista.active) .side,body:has(#s-modo.active) .side,body:has(#s-club.active) .side{display:none}
+  body:has(#s-login.active) .appwrap .screen,body:has(#s-entrevista.active) .appwrap .screen,body:has(#s-modo.active) .appwrap .screen,body:has(#s-club.active) .appwrap .screen{left:0}
+  #s-login,#s-entrevista,#s-modo,#s-club{left:0!important}
 }
 </style>
 <style id="tema-cristal-polish">
@@ -695,6 +695,14 @@ body{
     </div>
   </div>
 </section>
+<section class="screen" id="s-club">
+        <div class="pad pad-top" style="max-width:560px;margin:0 auto;width:100%">
+          <div id="club-cab" style="display:flex;align-items:center;gap:12px;margin-bottom:14px"></div>
+          <div id="club-vista"></div>
+          <button class="btn btn-ghost" style="margin-top:16px" data-go="login">Cerrar sesión</button>
+          <p class="foot" id="app-version-3" style="margin-top:10px;text-align:center;opacity:.7"></p>
+        </div>
+      </section>
 <section class="screen" id="s-modo">
         <div class="pad pad-top" style="max-width:520px;margin:0 auto;width:100%">
           <div class="section-t">Has entrado como administrador</div>
@@ -1114,10 +1122,10 @@ body{
 <script>
 const SUPABASE_URL="https://kbrvaawngeuuewplcwyn.supabase.co";
 const SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticnZhYXduZ2V1dWV3cGxjd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTA0MjIsImV4cCI6MjA5Nzg2NjQyMn0.9ys4m2OicbMq3cFyf0a2IA_eh3VspPJ3pYgjNkMO6WA";
-const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
-const screens={login:'s-login',entrevista:'s-entrevista',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil',libre:'s-libre',dirigido:'s-dirigido',admin:'s-admin',entrenador:'s-entrenador',modo:'s-modo'};
-const APP_VERSION='v1.5 · 19/07/2026';
-document.querySelectorAll('#app-version,#app-version-2').forEach(function(el){ el.textContent='ANMAR TRAINING '+APP_VERSION; });
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON,{auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:true}});
+const screens={login:'s-login',entrevista:'s-entrevista',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil',libre:'s-libre',dirigido:'s-dirigido',admin:'s-admin',entrenador:'s-entrenador',modo:'s-modo',club:'s-club'};
+const APP_VERSION='v1.6 · 19/07/2026';
+document.querySelectorAll('#app-version,#app-version-2,#app-version-3').forEach(function(el){ el.textContent='ANMAR TRAINING '+APP_VERSION; });
 window.APP_VERSION=APP_VERSION;
 function go(name,isBack){
   if(!isBack&&window.__cur&&window.__cur!==name){(window.__hist=window.__hist||[]).push(window.__cur);} if(name==='hoy'){window.__hist=[];} window.__cur=name;
@@ -1140,8 +1148,8 @@ function traducir(m){ m=(m||'').toLowerCase();
 async function loadProfileAndEnter(){
   var r=await sb.auth.getUser(); var user=r.data&&r.data.user; if(!user) return;
   var nombre=(user.email||'').split('@')[0], role='jugador';
-  var p=await sb.from('profiles').select('nombre,role,avatar_url,debe_cambiar_password').eq('id',user.id).maybeSingle();
-  if(p.data){ nombre=p.data.nombre||nombre; role=p.data.role||role; }
+  var p=await sb.from('profiles').select('nombre,role,avatar_url,debe_cambiar_password,club_id').eq('id',user.id).maybeSingle();
+  if(p.data){ nombre=p.data.nombre||nombre; role=p.data.role||role; window.__clubId=p.data.club_id||null; }
   document.querySelectorAll('#u-nombre,#u-nombre2').forEach(function(el){el.textContent=nombre;});
   var ini=(nombre||'?').trim().charAt(0).toUpperCase();
   document.querySelectorAll('#u-ini,#u-ini2').forEach(function(el){el.textContent=ini;});
@@ -1159,6 +1167,8 @@ async function loadProfileAndEnter(){
   window.__dj=dj.data||null;
   if(window.cargarResumenPerfil) cargarResumenPerfil(window.__dj);
   if(role==='admin'){ go('modo'); return; }
+  if(role==='admin_club'){ clubPanelUI(); return; }
+  if(window.__clubId && window.pintaLogoClub) pintaLogoClub(window.__clubId);
   entrarModoJugador();
 }
 function cargarResumenPerfil(dj){
@@ -1198,6 +1208,7 @@ sb.auth.onAuthStateChange(function(event,session){
   if(recoveryFlow&&session){ showSetPass(); return; }
 });
 (async function(){
+  try{ Object.keys(localStorage).forEach(function(k){ if(k.indexOf('sb-')===0) localStorage.removeItem(k); }); }catch(e){}
   if(hashErr){ history.replaceState(null,'',location.pathname); go('login'); setMsg('El enlace ha caducado o ya se usó. Pulsa "¿Olvidaste tu contraseña?" para pedir uno nuevo.'); return; }
   if(recoveryFlow){
     for(var i=0;i<25;i++){ var s=(await sb.auth.getSession()).data.session; if(s){ showSetPass(); return; } await new Promise(function(r){setTimeout(r,150);}); }
@@ -1859,6 +1870,119 @@ async function borrarUsuario(uid, nombre, bt){
 }
 </script>
 <script>
+/* ===== PANEL DEL ADMINISTRADOR DE CLUB (capa de club F1 parte 2) ===== */
+function logoClubUrl(path){ try{ return path? sb.storage.from('clubes').getPublicUrl(path).data.publicUrl : null; }catch(e){ return null; } }
+async function pintaLogoClub(clubId){
+  try{
+    var r=await sb.from('clubes').select('nombre,logo_url').eq('id',clubId).maybeSingle();
+    if(!r||!r.data||!r.data.logo_url) return;
+    var url=logoClubUrl(r.data.logo_url); if(!url) return;
+    var marca=document.querySelector('.side .marca');
+    if(marca && !document.getElementById('club-logo-side')){
+      var im=document.createElement('img'); im.id='club-logo-side'; im.src=url; im.alt=r.data.nombre||'Club';
+      im.style.cssText='width:26px;height:26px;border-radius:6px;object-fit:cover;margin-left:6px';
+      marca.appendChild(im);
+    }
+  }catch(e){}
+}
+window.pintaLogoClub=pintaLogoClub;
+function escC(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+async function clubPanelUI(){
+  go('club');
+  var cab=document.getElementById('club-cab'), v=document.getElementById('club-vista');
+  if(!v) return;
+  v.innerHTML='<div class="card pr-panel"><div style="color:var(--muted);font-size:13px">Cargando tu club…</div></div>';
+  try{
+    var clubId=window.__clubId;
+    if(!clubId){ v.innerHTML='<div class="card pr-panel"><div style="color:#ff6b6b;font-size:13px">Tu cuenta no tiene club asignado. Avisa al administrador general.</div></div>'; return; }
+    var rc=await sb.from('clubes').select('id,nombre,logo_url,licencias,archivado').eq('id',clubId).maybeSingle();
+    if(rc&&rc.error) throw rc.error;
+    var club=rc.data||{};
+    var re=await sb.from('equipos').select('id,nombre,categoria,entrenador_id,archivado').eq('club_id',clubId).order('created_at');
+    var equipos=(re&&re.data)?re.data.filter(function(x){return !x.archivado;}):[];
+    var rt=await sb.from('profiles').select('id,nombre,role').eq('club_id',clubId);
+    var tecnicos=((rt&&rt.data)||[]).filter(function(x){return x.role==='entrenador';});
+    var nomTec={}; tecnicos.forEach(function(t){ nomTec[t.id]=t.nombre; });
+    var lg=logoClubUrl(club.logo_url);
+    cab.innerHTML='<div style="width:52px;height:52px;border-radius:14px;flex:none;background:#16213a center/cover no-repeat;'+(lg?('background-image:url(&quot;'+lg+'&quot;)'):'')+';display:flex;align-items:center;justify-content:center;font-weight:800;font-size:22px">'+(lg?'':escC((club.nombre||'?').charAt(0).toUpperCase()))+'</div>'+
+      '<div><div style="font-size:20px;font-weight:800">'+escC(club.nombre||'Club')+'</div><div style="font-size:12.5px;color:var(--muted)">'+equipos.length+' de '+(club.licencias||0)+' licencias de equipo usadas</div></div>';
+    var CATS_C=[['premini','Premini / Babybasket'],['minibasket','Minibasket'],['infantil','Infantil'],['cadete','Cadete'],['junior','Junior'],['senior','Senior']];
+    var catNomC=function(v2){ for(var i=0;i<CATS_C.length;i++){ if(CATS_C[i][0]===v2) return CATS_C[i][1]; } return v2||'—'; };
+    v.innerHTML=''+
+      '<div class="card pr-panel"><div class="section-t">Cuerpo técnico</div>'+
+      '<div id="ct-lista">'+(tecnicos.length? tecnicos.map(function(t){ return '<div style="padding:7px 0;border-top:1px solid rgba(255,255,255,.07)"><b>'+escC(t.nombre)+'</b> <span style="font-size:12px;color:var(--muted2)">· entrenador</span></div>'; }).join('') : '<div style="color:var(--muted);font-size:13px">Aún no hay cuerpo técnico. Da de alta al primero.</div>')+'</div>'+
+      '<div style="height:1px;background:rgba(255,255,255,.09);margin:12px 0"></div>'+
+      '<div style="font-size:13px;font-weight:700;margin-bottom:8px">Dar de alta (entrenador / cuerpo técnico)</div>'+
+      '<input class="field" id="ct-nombre" placeholder="Nombre">'+
+      '<input class="field" id="ct-email" type="email" placeholder="Correo electrónico" autocomplete="off">'+
+      '<button class="btn btn-primary" id="ct-crear" style="margin-top:4px">Crear cuenta con clave temporal</button>'+
+      '<div id="ct-msg" style="font-size:13px;margin-top:10px;line-height:1.5;min-height:16px"></div></div>'+
+      '<div class="card pr-panel" style="margin-top:14px"><div class="section-t">Equipos del club</div>'+
+      '<div id="ce-lista">'+(equipos.length? equipos.map(function(e){ return '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid rgba(255,255,255,.07)"><div style="flex:1;min-width:0"><b>'+escC(e.nombre)+'</b> <span style="font-size:12px;color:var(--muted2)">· '+escC(catNomC(e.categoria))+' · '+escC(nomTec[e.entrenador_id]||'sin entrenador')+'</span></div><button class="btn" data-arch="'+e.id+'" style="width:auto;padding:7px 10px;font-size:12px;background:#7a2323;color:#fff;border:1px solid #a34040">Archivar</button></div>'; }).join('') : '<div style="color:var(--muted);font-size:13px">Aún no hay equipos.</div>')+'</div>'+
+      '<div style="height:1px;background:rgba(255,255,255,.09);margin:12px 0"></div>'+
+      '<div style="font-size:13px;font-weight:700;margin-bottom:8px">Crear equipo (usa 1 licencia)</div>'+
+      '<input class="field" id="ce-nombre" placeholder="Nombre del equipo (ej. Cadete A)">'+
+      '<select class="field" id="ce-cat">'+CATS_C.map(function(c){return '<option value="'+c[0]+'">'+c[1]+'</option>';}).join('')+'</select>'+
+      '<select class="field" id="ce-ent"><option value="">Entrenador principal…</option>'+tecnicos.map(function(t){return '<option value="'+t.id+'">'+escC(t.nombre)+'</option>';}).join('')+'</select>'+
+      '<button class="btn btn-primary" id="ce-crear" style="margin-top:4px">Crear equipo</button>'+
+      '<div id="ce-msg" style="font-size:13px;margin-top:10px;line-height:1.5;min-height:16px"></div></div>';
+    // alta cuerpo técnico (la función del servidor fuerza rol entrenador y club del que llama)
+    document.getElementById('ct-crear').addEventListener('click', async function(){
+      var m=document.getElementById('ct-msg'), b=this;
+      var nom=(document.getElementById('ct-nombre').value||'').trim();
+      var em=(document.getElementById('ct-email').value||'').trim();
+      if(!em||em.indexOf('@')<0){ m.style.color='#ff6b6b'; m.textContent='Escribe un correo válido.'; return; }
+      b.disabled=true; m.style.color='#9AA8A0'; m.textContent='Creando…';
+      try{
+        var r=await sb.functions.invoke('admin-crear-usuario',{ body:{nombre:nom,email:em} });
+        var err=null;
+        if(r.error){ err=r.error.message||'error'; try{ if(r.error.context&&r.error.context.json){ var jd=await r.error.context.json(); if(jd&&jd.error) err=jd.error; } }catch(_e){}
+          if(err&&err.indexOf('non-2xx')>=0) err='No se pudo crear. Lo más habitual: ese correo ya está registrado.'; }
+        else if(r.data&&r.data.error) err=r.data.error;
+        if(err){ m.style.color='#ff6b6b'; m.textContent=err; b.disabled=false; return; }
+        m.style.color='#2ECC71';
+        m.innerHTML='Cuenta creada. Clave temporal:<br><b style="color:#FFD54A;font-size:16px;letter-spacing:.5px">'+escC(r.data.password)+'</b><br><span style="color:#9AA8A0">Compártela con '+escC(r.data.email)+'. Deberá cambiarla al entrar.</span>';
+        document.getElementById('ct-nombre').value=''; document.getElementById('ct-email').value='';
+      }catch(e){ m.style.color='#ff6b6b'; m.textContent='Error al crear la cuenta.'; }
+      b.disabled=false;
+    });
+    // crear equipo con control de licencias
+    document.getElementById('ce-crear').addEventListener('click', async function(){
+      var m=document.getElementById('ce-msg'), b=this;
+      var nom=(document.getElementById('ce-nombre').value||'').trim();
+      var cat=document.getElementById('ce-cat').value;
+      var ent=document.getElementById('ce-ent').value;
+      if(nom.length<2){ m.style.color='#ff6b6b'; m.textContent='Escribe el nombre del equipo.'; return; }
+      if(!ent){ m.style.color='#ff6b6b'; m.textContent='Asigna un entrenador principal (dalo de alta arriba si falta).'; return; }
+      if(equipos.length>=(club.licencias||0)){ m.style.color='#ff6b6b'; m.textContent='No quedan licencias libres ('+equipos.length+' de '+club.licencias+' usadas). Pide más al administrador general.'; return; }
+      b.disabled=true; m.style.color='#9AA8A0'; m.textContent='Creando equipo…';
+      try{
+        var r=await sb.from('equipos').insert({nombre:nom, categoria:cat||null, entrenador_id:ent, club_id:clubId});
+        if(r&&r.error) throw r.error;
+        m.style.color='#2ECC71'; m.textContent='Equipo creado. El entrenador lo verá al entrar.';
+        setTimeout(clubPanelUI, 700);
+      }catch(e){ m.style.color='#ff6b6b'; m.textContent='No se pudo crear el equipo.'; b.disabled=false; }
+    });
+    // archivar con TRIPLE aceptación
+    v.querySelectorAll('[data-arch]').forEach(function(btn){
+      var pasos=0;
+      btn.addEventListener('click', async function(){
+        pasos++;
+        var m=document.getElementById('ce-msg');
+        if(pasos===1){ m.style.color='#ffb454'; m.textContent='Archivar "'+btn.parentElement.querySelector('b').textContent+'": pulsa 2 veces más para confirmar (1/3). No se borra nada: se puede recuperar.'; return; }
+        if(pasos===2){ m.style.color='#ffb454'; m.textContent='Confirmación 2 de 3. Un toque más y el equipo se archiva.'; return; }
+        try{
+          var r=await sb.from('equipos').update({archivado:true}).eq('id',btn.getAttribute('data-arch'));
+          if(r&&r.error) throw r.error;
+          m.style.color='#2ECC71'; m.textContent='Equipo archivado. Licencia liberada.';
+          setTimeout(clubPanelUI, 700);
+        }catch(e){ m.style.color='#ff6b6b'; m.textContent='No se pudo archivar.'; }
+      });
+    });
+  }catch(e){ v.innerHTML='<div class="card pr-panel"><div style="color:#ff6b6b;font-size:13px">No se pudo cargar el club.</div></div>'; }
+}
+window.clubPanelUI=clubPanelUI;
+
 /* ===== CLUBES (capa de club F1: solo admin general) ===== */
 async function cargarClubes(){
   var box=document.getElementById('cl-lista'); if(!box) return;
