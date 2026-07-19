@@ -990,14 +990,28 @@ body{
             <h2>Administraci&oacute;n</h2>
             <button class="admin-volver" data-go="perfil">&lsaquo; Volver</button>
           </div>
-          <div class="section-t">Usuarios</div>
+          <div class="section-t">Clubes</div>
+          <div class="card pr-panel" id="admin-clubes">
+            <div id="cl-lista"><div style="color:var(--muted);font-size:13px">Cargando&hellip;</div></div>
+            <div style="height:1px;background:rgba(255,255,255,.09);margin:14px 0"></div>
+            <div style="font-size:13px;font-weight:700;margin-bottom:8px">Dar de alta un club</div>
+            <input class="field" id="cl-nombre" placeholder="Nombre del club (ej. CB El Palo)">
+            <div class="flab">Escudo / logotipo (opcional)</div>
+            <input class="field" id="cl-logo" type="file" accept="image/*" style="padding:11px">
+            <div class="flab">Licencias de equipo</div>
+            <input class="field" id="cl-lic" type="number" min="1" max="100" value="10">
+            <button class="btn btn-primary" id="cl-crear" style="margin-top:6px">Crear club</button>
+            <div id="cl-msg" style="font-size:13px;margin-top:10px;line-height:1.5;min-height:16px"></div>
+          </div>
+          <div class="section-t" style="margin-top:20px">Usuarios</div>
           <div id="admin-msg" style="font-size:13px;margin:0 2px 10px;min-height:16px"></div>
           <div class="card pr-panel" id="admin-users"><div style="color:var(--muted);font-size:13px">Cargando&hellip;</div></div>
           <div class="section-t" style="margin-top:20px">Crear usuario</div>
           <div class="card pr-panel" id="admin-crear">
             <input class="field" id="nu-nombre" placeholder="Nombre">
             <input class="field" id="nu-email" type="email" placeholder="Correo electr&oacute;nico" autocomplete="off">
-            <select class="field" id="nu-rol"><option value="jugador">Jugador</option><option value="entrenador">Entrenador</option><option value="admin">Administrador</option></select>
+            <select class="field" id="nu-rol"><option value="jugador">Jugador</option><option value="entrenador">Entrenador</option><option value="admin_club">Administrador de club</option><option value="admin">Administrador</option></select>
+            <select class="field" id="nu-club" style="display:none"><option value="">Elige el club&hellip;</option></select>
             <button class="btn btn-primary" id="nu-crear" style="margin-top:4px">Crear usuario</button>
             <div id="nu-msg" style="font-size:13px;margin-top:12px;line-height:1.5"></div>
           </div>
@@ -1102,7 +1116,7 @@ const SUPABASE_URL="https://kbrvaawngeuuewplcwyn.supabase.co";
 const SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticnZhYXduZ2V1dWV3cGxjd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTA0MjIsImV4cCI6MjA5Nzg2NjQyMn0.9ys4m2OicbMq3cFyf0a2IA_eh3VspPJ3pYgjNkMO6WA";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
 const screens={login:'s-login',entrevista:'s-entrevista',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil',libre:'s-libre',dirigido:'s-dirigido',admin:'s-admin',entrenador:'s-entrenador',modo:'s-modo'};
-const APP_VERSION='v1.2 · 19/07/2026';
+const APP_VERSION='v1.3 · 19/07/2026';
 document.querySelectorAll('#app-version,#app-version-2').forEach(function(el){ el.textContent='ANMAR TRAINING '+APP_VERSION; });
 window.APP_VERSION=APP_VERSION;
 function go(name,isBack){
@@ -1794,6 +1808,7 @@ if(n)n.onclick=function(){window.__calOffset=(window.__calOffset||0)+1;cargarCal
 </script>
 <script>
 async function cargarAdmin(){
+  if(window.cargarClubes) cargarClubes();
   var cont=document.getElementById('admin-users'); if(!cont) return; cont.innerHTML='Cargando\u2026';
   try{
     var r=await sb.rpc('admin_lista_usuarios');
@@ -1844,15 +1859,68 @@ async function borrarUsuario(uid, nombre, bt){
 }
 </script>
 <script>
+/* ===== CLUBES (capa de club F1: solo admin general) ===== */
+async function cargarClubes(){
+  var box=document.getElementById('cl-lista'); if(!box) return;
+  try{
+    var r=await sb.from('clubes').select('id,nombre,logo_url,licencias,archivado').order('created_at');
+    if(r&&r.error){ box.innerHTML='<div style="font-size:12px;color:var(--muted2)">Solo el administrador puede gestionar clubes.</div>'; return; }
+    var rows=(r.data||[]).filter(function(c){return !c.archivado;});
+    window.__clubes=rows;
+    // rellenar selector de club del alta de usuarios
+    var selc=document.getElementById('nu-club');
+    if(selc) selc.innerHTML='<option value="">Elige el club\u2026</option>'+rows.map(function(c){return '<option value="'+c.id+'">'+String(c.nombre).replace(/</g,'&lt;')+'</option>';}).join('');
+    if(!rows.length){ box.innerHTML='<div style="font-size:13px;color:var(--muted)">A\u00fan no hay clubes dados de alta.</div>'; return; }
+    var pub=function(p){ try{ return sb.storage.from('clubes').getPublicUrl(p).data.publicUrl; }catch(e){ return null; } };
+    box.innerHTML=rows.map(function(c){
+      var lg=c.logo_url?pub(c.logo_url):null;
+      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid rgba(255,255,255,.07)">'+
+        '<div style="width:38px;height:38px;border-radius:10px;flex:none;background:#16213a center/cover no-repeat;'+(lg?('background-image:url("'+lg+'")'):'')+';display:flex;align-items:center;justify-content:center;font-weight:800">'+(lg?'':String(c.nombre||'?').charAt(0).toUpperCase())+'</div>'+
+        '<div style="flex:1;min-width:0"><div style="font-weight:700">'+String(c.nombre).replace(/</g,'&lt;')+'</div><div style="font-size:12px;color:var(--muted2)">'+c.licencias+' licencias de equipo</div></div>'+
+        '</div>';
+    }).join('');
+  }catch(e){ box.innerHTML='<div style="font-size:12px;color:#ff6b6b">Error al cargar clubes.</div>'; }
+}
+window.cargarClubes=cargarClubes;
+async function crearClub(){
+  var m=document.getElementById('cl-msg'), b=document.getElementById('cl-crear');
+  var nombre=(document.getElementById('cl-nombre').value||'').trim();
+  var lic=parseInt(document.getElementById('cl-lic').value,10); if(isNaN(lic)||lic<1) lic=10;
+  if(nombre.length<2){ m.style.color='#ff6b6b'; m.textContent='Escribe el nombre del club.'; return; }
+  b.disabled=true; m.style.color='#9AA8A0'; m.textContent='Creando club\u2026';
+  try{
+    var logoPath=null;
+    var f=document.getElementById('cl-logo').files[0];
+    var ins=await sb.from('clubes').insert({nombre:nombre, licencias:lic}).select().single();
+    if(ins&&ins.error) throw ins.error;
+    if(f){
+      var ext=(f.name.split('.').pop()||'png').toLowerCase().replace(/[^a-z0-9]/g,'')||'png';
+      logoPath=ins.data.id+'/logo.'+ext;
+      var up=await sb.storage.from('clubes').upload(logoPath, f, {upsert:true});
+      if(up&&up.error){ m.style.color='#ffb454'; m.textContent='Club creado, pero el escudo no se pudo subir (puedes reintentarlo).'; }
+      else { await sb.from('clubes').update({logo_url:logoPath}).eq('id',ins.data.id); }
+    }
+    document.getElementById('cl-nombre').value=''; document.getElementById('cl-logo').value=''; document.getElementById('cl-lic').value='10';
+    m.style.color='#2ECC71'; m.textContent='Club "'+nombre+'" creado con '+lic+' licencias. Ahora crea su administrador en "Crear usuario" (rol Administrador de club).';
+    cargarClubes();
+  }catch(e){ m.style.color='#ff6b6b'; m.textContent='No se pudo crear el club.'; }
+  b.disabled=false;
+}
+(function(){ var b=document.getElementById('cl-crear'); if(b) b.addEventListener('click',crearClub); })();
+(function(){ var s=document.getElementById('nu-rol'); if(s) s.addEventListener('change',function(){ var c=document.getElementById('nu-club'); if(c) c.style.display=(s.value==='admin_club')?'block':'none'; }); })();
+
 async function crearUsuario(){
   var msg=document.getElementById('nu-msg'), btn=document.getElementById('nu-crear');
   var nombre=(document.getElementById('nu-nombre').value||'').trim();
   var email=(document.getElementById('nu-email').value||'').trim();
   var rol=document.getElementById('nu-rol').value;
+  var clubSel=document.getElementById('nu-club');
+  var club_id=(rol==='admin_club'&&clubSel)?(clubSel.value||''):'';
   if(!email){ msg.style.color='#ff6b6b'; msg.textContent='Escribe el correo.'; return; }
+  if(rol==='admin_club'&&!club_id){ msg.style.color='#ff6b6b'; msg.textContent='Elige de qu\u00e9 club ser\u00e1 administrador.'; return; }
   btn.disabled=true; msg.style.color='#9AA8A0'; msg.textContent='Creando\u2026';
   try{
-    var r=await sb.functions.invoke('admin-crear-usuario',{ body:{nombre:nombre,email:email,rol:rol} });
+    var r=await sb.functions.invoke('admin-crear-usuario',{ body:{nombre:nombre,email:email,rol:rol,club_id:club_id||null} });
     var err=(r.error)?(r.error.message||'error'):((r.data&&r.data.error)?r.data.error:null);
     if(err){ msg.style.color='#ff6b6b'; msg.textContent=err; btn.disabled=false; return; }
     var d=r.data;
