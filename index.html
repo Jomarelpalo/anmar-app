@@ -691,6 +691,7 @@ body{
       </form>
       <p class="msg" id="msg"></p>
       <p class="foot">Acceso protegido · <b>verificación en 2 pasos</b></p>
+      <p class="foot" id="app-version" style="margin-top:4px;opacity:.7"></p>
     </div>
   </div>
 </section>
@@ -967,6 +968,7 @@ body{
           <button class="btn btn-primary solo-admin" style="margin-top:18px" data-go="admin">Administración</button>
           <button class="btn btn-ghost solo-admin" style="margin-top:12px" data-go="modo">Cambiar de modo</button>
           <button class="btn btn-ghost" style="margin-top:12px" data-go="login">Cerrar sesión</button>
+          <p class="foot" id="app-version-2" style="margin-top:14px;text-align:center;opacity:.7"></p>
         </div>
       </section>
 
@@ -1100,6 +1102,9 @@ const SUPABASE_URL="https://kbrvaawngeuuewplcwyn.supabase.co";
 const SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticnZhYXduZ2V1dWV3cGxjd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTA0MjIsImV4cCI6MjA5Nzg2NjQyMn0.9ys4m2OicbMq3cFyf0a2IA_eh3VspPJ3pYgjNkMO6WA";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
 const screens={login:'s-login',entrevista:'s-entrevista',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil',libre:'s-libre',dirigido:'s-dirigido',admin:'s-admin',entrenador:'s-entrenador',modo:'s-modo'};
+const APP_VERSION='v1.0 · 19/07/2026';
+document.querySelectorAll('#app-version,#app-version-2').forEach(function(el){ el.textContent='ANMAR TRAINING '+APP_VERSION; });
+window.APP_VERSION=APP_VERSION;
 function go(name,isBack){
   if(!isBack&&window.__cur&&window.__cur!==name){(window.__hist=window.__hist||[]).push(window.__cur);} if(name==='hoy'){window.__hist=[];} window.__cur=name;
   Object.values(screens).forEach(function(id){var el=document.getElementById(id); if(el) el.classList.remove('active');});
@@ -2580,8 +2585,12 @@ window.verJugador=verJugador;
       '<input class="field" id="eq-nombre" placeholder="Nombre del equipo (ej. Infantil A)">'+
       '<div class="flab">Categoría</div><select class="field" id="eq-cat">'+catOpts+'</select>'+
       '<button class="btn btn-primary" id="eq-crear">Crear equipo</button></div>'+
-      '<div class="card pr-panel" style="margin-top:14px"><div class="section-t">Mis equipos</div><div id="eq-lista"><div style="color:var(--muted);font-size:13px">Cargando…</div></div></div>';
+      '<div class="card pr-panel" style="margin-top:14px"><div class="section-t">Mis equipos</div><div id="eq-lista"><div style="color:var(--muted);font-size:13px">Cargando…</div></div></div>'+
+      '<div class="card pr-panel" style="margin-top:14px"><div class="section-t">Biblioteca de ejercicios</div>'+
+      '<div style="font-size:12px;color:var(--muted2);margin:-2px 2px 10px;line-height:1.5">Explora el catálogo completo con filtros: cada ejercicio con sus instrucciones y su fuente.</div>'+
+      '<button class="btn btn-ghost" id="eq-biblio">Abrir la biblioteca</button></div>';
     document.getElementById('eq-crear').addEventListener('click',crearEquipo);
+    var ebib=document.getElementById('eq-biblio'); if(ebib) ebib.addEventListener('click',function(){ bibliotecaUI(); });
     var box=document.getElementById('eq-lista');
     try{
       var r=await sb.from('equipos').select('id,nombre,categoria').order('created_at',{ascending:true});
@@ -2597,6 +2606,75 @@ window.verJugador=verJugador;
     }catch(e){ box.innerHTML='<div style="color:#ff6b6b;font-size:13px">Error al cargar.</div>'; }
   }
   window.cargarEquipos=cargarEquipos;
+
+  /* ====== BIBLIOTECA DE EJERCICIOS (buscador del catálogo) ====== */
+  var BIB_PIL=[['','Todos los pilares'],['calentamiento','Calentamiento'],['tecnica','Técnica'],['tactica','Táctica'],['fuerza','Fuerza'],['pliometria','Pliometría'],['acondicionamiento','Acondicionamiento'],['recuperacion','Recuperación'],['mentoria','Mentoría']];
+  var BIB_NIV=[['','Todos los niveles'],['iniciacion','Iniciación'],['medio','Medio'],['avanzado','Avanzado']];
+  var BIB_PAGE=30;
+  function bibliotecaUI(){
+    setTitulo('Biblioteca'); volverBtn(true, cargarEquipos); msg('');
+    var v=document.getElementById('eq-vista'); if(!v) return;
+    var pilOpts=BIB_PIL.map(function(o){return '<option value="'+o[0]+'">'+o[1]+'</option>';}).join('');
+    var nivOpts=BIB_NIV.map(function(o){return '<option value="'+o[0]+'">'+o[1]+'</option>';}).join('');
+    v.innerHTML='<div class="card pr-panel">'+
+      '<div class="section-t">Buscar en el catálogo</div>'+
+      '<input class="field" id="bib-txt" placeholder="Buscar por nombre o tipo (ej. tiro, rebote, zig-zag)">'+
+      '<div style="display:flex;gap:10px"><select class="field" id="bib-pil" style="flex:1.2">'+pilOpts+'</select><select class="field" id="bib-niv" style="flex:1">'+nivOpts+'</select></div>'+
+      '<div class="flab">Edad de los jugadores (opcional)</div><input class="field" id="bib-edad" type="number" min="6" max="60" placeholder="Ej. 13 — solo ejercicios aptos para esa edad">'+
+      '<button class="btn btn-primary" id="bib-buscar" style="margin-top:8px">Buscar</button>'+
+      '<div id="bib-cont" style="font-size:12px;color:var(--muted2);margin-top:10px;min-height:16px"></div>'+
+      '</div>'+
+      '<div id="bib-res" style="margin-top:14px"></div>'+
+      '<button class="btn btn-ghost" id="bib-mas" style="margin-top:12px;display:none">Cargar más</button>';
+    var estado={offset:0, total:0};
+    function consulta(){
+      var q=sb.from('ejercicios').select('nombre,pilar,subapartado,nivel,descripcion,instrucciones,material_necesario,series_def,reps_def,descanso_seg_def,edad_min,fuente',{count:'exact'}).eq('activo',true);
+      var txt=(document.getElementById('bib-txt').value||'').trim();
+      var pil=document.getElementById('bib-pil').value, niv=document.getElementById('bib-niv').value;
+      var ed=parseInt(document.getElementById('bib-edad').value,10);
+      if(txt) q=q.or('nombre.ilike.%'+txt.replace(/[,%()]/g,'')+'%,subapartado.ilike.%'+txt.replace(/[,%()]/g,'')+'%');
+      if(pil) q=q.eq('pilar',pil);
+      if(niv) q=q.eq('nivel',niv);
+      if(!isNaN(ed)) q=q.or('edad_min.is.null,edad_min.lte.'+ed);
+      return q.order('pilar').order('nombre').range(estado.offset, estado.offset+BIB_PAGE-1);
+    }
+    function pintaItem(e){
+      var meta=[]; if(e.pilar)meta.push(pilNom(e.pilar)); if(e.subapartado)meta.push(e.subapartado.replace(/_/g,' ')); if(e.nivel)meta.push(e.nivel); if(e.edad_min)meta.push(e.edad_min+'+ años');
+      var dosis=(e.series_def?e.series_def+'x'+(e.reps_def||1):'')+(e.descanso_seg_def?' · '+e.descanso_seg_def+'s descanso':'');
+      return '<div class="bib-item card pr-panel" style="margin-bottom:10px;padding:12px 14px">'+
+        '<div class="bib-head" style="display:flex;gap:8px;align-items:baseline;cursor:pointer">'+
+          '<span style="flex:1;min-width:0;font-weight:700">'+esc(e.nombre)+'</span>'+
+          '<span style="color:var(--muted2);font-size:18px">›</span></div>'+
+        '<div style="font-size:11.5px;color:var(--muted2);margin-top:2px">'+esc(meta.join(' · '))+(dosis?(' · '+esc(dosis)):'')+'</div>'+
+        '<div class="bib-body" style="display:none;font-size:13px;color:var(--muted);padding-top:8px;line-height:1.55">'+
+          (e.descripcion?('<div style="margin-bottom:6px">'+esc(e.descripcion)+'</div>'):'')+
+          (e.instrucciones?('<div style="color:var(--text)"><b>Cómo se hace:</b> '+esc(e.instrucciones)+'</div>'):'')+
+          ((e.material_necesario&&e.material_necesario.length)?('<div style="margin-top:6px"><b>Material:</b> '+esc(e.material_necesario.join(', '))+'</div>'):'')+
+          (e.fuente?('<div style="margin-top:6px;font-size:11px;color:var(--muted2)">Fuente: '+esc(e.fuente)+'</div>'):'')+
+        '</div></div>';
+    }
+    function pilNom(p){ for(var i=0;i<BIB_PIL.length;i++){ if(BIB_PIL[i][0]===p) return BIB_PIL[i][1]; } return p; }
+    async function buscar(reset){
+      var cont=document.getElementById('bib-cont'), res=document.getElementById('bib-res'), mas=document.getElementById('bib-mas');
+      if(reset){ estado.offset=0; res.innerHTML=''; }
+      if(cont) cont.textContent='Buscando…';
+      try{
+        var r=await consulta();
+        if(r&&r.error) throw r.error;
+        var rows=r.data||[]; estado.total=(r.count!=null?r.count:rows.length);
+        res.insertAdjacentHTML('beforeend', rows.map(pintaItem).join(''));
+        res.querySelectorAll('.bib-item').forEach(function(it){ if(it.__ok)return; it.__ok=1; it.querySelector('.bib-head').addEventListener('click',function(){ var b=it.querySelector('.bib-body'); b.style.display=(b.style.display==='none'?'block':'none'); }); });
+        estado.offset+=rows.length;
+        if(cont) cont.textContent=estado.total?('Mostrando '+estado.offset+' de '+estado.total+' ejercicios. Todos con su fuente.'):'No hay ejercicios con esos filtros. Prueba a quitar alguno.';
+        if(mas) mas.style.display=(estado.offset<estado.total)?'block':'none';
+      }catch(e){ if(cont){ cont.style.color='#ff6b6b'; cont.textContent='No se pudo buscar. Revisa la conexión.'; } }
+    }
+    document.getElementById('bib-buscar').addEventListener('click',function(){ buscar(true); });
+    document.getElementById('bib-txt').addEventListener('keydown',function(ev){ if(ev.key==='Enter') buscar(true); });
+    document.getElementById('bib-mas').addEventListener('click',function(){ buscar(false); });
+    buscar(true);
+  }
+  window.bibliotecaUI=bibliotecaUI;
 
   async function crearEquipo(){
     var inp=document.getElementById('eq-nombre'); var nombre=(inp.value||'').trim();
