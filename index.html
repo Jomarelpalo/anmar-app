@@ -1129,7 +1129,7 @@ const SUPABASE_URL="https://kbrvaawngeuuewplcwyn.supabase.co";
 const SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticnZhYXduZ2V1dWV3cGxjd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTA0MjIsImV4cCI6MjA5Nzg2NjQyMn0.9ys4m2OicbMq3cFyf0a2IA_eh3VspPJ3pYgjNkMO6WA";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON,{auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:true}});
 const screens={login:'s-login',entrevista:'s-entrevista',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil',libre:'s-libre',dirigido:'s-dirigido',admin:'s-admin',entrenador:'s-entrenador',modo:'s-modo',club:'s-club',admEquipos:'s-adm-equipos',admJugadores:'s-adm-jugadores',admActividad:'s-adm-actividad',admAjustes:'s-adm-ajustes',admCompeticiones:'s-adm-competiciones'};
-const APP_VERSION='v2.1 · 19/07/2026';
+const APP_VERSION='v2.2 · 19/07/2026';
 document.querySelectorAll('#app-version,#app-version-2,#app-version-3').forEach(function(el){ el.textContent='ANMAR TRAINING '+APP_VERSION; });
 window.APP_VERSION=APP_VERSION;
 function go(name,isBack){
@@ -4501,7 +4501,6 @@ window.verJugador=verJugador;
   function fmtClock(sec){ var m=Math.floor(sec/60), s=sec%60; return (m<10?'0':'')+m+':'+(s<10?'0':'')+s; }
   function fsActive(){ return document.fullscreenElement||document.webkitFullscreenElement; }
   function fsExit(){ try{ if(document.exitFullscreen) document.exitFullscreen(); else if(document.webkitExitFullscreen) document.webkitExitFullscreen(); }catch(e){} }
-  function toggleFs(el){ try{ if(fsActive()){ fsExit(); } else { var rq=el.requestFullscreen||el.webkitRequestFullscreen; if(rq){ var p=rq.call(el); if(p&&p.catch) p.catch(function(){}); } } }catch(e){} }
   function scoreLocal(np){ return np.players.reduce(function(a,p){ return a+ptsSt(p.st); },0); }
   function foulsTeam(np){ return np.players.reduce(function(a,p){ return a+p.st.faltas; },0); }
   function onCourtPlayers(np){ return np.players.filter(function(p){return p.onCourt;}); }
@@ -4655,7 +4654,7 @@ window.verJugador=verJugador;
       '<span style="min-width:0;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9.5px;color:var(--muted2);text-transform:uppercase">'+esc2f(rivalLabel)+'</span>'+
     '</div>';
     ov.innerHTML='<div class="cap-wrap cap-live">'+
-      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px"><h2 style="margin:0;font-size:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc2f(np.nombreLocal||'Tu equipo')+' vs '+esc2f(np.rival||'Rival')+'</h2>'+mkTop+'<div style="display:flex;gap:6px;flex:none">'+(np.prompt?'':'<button class="btn btn-ghost cap-undo-top" id="cap-undo2" title="Deshacer" style="margin:0;padding:8px 12px"'+(np.log.length?'':' disabled')+'>&#8624;</button><button class="btn btn-primary cap-guard-top" id="cap-guardar2" style="margin:0;padding:8px 13px">Guardar</button>')+'<button class="btn btn-ghost" id="cap-fs" title="Pantalla completa" style="margin:0;padding:8px 11px">&#9974;</button><button class="btn btn-ghost" id="cap-cerrar" style="max-width:85px;margin:0">Cerrar</button></div></div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px"><h2 style="margin:0;font-size:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc2f(np.nombreLocal||'Tu equipo')+' vs '+esc2f(np.rival||'Rival')+'</h2>'+mkTop+'<div style="display:flex;gap:6px;flex:none">'+(np.prompt?'':'<button class="btn btn-ghost cap-undo-top" id="cap-undo2" title="Deshacer" style="margin:0;padding:8px 12px"'+(np.log.length?'':' disabled')+'>&#8624;</button><button class="btn btn-primary cap-guard-top" id="cap-guardar2" style="margin:0;padding:8px 13px">Guardar</button>')+'<button class="btn btn-ghost" id="cap-cerrar" style="max-width:85px;margin:0">Cerrar</button></div></div>'+
       '<div class="cap-rot">Gira el dispositivo en horizontal para anotar a pantalla completa y con botones más grandes.</div>'+
       marcador+body+
       (np.prompt?'':'<button class="btn btn-primary cap-guard-bottom" id="cap-guardar" style="margin-top:14px">Guardar partido</button><div id="cap-msg" style="font-size:12px;margin-top:8px;min-height:14px"></div>')+
@@ -4667,7 +4666,6 @@ window.verJugador=verJugador;
       window.addEventListener('orientationchange',function(){ setTimeout(tryFs,350); });
     }
     document.getElementById('cap-cerrar').addEventListener('click',function(){ stop(); if(fsActive()) fsExit(); ov.style.display='none'; });
-    var fsb=document.getElementById('cap-fs'); if(fsb) fsb.addEventListener('click',function(){ toggleFs(ov); });
     [].slice.call(ov.querySelectorAll('#cap-clock-btn,.cap-clock-btnc')).forEach(function(cb){ cb.addEventListener('click',function(){ np.clockRun=!np.clockRun; renderCaptura(ov); }); });
     [].slice.call(ov.querySelectorAll('#cap-per-m,.cap-permc')).forEach(function(pm){ pm.addEventListener('click',function(){ np.periodo=Math.max(1,np.periodo-1); renderCaptura(ov); }); });
     [].slice.call(ov.querySelectorAll('#cap-per-p,.cap-perpc')).forEach(function(pmp){ pmp.addEventListener('click',function(){
