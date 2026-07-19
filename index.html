@@ -1124,7 +1124,7 @@ const SUPABASE_URL="https://kbrvaawngeuuewplcwyn.supabase.co";
 const SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticnZhYXduZ2V1dWV3cGxjd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTA0MjIsImV4cCI6MjA5Nzg2NjQyMn0.9ys4m2OicbMq3cFyf0a2IA_eh3VspPJ3pYgjNkMO6WA";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON,{auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:true}});
 const screens={login:'s-login',entrevista:'s-entrevista',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil',libre:'s-libre',dirigido:'s-dirigido',admin:'s-admin',entrenador:'s-entrenador',modo:'s-modo',club:'s-club'};
-const APP_VERSION='v1.6 · 19/07/2026';
+const APP_VERSION='v1.7 · 19/07/2026';
 document.querySelectorAll('#app-version,#app-version-2,#app-version-3').forEach(function(el){ el.textContent='ANMAR TRAINING '+APP_VERSION; });
 window.APP_VERSION=APP_VERSION;
 function go(name,isBack){
@@ -1829,7 +1829,8 @@ async function cargarAdmin(){
     var me=null; try{ var u=await sb.auth.getUser(); me=u.data&&u.data.user?u.data.user.id:null; }catch(e){}
     cont.innerHTML=rows.map(function(x){
       var yo=(x.id===me);
-      var opts=['jugador','entrenador','admin'].map(function(rr){ return '<option value="'+rr+'"'+(x.rol===rr?' selected':'')+'>'+rr+'</option>'; }).join('');
+      var ROLES_L=[['jugador','jugador'],['entrenador','entrenador'],['admin_club','admin de club'],['admin','admin']];
+      var opts=ROLES_L.map(function(rr){ return '<option value="'+rr[0]+'"'+(x.rol===rr[0]?' selected':'')+'>'+rr[1]+'</option>'; }).join('');
       var borrar=yo?'':'<button class="admin-borrar" data-uid="'+x.id+'" data-nom="'+((x.nombre||x.email||'este usuario').replace(/"/g,'&quot;'))+'" title="Borrar usuario" style="background:#7a2323;color:#fff;border:1px solid #a34040;border-radius:8px;padding:8px 10px;font-size:12px;cursor:pointer;font-family:var(--font);flex:none">Borrar</button>';
       return '<div class="admin-u"><div><div class="admin-u-n">'+(x.nombre||'(sin nombre)')+(yo?' <span style="color:#8A8D93">(t\u00fa)</span>':'')+'</div><div class="admin-u-e">'+(x.email||'')+'</div></div>'+
              '<div style="display:flex;gap:8px;align-items:center;flex:none"><select class="admin-rol" data-uid="'+x.id+'"'+(yo?' disabled':'')+'>'+opts+'</select>'+borrar+'</div></div>';
@@ -1841,7 +1842,20 @@ async function cargarAdmin(){
 async function guardarRol(uid, rol, sel){
   if(sel){ sel.disabled=true; }
   var m=document.getElementById('admin-msg');
-  var r=await sb.from('profiles').update({role:rol}).eq('id',uid);
+  var cambio={role:rol};
+  if(rol==='admin_club'){
+    var cls=window.__clubes||[];
+    if(!cls.length){ if(m){ m.style.color='#ff6b6b'; m.textContent='Primero crea un club (arriba).'; } if(typeof cargarAdmin==='function') cargarAdmin(); return; }
+    if(cls.length===1){ cambio.club_id=cls[0].id; }
+    else {
+      var lista=cls.map(function(c,i){ return (i+1)+') '+c.nombre; }).join('\n');
+      var elegido=window.prompt('¿De qué club será administrador?\n'+lista+'\nEscribe el número:');
+      var idx=parseInt(elegido,10)-1;
+      if(isNaN(idx)||!cls[idx]){ if(m){ m.style.color='#ff6b6b'; m.textContent='Cambio cancelado: no se eligió club.'; } if(typeof cargarAdmin==='function') cargarAdmin(); return; }
+      cambio.club_id=cls[idx].id;
+    }
+  }
+  var r=await sb.from('profiles').update(cambio).eq('id',uid);
   if(r&&r.error){
     if(m){ m.style.color='#ff6b6b'; m.textContent=(String(r.error.message||'').indexOf('administrador')>=0)?'Debe existir al menos un administrador.':'No se pudo cambiar el rol.'; }
     if(typeof cargarAdmin==='function') cargarAdmin();
