@@ -2571,6 +2571,7 @@ window.verJugador=verJugador;
       '<button class="btn btn-ghost" id="eq-sesion-grupo" style="margin-top:10px">Generar sesión de grupo</button>'+
       '<button class="btn btn-ghost" id="eq-nuevo-partido" style="margin-top:10px">Nuevo partido (estadísticas)</button>'+
       '<button class="btn btn-ghost" id="eq-stats-equipo" style="margin-top:10px">Estadísticas del equipo</button>'+
+      '<button class="btn btn-ghost" id="eq-estrategia" style="margin-top:10px">Estrategia de temporada</button>'+
       '<div class="flab" style="margin-top:12px">Categoría del equipo</div><select class="field" id="eq-cat-edit">'+catOpts+'</select>'+
       '<div id="eq-cat-msg" style="font-size:12px;color:var(--muted2);min-height:14px;margin-top:2px"></div></div>';
     var ce=document.getElementById('eq-cat-edit');
@@ -2585,8 +2586,184 @@ window.verJugador=verJugador;
     var esg=document.getElementById('eq-sesion-grupo'); if(esg) esg.addEventListener('click',function(){ generarSesionGrupoUI(id, nombre); });
     var enp=document.getElementById('eq-nuevo-partido'); if(enp) enp.addEventListener('click',function(){ nuevoPartidoUI(id, nombre); });
     var ese=document.getElementById('eq-stats-equipo'); if(ese) ese.addEventListener('click',function(){ abrirStatsEquipo(id, nombre); });
+    var eest=document.getElementById('eq-estrategia'); if(eest) eest.addEventListener('click',function(){ estrategiaEquipoUI(id, nombre); });
     cargarJugadores();
   }
+  window.abrirEquipo=abrirEquipo;
+
+  /* ====== ESTRATEGIA DE TEMPORADA (cuestionario del entrenador) ====== */
+  var ESTR_OBJ=[['','—'],['formar','Formar jugadores (el resultado es secundario)'],['equilibrado','Equilibrado: formar compitiendo'],['competir','Competir al máximo']];
+  var ESTR_NIV=[['','—'],['nuevo_iniciacion','Grupo nuevo, empezando desde cero'],['nuevo_con_base','Grupo nuevo, pero con base previa'],['consolidado_medio','Grupo consolidado, nivel medio'],['consolidado_avanzado','Grupo consolidado, nivel avanzado']];
+  var ESTR_ATA=[['','—'],['contraataque','Contraataque y ritmo alto'],['posicional','Juego posicional y elaborado'],['mixto','Mixto: correr cuando se pueda, elaborar cuando no']];
+  var ESTR_DEF=[['','—'],['individual','Individual en medio campo'],['presion','Presionante (líneas adelantadas / toda pista)'],['zona_mixta','Zonas y defensas mixtas']];
+  var ESTR_PSI=[['','—'],['cohesion','Cohesión: que sean un equipo'],['confianza','Confianza individual'],['concentracion','Concentración y atención'],['gestion_errores','Gestión de errores y frustración'],['competitividad','Mentalidad competitiva']];
+  var ESTR_PRI=[['tiro','Tiro'],['bote','Bote y manejo'],['pase','Pase'],['finalizacion','Entradas y finalización'],['rebote','Rebote'],['defensa_individual','Defensa individual'],['transicion','Transición / contraataque'],['fisico','Físico general']];
+  var ESTR_MAT=[['pista_completa','Pista completa'],['media_pista','Solo media pista'],['gimnasio','Gimnasio / pesas'],['balones','Un balón por jugador'],['conos_vallas','Conos, vallas, escalera'],['cajones','Cajones / steps']];
+  async function estrategiaEquipoUI(id, nombre){
+    setTitulo('Estrategia · '+(nombre||'Equipo'));
+    volverBtn(true, function(){ abrirEquipo(window.__eq.id, window.__eq.nombre, window.__eq.categoria); });
+    msg('');
+    var v=document.getElementById('eq-vista');
+    v.innerHTML='<div class="card pr-panel"><div style="color:var(--muted);font-size:13px">Cargando…</div></div>';
+    var est=null;
+    try{ var r=await sb.from('estrategia_equipo').select('*').eq('equipo_id',id).maybeSingle(); if(r&&!r.error) est=r.data||null; }catch(e){}
+    est=est||{};
+    var pesos=est.pesos||{fisico:25,tecnica:30,tactica:30,psico:15};
+    function so(list,val){ return list.map(function(o){return '<option value="'+o[0]+'"'+((val||'')===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join(''); }
+    function chk(list, sel, cls){ sel=sel||[]; return '<div class="lez" style="margin-top:4px">'+list.map(function(o){var on=sel.indexOf(o[0])>=0;return '<label><input type="checkbox" class="'+cls+'" value="'+o[0]+'"'+(on?' checked':'')+'>'+o[1]+'</label>';}).join('')+'</div>'; }
+    function slider(k,lab,val){ return '<div style="display:flex;align-items:center;gap:10px;margin-top:8px"><div style="width:110px;font-size:13px">'+lab+'</div><input type="range" class="es-peso" data-k="'+k+'" min="0" max="100" step="5" value="'+val+'" style="flex:1;accent-color:var(--orange)"><div class="es-pv" data-k="'+k+'" style="width:44px;text-align:right;font-size:13px;font-weight:600">'+val+'%</div></div>'; }
+    var diasOpts=[1,2,3,4,5,6].map(function(n){return '<option value="'+n+'"'+((est.dias_semana||3)===n?' selected':'')+'>'+n+' día'+(n===1?'':'s')+'</option>';}).join('');
+    var minOpts=[60,75,90,105,120].map(function(n){return '<option value="'+n+'"'+((est.min_sesion||90)===n?' selected':'')+'>'+n+' minutos</option>';}).join('');
+    v.innerHTML='<div class="card pr-panel">'+
+      '<div class="section-t">Estrategia de temporada</div>'+
+      '<div style="font-size:12px;color:var(--muted2);margin:-2px 2px 10px;line-height:1.5">Responde estas 10 preguntas y el sistema usará tus respuestas para orientar la guía de temporada y las sesiones. Puedes cambiarlas cuando quieras.</div>'+
+      '<div class="flab">1 · Objetivo del año</div><select class="field" id="es-obj">'+so(ESTR_OBJ,est.objetivo)+'</select>'+
+      '<div class="flab">2 · Punto de partida del grupo</div><select class="field" id="es-niv">'+so(ESTR_NIV,est.nivel_grupo)+'</select>'+
+      '<div class="flab">3 · Estilo de juego en ataque</div><select class="field" id="es-ata">'+so(ESTR_ATA,est.estilo_ataque)+'</select>'+
+      '<div class="flab">4 · Estilo defensivo</div><select class="field" id="es-def">'+so(ESTR_DEF,est.estilo_defensa)+'</select>'+
+      '<div class="flab">5 · Entrenamientos por semana y duración</div>'+
+      '<div style="display:flex;gap:10px"><select class="field" id="es-dias" style="flex:1">'+diasOpts+'</select><select class="field" id="es-min" style="flex:1">'+minOpts+'</select></div>'+
+      '<div class="flab">6 · Fechas clave</div>'+
+      '<div style="font-size:12px;color:var(--muted2);margin:0 2px 4px">Inicio de pretemporada</div><input class="field" id="es-fpre" type="date" value="'+esc(est.fecha_pretemporada||'')+'">'+
+      '<div style="font-size:12px;color:var(--muted2);margin:6px 2px 4px">Inicio de competición</div><input class="field" id="es-fcomp" type="date" value="'+esc(est.fecha_competicion||'')+'">'+
+      '<div style="font-size:12px;color:var(--muted2);margin:6px 2px 4px">Fin de temporada</div><input class="field" id="es-ffin" type="date" value="'+esc(est.fecha_fin||'')+'">'+
+      '<div class="flab">7 · Reparto del trabajo (debe sumar 100%)</div>'+
+      slider('fisico','Físico',pesos.fisico!=null?pesos.fisico:25)+
+      slider('tecnica','Técnica',pesos.tecnica!=null?pesos.tecnica:30)+
+      slider('tactica','Táctica',pesos.tactica!=null?pesos.tactica:30)+
+      slider('psico','Psicológico',pesos.psico!=null?pesos.psico:15)+
+      '<div id="es-suma" style="font-size:12px;margin:6px 2px 0;min-height:16px"></div>'+
+      '<div class="flab">8 · Prioridades concretas (elige hasta 3)</div>'+chk(ESTR_PRI,est.prioridades,'es-pri')+
+      '<div class="flab">9 · Aspecto psicológico prioritario</div><select class="field" id="es-psi">'+so(ESTR_PSI,est.psico_prioridad)+'</select>'+
+      '<div class="flab">10 · Material e instalaciones disponibles</div>'+chk(ESTR_MAT,est.material,'es-mat')+
+      '<div class="flab">Notas (opcional)</div><textarea class="field" id="es-notas" rows="2" placeholder="Lo que quieras apuntar sobre tu plan">'+esc(est.notas||'')+'</textarea>'+
+      '<button class="btn btn-primary" id="es-guardar" style="margin-top:14px">Guardar estrategia</button>'+
+      '<button class="btn btn-ghost" id="es-guia" style="margin-top:10px">Ver guía de temporada</button>'+
+      '<div id="es-msg" style="text-align:center;font-size:12px;margin-top:10px;min-height:16px"></div>'+
+      '</div>';
+    function sumaPesos(){ var s=0; v.querySelectorAll('.es-peso').forEach(function(r){ s+=parseInt(r.value,10)||0; }); return s; }
+    function pintaSuma(){ var s=sumaPesos(); var el=document.getElementById('es-suma'); if(!el) return;
+      v.querySelectorAll('.es-peso').forEach(function(r){ var pv=v.querySelector('.es-pv[data-k="'+r.getAttribute('data-k')+'"]'); if(pv) pv.textContent=r.value+'%'; });
+      if(s===100){ el.style.color='var(--muted2)'; el.textContent='Suma: 100% ✓'; }
+      else { el.style.color='#ffb454'; el.textContent='Suma: '+s+'% — ajusta las barras hasta llegar a 100%.'; } }
+    v.querySelectorAll('.es-peso').forEach(function(r){ r.addEventListener('input',pintaSuma); });
+    pintaSuma();
+    v.querySelectorAll('.es-pri').forEach(function(c){ c.addEventListener('change',function(){
+      var on=v.querySelectorAll('.es-pri:checked'); if(on.length>3){ c.checked=false; var m=document.getElementById('es-msg'); if(m){ m.style.color='#ffb454'; m.textContent='Máximo 3 prioridades: así el plan de verdad prioriza.'; } } }); });
+    function leerForm(){
+      var ps={}; v.querySelectorAll('.es-peso').forEach(function(r){ ps[r.getAttribute('data-k')]=parseInt(r.value,10)||0; });
+      var pri=[]; v.querySelectorAll('.es-pri:checked').forEach(function(c){ pri.push(c.value); });
+      var mat=[]; v.querySelectorAll('.es-mat:checked').forEach(function(c){ mat.push(c.value); });
+      return { equipo_id:id,
+        objetivo:document.getElementById('es-obj').value||null,
+        nivel_grupo:document.getElementById('es-niv').value||null,
+        estilo_ataque:document.getElementById('es-ata').value||null,
+        estilo_defensa:document.getElementById('es-def').value||null,
+        dias_semana:parseInt(document.getElementById('es-dias').value,10)||null,
+        min_sesion:parseInt(document.getElementById('es-min').value,10)||null,
+        fecha_pretemporada:document.getElementById('es-fpre').value||null,
+        fecha_competicion:document.getElementById('es-fcomp').value||null,
+        fecha_fin:document.getElementById('es-ffin').value||null,
+        pesos:ps, prioridades:pri, material:mat,
+        psico_prioridad:document.getElementById('es-psi').value||null,
+        notas:document.getElementById('es-notas').value||null };
+    }
+    document.getElementById('es-guardar').addEventListener('click', async function(){
+      var m=document.getElementById('es-msg');
+      var s=sumaPesos();
+      if(s!==100){ if(m){ m.style.color='#ff6b6b'; m.textContent='El reparto debe sumar 100% (ahora suma '+s+'%).'; } return; }
+      var obj=leerForm(); obj.updated_at=new Date().toISOString();
+      if(m){ m.style.color='var(--muted2)'; m.textContent='Guardando…'; }
+      try{
+        var rr=await sb.from('estrategia_equipo').upsert(obj,{onConflict:'equipo_id'});
+        if(rr&&rr.error) throw rr.error;
+        if(m){ m.style.color='#7ee29a'; m.textContent='Estrategia guardada. Pulsa "Ver guía de temporada" para ver el plan.'; }
+      }catch(e){ if(m){ m.style.color='#ff6b6b'; m.textContent='No se pudo guardar. Revisa la conexión e inténtalo de nuevo.'; } }
+    });
+    document.getElementById('es-guia').addEventListener('click', function(){
+      var m=document.getElementById('es-msg');
+      var s=sumaPesos();
+      if(s!==100){ if(m){ m.style.color='#ff6b6b'; m.textContent='Antes de ver la guía, ajusta el reparto hasta sumar 100%.'; } return; }
+      guiaTemporadaUI(leerForm(), id, nombre);
+    });
+  }
+  window.estrategiaEquipoUI=estrategiaEquipoUI;
+
+  /* ====== GUÍA DE TEMPORADA (generada desde la estrategia; fuentes citadas) ====== */
+  function guiaTemporadaUI(est, id, nombre){
+    setTitulo('Guía · '+(nombre||'Equipo'));
+    volverBtn(true, function(){ estrategiaEquipoUI(id, nombre); });
+    msg('');
+    var v=document.getElementById('eq-vista');
+    var cat=(window.__eq&&window.__eq.categoria)||null;
+    var catLab=cat?(catNom(cat)||cat):null;
+    function fmtD(iso){ if(!iso) return null; try{ var p=iso.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }catch(e){ return iso; } }
+    function sem(a,b){ try{ var ms=(new Date(b))-(new Date(a)); var w=Math.round(ms/(7*24*3600*1000)); return w>0?w:null; }catch(e){ return null; } }
+    function labelDe(list,val){ for(var i=0;i<list.length;i++){ if(list[i][0]===val) return list[i][1]; } return null; }
+    var ps=est.pesos||{fisico:25,tecnica:30,tactica:30,psico:15};
+    // Fases con fechas
+    var fpre=est.fecha_pretemporada, fcomp=est.fecha_competicion, ffin=est.fecha_fin;
+    var wPre=(fpre&&fcomp)?sem(fpre,fcomp):null, wComp=(fcomp&&ffin)?sem(fcomp,ffin):null;
+    var fasesHtml='';
+    if(fpre||fcomp||ffin){
+      fasesHtml='<div class="if-trow" style="display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:6px 2px;border-bottom:1px solid var(--line)"><span>Pretemporada</span><span style="color:var(--muted)">'+(fpre?fmtD(fpre):'—')+' → '+(fcomp?fmtD(fcomp):'—')+(wPre?(' · '+wPre+' sem'):'')+'</span></div>'+
+        '<div style="display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:6px 2px;border-bottom:1px solid var(--line)"><span>Competición</span><span style="color:var(--muted)">'+(fcomp?fmtD(fcomp):'—')+' → '+(ffin?fmtD(ffin):'—')+(wComp?(' · '+wComp+' sem'):'')+'</span></div>'+
+        '<div style="display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:6px 2px"><span>Descanso / transición</span><span style="color:var(--muted)">'+(ffin?('tras el '+fmtD(ffin)):'—')+'</span></div>';
+    } else fasesHtml='<div style="font-size:13px;color:var(--muted)">Sin fechas: rellena la pregunta 6 del cuestionario para ver el calendario por fases.</div>';
+    var avisoPre=(wPre!=null&&wPre<8)?'<div style="font-size:12px;color:#ffb454;margin-top:6px">Tu pretemporada dura '+wPre+' semanas: el programa de referencia es de 8 (general → específico → puesta a punto). Con menos tiempo, prioriza lo general y recorta la puesta a punto.</div>':'';
+    // Adaptación por categoría (Guía Científica Completa 2026: LTAD/PHV, secciones 3-9)
+    var catHtml='';
+    if(cat==='premini'||cat==='minibasket'){
+      catHtml='Etapa PRE-PHV (antes del estirón): trabajo de fuerza SOLO con el peso corporal, gomas o balón medicinal ligero (1-2 kg); nada de barras ni impactos altos. Prioriza coordinación, esquema corporal y JUEGO; hasta los 12 años conviene compaginar con otros deportes.';
+    } else if(cat==='infantil'){
+      catHtml='Edad del estirón (PHV: chicos 12-14, chicas 10-12): las zonas de crecimiento son vulnerables (Osgood-Schlatter, Sever…). En picos de crecimiento REDUCE la carga y da más peso a movilidad y control del cuerpo. Aún sin barra cargada antes del estirón.';
+    } else if(cat==='cadete'){
+      catHtml='Tras el estirón (POST-PHV) ya se puede iniciar la fuerza con pesos, con técnica supervisada y progresión de 12 semanas: sem. 1-4 técnica al 40-50% de 1RM (3x12-15), sem. 5-8 al 55-65% (3x8-10), sem. 9-12 al 65-75% (4x5-8).';
+    } else if(cat==='junior'||cat==='senior'){
+      catHtml='Ventana máxima de adaptación: objetivos de fuerza de referencia (sentadilla 1,2-1,5x peso corporal), partidos reducidos 4vs4 como mejor método de resistencia específica, y pretemporada de referencia de 8 semanas (general → específico → puesta a punto).';
+    } else {
+      catHtml='Este equipo no tiene categoría asignada: ponla en la pantalla del equipo y la guía se adaptará a la edad.';
+    }
+    // Semana tipo desde el reparto del entrenador
+    var dias=est.dias_semana||3, mins=est.min_sesion||90;
+    var cal=Math.min(25,Math.max(15,Math.round(mins*0.2))), vc=10, principal=mins-cal-vc;
+    var orden=['fisico','tecnica','tactica','psico'];
+    var nom={fisico:'Físico',tecnica:'Técnica',tactica:'Táctica',psico:'Psicológico'};
+    var totalSem=principal*dias;
+    var minutosPil={}; orden.forEach(function(k){ minutosPil[k]=Math.round(totalSem*(ps[k]||0)/100); });
+    var diasArr=[]; for(var d=0; d<dias; d++) diasArr.push({cap:principal,items:[]});
+    var di=0;
+    orden.forEach(function(k){
+      var rest=minutosPil[k];
+      while(rest>0&&di<diasArr.length){
+        var toma=Math.min(rest,diasArr[di].cap);
+        if(toma>0){ diasArr[di].items.push(nom[k]+' '+toma+'\''); diasArr[di].cap-=toma; rest-=toma; }
+        if(diasArr[di].cap<=0) di++;
+      }
+    });
+    var semanaHtml=diasArr.map(function(dd,i){ return '<div style="display:flex;gap:8px;font-size:13px;padding:6px 2px;border-bottom:1px solid var(--line)"><span style="width:52px;color:var(--muted)">Día '+(i+1)+'</span><span style="flex:1">Calent. '+cal+'\' · '+(dd.items.join(' + ')||'—')+' · Vuelta a la calma '+vc+'\'</span></div>'; }).join('');
+    var priLabs=(est.prioridades||[]).map(function(p){ return labelDe(ESTR_PRI,p)||p; });
+    var psiLab=labelDe(ESTR_PSI,est.psico_prioridad);
+    var mat=est.material||[];
+    var avisoGym=((cat==='cadete'||cat==='junior'||cat==='senior')&&mat.indexOf('gimnasio')<0)?'<div style="font-size:12px;color:#ffb454;margin-top:6px">Has indicado que no dispones de gimnasio: la fuerza con pesos de esta categoría tendrá que sustituirse por trabajo con el peso corporal y gomas hasta que lo tengas.</div>':'';
+    v.innerHTML='<div class="card pr-panel">'+
+      '<div class="section-t">Guía de temporada</div>'+
+      '<div style="font-size:12px;color:var(--muted2);margin:-2px 2px 12px;line-height:1.5">'+esc(nombre||'Equipo')+(catLab?(' · '+catLab):'')+
+        (est.objetivo?(' · Objetivo: '+(labelDe(ESTR_OBJ,est.objetivo)||est.objetivo)):'')+'. Orientativa: la decisión final siempre es del entrenador.</div>'+
+      '<div class="section-t" style="font-size:14px">Fases del año</div>'+fasesHtml+avisoPre+
+      '<div style="font-size:12px;color:var(--muted2);margin-top:8px;line-height:1.5">Pretemporada: construir la base física de lo general a lo específico. Competición: mantener el físico y dar más peso a táctica y juego; la semana se organiza según los partidos (con 3 partidos en la semana, la fuerza casi se elimina). Tras la última fase: descanso.</div>'+
+      '<div class="section-t" style="font-size:14px;margin-top:16px">Adaptación a la categoría</div>'+
+      '<div style="font-size:13px;line-height:1.55">'+catHtml+'</div>'+avisoGym+
+      '<div class="section-t" style="font-size:14px;margin-top:16px">Semana tipo ('+dias+' día'+(dias===1?'':'s')+' × '+mins+'\')</div>'+
+      '<div style="font-size:12px;color:var(--muted2);margin:0 2px 6px">Con tu reparto ('+orden.map(function(k){return nom[k]+' '+(ps[k]||0)+'%';}).join(' · ')+'). El calentamiento no lleva estiramientos estáticos (bajan la fuerza); los estáticos van en la vuelta a la calma.</div>'+
+      semanaHtml+
+      ((priLabs.length||psiLab)?('<div class="section-t" style="font-size:14px;margin-top:16px">Tus prioridades</div>'+
+        '<div style="font-size:13px;line-height:1.55">'+(priLabs.length?('Dedica dentro de los bloques de técnica/táctica un hueco fijo a: <b>'+esc(priLabs.join(', '))+'</b>. '):'')+
+        (psiLab?('En lo psicológico, trabaja de forma transversal: <b>'+esc(psiLab)+'</b>.'):'')+'</div>'):'')+
+      '<div style="font-size:11px;color:var(--muted2);margin-top:16px;line-height:1.5">Fuentes: Guía Científica Completa de Preparación Física 2026 (periodización, LTAD/PHV, fuerza por edades, calentamiento; 80+ publicaciones revisadas) y Documento Maestro de Entrenamiento — biblioteca ANMAR. Nada de esta guía es inventado; ante lesión o dolor, consulta médica.</div>'+
+      '</div>';
+  }
+  window.guiaTemporadaUI=guiaTemporadaUI;
 
   async function cargarJugadores(){
     var box=document.getElementById('eq-jug'); if(!box||!window.__eq) return;
