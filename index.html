@@ -1116,7 +1116,7 @@ const SUPABASE_URL="https://kbrvaawngeuuewplcwyn.supabase.co";
 const SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticnZhYXduZ2V1dWV3cGxjd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTA0MjIsImV4cCI6MjA5Nzg2NjQyMn0.9ys4m2OicbMq3cFyf0a2IA_eh3VspPJ3pYgjNkMO6WA";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
 const screens={login:'s-login',entrevista:'s-entrevista',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil',libre:'s-libre',dirigido:'s-dirigido',admin:'s-admin',entrenador:'s-entrenador',modo:'s-modo'};
-const APP_VERSION='v1.4 · 19/07/2026';
+const APP_VERSION='v1.5 · 19/07/2026';
 document.querySelectorAll('#app-version,#app-version-2').forEach(function(el){ el.textContent='ANMAR TRAINING '+APP_VERSION; });
 window.APP_VERSION=APP_VERSION;
 function go(name,isBack){
@@ -1921,7 +1921,12 @@ async function crearUsuario(){
   btn.disabled=true; msg.style.color='#9AA8A0'; msg.textContent='Creando\u2026';
   try{
     var r=await sb.functions.invoke('admin-crear-usuario',{ body:{nombre:nombre,email:email,rol:rol,club_id:club_id||null} });
-    var err=(r.error)?(r.error.message||'error'):((r.data&&r.data.error)?r.data.error:null);
+    var err=null;
+    if(r.error){
+      err=r.error.message||'error';
+      try{ if(r.error.context&&r.error.context.json){ var jd=await r.error.context.json(); if(jd&&jd.error) err=jd.error; } }catch(_e){}
+      if(err&&err.indexOf('non-2xx')>=0) err='No se pudo crear el usuario. Lo más habitual: ese correo ya está registrado (cada usuario necesita un correo único).';
+    } else if(r.data&&r.data.error) err=r.data.error;
     if(err){ msg.style.color='#ff6b6b'; msg.textContent=err; btn.disabled=false; return; }
     var d=r.data;
     msg.style.color='#2ECC71';
