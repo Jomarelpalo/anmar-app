@@ -492,6 +492,30 @@ body{
   #s-login .bg{background-size:contain!important;background-position:center!important}
   #s-login .login-bottom{max-width:400px}
 }
+/* ====== PIZARRA: diseño adaptado a móvil / tablet / PC ====== */
+/* Móvil (base): una sola columna, cancha a lo ancho */
+#piz-grid{display:block}
+#piz-colp{min-width:0}
+/* Tablet (768-1023): dos columnas — cancha grande a la izquierda, panel de trabajo a la derecha */
+@media(min-width:768px){
+  #piz-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
+  #piz-cancha{max-width:none!important;width:min(100%,calc(72vh*300/282))!important}
+}
+/* PC (≥1024): cancha aún más grande y panel más ancho, para crear ejercicios con comodidad */
+@media(min-width:1024px){
+  #piz-grid{grid-template-columns:minmax(0,1fr) 350px;gap:26px}
+  #piz-cancha{width:min(100%,calc(78vh*300/282))!important}
+  /* la pantalla del entrenador se limita a 680px en PC; con la pizarra abierta se amplía */
+  #s-entrenador .pad:has(#piz-card){max-width:1080px}
+}
+/* MODO ENSEÑANZA (pantalla completa): apaisado = cancha izquierda + texto/botones derecha */
+#piz-show .pshow-main{display:flex;gap:14px;flex:1;min-height:0;padding:0 14px 12px}
+#piz-show #pshow-court{flex:1;display:flex;align-items:center;justify-content:center;min-width:0;min-height:0;cursor:pointer}
+#piz-show .pshow-side{flex:none;width:34%;max-width:340px;display:flex;flex-direction:column;justify-content:center;gap:14px}
+@media(orientation:portrait){
+  #piz-show .pshow-main{flex-direction:column}
+  #piz-show .pshow-side{width:auto;max-width:none;flex:none;padding-bottom:6px}
+}
 </style>
 <style id="tema-login2">
 /* Escritorio: formulario mas ALTO y a la DERECHA (zona despejada), sin tapar "ANMAR TRAINING" */
@@ -1129,7 +1153,7 @@ const SUPABASE_URL="https://kbrvaawngeuuewplcwyn.supabase.co";
 const SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticnZhYXduZ2V1dWV3cGxjd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTA0MjIsImV4cCI6MjA5Nzg2NjQyMn0.9ys4m2OicbMq3cFyf0a2IA_eh3VspPJ3pYgjNkMO6WA";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON,{auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:true}});
 const screens={login:'s-login',entrevista:'s-entrevista',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil',libre:'s-libre',dirigido:'s-dirigido',admin:'s-admin',entrenador:'s-entrenador',modo:'s-modo',club:'s-club',admEquipos:'s-adm-equipos',admJugadores:'s-adm-jugadores',admActividad:'s-adm-actividad',admAjustes:'s-adm-ajustes',admCompeticiones:'s-adm-competiciones'};
-const APP_VERSION='v2.4 · 20/07/2026';
+const APP_VERSION='v2.5 · 20/07/2026';
 document.querySelectorAll('#app-version,#app-version-2,#app-version-3').forEach(function(el){ el.textContent='ANMAR TRAINING '+APP_VERSION; });
 window.APP_VERSION=APP_VERSION;
 function go(name,isBack){
@@ -3208,10 +3232,11 @@ window.verJugador=verJugador;
     var st=(selId===f.id)?'stroke="#f2a33c" stroke-width="3"':'stroke="#04070d" stroke-width="1.6"';
     return '<g class="piz-fi" data-fid="'+f.id+'" style="cursor:grab"><circle cx="'+f.x+'" cy="'+f.y+'" r="11" fill="'+fill+'" '+st+'></circle><text x="'+f.x+'" y="'+(f.y+3.8)+'" text-anchor="middle" font-size="10.5" font-weight="800" fill="'+tc+'" style="pointer-events:none">'+esc(f.num||'')+'</text></g>';
   }
-  function pizCourtSVG(paso,selId){
+  function pizCourtSVG(paso,selId,opts){
+    opts=opts||{};
     var inner=(paso.flechas||[]).map(pizFlechaSVG).join('')+(paso.fichas||[]).map(function(f){ return pizFichaSVG(f,selId); }).join('');
     if(paso.balon) inner+='<g class="piz-ba" style="cursor:grab"><circle cx="'+paso.balon.x+'" cy="'+paso.balon.y+'" r="6.5" fill="#f2a33c" stroke="#5a2d00" stroke-width="1.6"></circle></g>';
-    return '<svg id="piz-cancha" viewBox="0 0 300 282" style="display:block;width:100%;max-width:560px;height:auto;margin:0 auto;background:#0a1526;border:1px solid rgba(255,255,255,.10);border-radius:12px;touch-action:none">'+
+    return '<svg id="'+(opts.id||'piz-cancha')+'" viewBox="0 0 300 282" style="'+(opts.style||'display:block;width:100%;max-width:560px;height:auto;margin:0 auto;background:#0a1526;border:1px solid rgba(255,255,255,.10);border-radius:12px;touch-action:none')+'">'+
       '<defs><marker id="piz-ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#eaf2fb"></path></marker>'+
       '<marker id="piz-tope" viewBox="0 0 12 12" refX="6" refY="6" markerWidth="8" markerHeight="8" orient="auto"><path d="M6 0 L6 12" stroke="#eaf2fb" stroke-width="2.6" fill="none"></path></marker></defs>'+
       '<path d="M18 0 L18 59.8 A135 135 0 0 0 282 59.8 L282 0 Z" fill="rgba(96,130,182,.14)"></path>'+
@@ -3310,9 +3335,10 @@ window.verJugador=verJugador;
     var paso=p.pasos[p.pi];
     var catOpts='<option value="">— Elige categor&iacute;a —</option>'+PIZ_CATS.map(function(c){ return '<option value="'+c[0]+'"'+(p.categoria===c[0]?' selected':'')+'>'+c[1]+'</option>'; }).join('');
     var tools=PIZ_TOOLS.map(function(t){ var on=(p.tool===t[0]); return '<button type="button" class="piz-tool" data-t="'+t[0]+'" style="flex:none;border-radius:999px;padding:8px 13px;font-size:12.5px;font-weight:700;font-family:var(--font);cursor:pointer;background:'+(on?'rgba(242,121,43,.18)':'rgba(255,255,255,.04)')+';border:1px solid '+(on?'#f2792b':'rgba(255,255,255,.14)')+';color:'+(on?'#f2a03b':'#cdd8e8')+'">'+t[1]+'</button>'; }).join('');
-    v.innerHTML='<div class="card pr-panel">'+
+    v.innerHTML='<div class="card pr-panel" id="piz-card">'+
       '<div class="section-t">Pizarra de jugadas</div>'+
       '<div style="font-size:12px;color:var(--muted2);margin:-2px 2px 10px;line-height:1.5">Dibuja la jugada por gr&aacute;ficos, como en un cuaderno t&eacute;cnico: fichas de ataque (azul cian) y defensa (rojo), flechas y bal&oacute;n. Elige una herramienta y arrastra sobre la cancha.</div>'+
+      '<div id="piz-grid"><div id="piz-colc">'+
       '<div style="display:flex;align-items:center;gap:7px;margin-bottom:9px;flex-wrap:wrap">'+
         '<button class="btn btn-ghost" id="piz-prev" style="margin:0;width:44px;padding:9px 0;flex:none"'+(p.pi===0?' disabled':'')+'>&lsaquo;</button>'+
         '<div id="piz-plabel" style="font-weight:800;font-size:14px;flex:none">Gr&aacute;fico '+(p.pi+1)+' / '+p.pasos.length+'</div>'+
@@ -3328,6 +3354,8 @@ window.verJugador=verJugador;
         '<button class="btn btn-ghost" id="piz-balon" style="margin:0;padding:9px 13px;font-size:12.5px;flex:none;width:auto;border-color:rgba(242,163,60,.55);color:#f2a33c">&#9679; Bal&oacute;n</button>'+
       '</div>'+
       '<div id="piz-sel" style="margin-top:9px;display:none"></div>'+
+      '<button class="btn btn-ghost" id="piz-ensenar" style="margin-top:10px;border-color:rgba(34,211,238,.5);color:#7fe3f2">&#9658; Modo ense&ntilde;anza (pantalla completa)</button>'+
+      '</div><div id="piz-colp">'+
       '<div class="flab">Texto del gr&aacute;fico '+(p.pi+1)+'</div>'+
       '<textarea class="field" id="piz-texto" rows="2" placeholder="Ej.: 1 pasa a 2 y corta al aro por el centro">'+esc(paso.texto||'')+'</textarea>'+
       '<div class="flab" style="margin-top:12px">Datos de la jugada</div>'+
@@ -3337,6 +3365,7 @@ window.verJugador=verJugador;
       '<button class="btn btn-primary" id="piz-guardar" style="margin-top:12px">Guardar jugada</button>'+
       '<button class="btn btn-ghost" id="piz-lista" style="margin-top:10px">Jugadas guardadas</button>'+
       '<div id="piz-msg" style="text-align:center;font-size:12px;margin-top:10px;min-height:16px"></div>'+
+      '</div></div>'+
       '</div>';
     pizDraw();
     v.querySelectorAll('.piz-tool').forEach(function(b){ b.addEventListener('click',function(){ p.tool=b.getAttribute('data-t'); p.sel=null; pizRender(); }); });
@@ -3357,7 +3386,72 @@ window.verJugador=verJugador;
     });
     document.getElementById('piz-guardar').addEventListener('click',pizGuardar);
     document.getElementById('piz-lista').addEventListener('click',pizLista);
+    document.getElementById('piz-ensenar').addEventListener('click',function(){ pizPresentar(false); });
+    var ovs=document.getElementById('piz-show');
+    if(ovs) pizPresentar(ovs.__auto); /* el modo enseñanza abierto se repinta con el estado actual */
+    else pizOnRotate(); /* si ya está en apaisado de móvil, entra directo en modo enseñanza */
   }
+  /* --- MODO ENSEÑANZA: pantalla completa limpia para mostrar la jugada a los jugadores.
+     En móvil se activa solo al girar a apaisado (y se cierra al volver a vertical);
+     en tablet/PC, con el botón. Tocar la cancha: mitad derecha avanza, izquierda retrocede. --- */
+  function pizCerrarShow(manual){
+    var ov=document.getElementById('piz-show'); if(!ov) return;
+    if(manual&&window.matchMedia('(orientation: landscape)').matches) window.__pizNoAuto=true;
+    try{ if(document.fullscreenElement) document.exitFullscreen(); }catch(e){}
+    if(ov.__fit) window.removeEventListener('resize',ov.__fit);
+    ov.remove();
+    if(window.__piz&&document.getElementById('piz-card')) pizRender();
+  }
+  function pizPresentar(auto){
+    var p=window.__piz; if(!p) return;
+    var ov=document.getElementById('piz-show');
+    if(!ov){ ov=document.createElement('div'); ov.id='piz-show'; document.body.appendChild(ov); }
+    ov.__auto=!!auto;
+    ov.style.cssText='position:fixed;inset:0;z-index:9999;background:#04070d;display:flex;flex-direction:column;color:#eaf2fb;font-family:var(--font)';
+    function paint(){
+      var paso=p.pasos[p.pi];
+      ov.innerHTML='<div style="display:flex;align-items:center;gap:12px;padding:9px 16px;flex:none">'+
+          '<b style="font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.nombre||'Jugada')+'</b>'+
+          '<span id="pshow-n" style="flex:none;font-size:13px;color:#8fa3bd;font-weight:700">Gr&aacute;fico '+(p.pi+1)+' / '+p.pasos.length+'</span>'+
+          '<button id="pshow-x" style="margin-left:auto;flex:none;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:9px;color:#eaf2fb;font-size:15px;padding:6px 14px;cursor:pointer;font-family:var(--font)">&#10005; Salir</button></div>'+
+        '<div class="pshow-main">'+
+          '<div id="pshow-court">'+pizCourtSVG(paso,null,{id:'piz-show-cancha',style:'display:block;background:#0a1526;border:1px solid rgba(255,255,255,.14);border-radius:14px;touch-action:manipulation'})+'</div>'+
+          '<div class="pshow-side">'+
+            '<div id="pshow-tx" style="font-size:17px;line-height:1.55;font-weight:600">'+(paso.texto?esc(paso.texto):'<span style="color:#8fa3bd">Este gr&aacute;fico no tiene texto.</span>')+'</div>'+
+            '<div style="display:flex;gap:10px">'+
+              '<button id="pshow-prev" style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.2);border-radius:12px;color:#eaf2fb;font-size:26px;padding:10px 0;cursor:pointer"'+(p.pi===0?' disabled':'')+'>&lsaquo;</button>'+
+              '<button id="pshow-next" style="flex:1;background:rgba(34,211,238,.12);border:1px solid rgba(34,211,238,.5);border-radius:12px;color:#7fe3f2;font-size:26px;padding:10px 0;cursor:pointer"'+(p.pi>=p.pasos.length-1?' disabled':'')+'>&rsaquo;</button>'+
+            '</div>'+
+          '</div>'+
+        '</div>';
+      var court=document.getElementById('pshow-court'), svg=document.getElementById('piz-show-cancha');
+      function fit(){ if(!court||!svg||!court.isConnected) return; var r=court.getBoundingClientRect(); var s=Math.max(1,Math.min(r.width/300,r.height/282)); svg.style.width=(300*s)+'px'; svg.style.height=(282*s)+'px'; }
+      if(ov.__fit) window.removeEventListener('resize',ov.__fit);
+      ov.__fit=fit; window.addEventListener('resize',fit); requestAnimationFrame(fit);
+      document.getElementById('pshow-x').addEventListener('click',function(){ pizCerrarShow(true); });
+      document.getElementById('pshow-prev').addEventListener('click',function(){ if(p.pi>0){ p.pi--; paint(); } });
+      document.getElementById('pshow-next').addEventListener('click',function(){ if(p.pi<p.pasos.length-1){ p.pi++; paint(); } });
+      court.addEventListener('click',function(ev){
+        var r=court.getBoundingClientRect();
+        if(ev.clientX<r.left+r.width*0.4){ if(p.pi>0){ p.pi--; paint(); } }
+        else { if(p.pi<p.pasos.length-1){ p.pi++; paint(); } }
+      });
+    }
+    paint();
+    /* pantalla completa: directa si viene de un toque (botón); si es automática, al primer toque */
+    var pedirFs=function(){ try{ var el=document.documentElement; if(!document.fullscreenElement&&el.requestFullscreen) el.requestFullscreen().catch(function(){}); }catch(e){} };
+    if(auto){ ov.addEventListener('pointerdown',function h(){ ov.removeEventListener('pointerdown',h); pedirFs(); }); }
+    else pedirFs();
+  }
+  function pizOnRotate(){
+    var apais=window.matchMedia('(orientation: landscape)').matches;
+    if(!apais){ window.__pizNoAuto=false; var ov=document.getElementById('piz-show'); if(ov&&ov.__auto) pizCerrarShow(false); return; }
+    if(window.__pizNoAuto) return;
+    if(window.__piz&&document.getElementById('piz-card')&&!document.getElementById('piz-show')&&window.innerHeight<520) pizPresentar(true);
+  }
+  (function(){ var m=window.matchMedia('(orientation: landscape)'); try{ m.addEventListener('change',pizOnRotate); }catch(e){ if(m.addListener) m.addListener(pizOnRotate); } })();
+  window.pizPresentar=pizPresentar;
+
   async function pizGuardar(){
     var p=window.__piz; if(!p) return;
     if(!(p.nombre||'').trim()){ pizMsg('Ponle un nombre a la jugada antes de guardar.','#ff6b6b'); return; }
