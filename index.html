@@ -1129,7 +1129,7 @@ const SUPABASE_URL="https://kbrvaawngeuuewplcwyn.supabase.co";
 const SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticnZhYXduZ2V1dWV3cGxjd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTA0MjIsImV4cCI6MjA5Nzg2NjQyMn0.9ys4m2OicbMq3cFyf0a2IA_eh3VspPJ3pYgjNkMO6WA";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON,{auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:true}});
 const screens={login:'s-login',entrevista:'s-entrevista',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil',libre:'s-libre',dirigido:'s-dirigido',admin:'s-admin',entrenador:'s-entrenador',modo:'s-modo',club:'s-club',admEquipos:'s-adm-equipos',admJugadores:'s-adm-jugadores',admActividad:'s-adm-actividad',admAjustes:'s-adm-ajustes',admCompeticiones:'s-adm-competiciones'};
-const APP_VERSION='v2.3 · 19/07/2026';
+const APP_VERSION='v2.4 · 20/07/2026';
 document.querySelectorAll('#app-version,#app-version-2,#app-version-3').forEach(function(el){ el.textContent='ANMAR TRAINING '+APP_VERSION; });
 window.APP_VERSION=APP_VERSION;
 function go(name,isBack){
@@ -3030,6 +3030,7 @@ window.verJugador=verJugador;
       '<button class="btn btn-ghost" id="eq-nuevo-partido" style="margin-top:10px">Nuevo partido (estadísticas)</button>'+
       '<button class="btn btn-ghost" id="eq-stats-equipo" style="margin-top:10px">Estadísticas del equipo</button>'+
       '<button class="btn btn-ghost" id="eq-estrategia" style="margin-top:10px">Estrategia de temporada</button>'+
+      '<button class="btn btn-ghost" id="eq-pizarra" style="margin-top:10px">Pizarra de jugadas</button>'+
       '<button class="btn btn-ghost" id="eq-scouting" style="margin-top:10px">Scouting de rivales</button>'+
       '<button class="btn btn-ghost" id="eq-registro" style="margin-top:10px">Registro de entrenamientos</button>'+
       '<div class="flab" style="margin-top:12px">Categoría del equipo</div><select class="field" id="eq-cat-edit">'+catOpts+'</select>'+
@@ -3050,6 +3051,7 @@ window.verJugador=verJugador;
     var enp=document.getElementById('eq-nuevo-partido'); if(enp) enp.addEventListener('click',function(){ nuevoPartidoUI(id, nombre); });
     var ese=document.getElementById('eq-stats-equipo'); if(ese) ese.addEventListener('click',function(){ abrirStatsEquipo(id, nombre); });
     var eest=document.getElementById('eq-estrategia'); if(eest) eest.addEventListener('click',function(){ estrategiaEquipoUI(id, nombre); });
+    var epiz=document.getElementById('eq-pizarra'); if(epiz) epiz.addEventListener('click',function(){ pizarraUI(id, nombre); });
     var esct=document.getElementById('eq-scouting'); if(esct) esct.addEventListener('click',function(){ scoutingUI(id, nombre); });
     var ereg=document.getElementById('eq-registro'); if(ereg) ereg.addEventListener('click',function(){ registroEquipoUI(id, nombre); });
     // Asignar equipo a un club (solo admin general): un equipo creado fuera de un club puede añadirse después
@@ -3176,6 +3178,252 @@ window.verJugador=verJugador;
     });
   }
   window.estrategiaEquipoUI=estrategiaEquipoUI;
+
+  /* ====== PIZARRA DE JUGADAS (playbook) — SVG nativo, sin librerías ======
+     Formato FIBA Coaching (referencia, no reproducción): secuencia de gráficos (media cancha
+     cenital) + texto por gráfico; notación O1-O5 (ataque) / X1-X5 (defensa); flecha continua=
+     movimiento, discontinua=pase, zigzag=bote, tope=bloqueo. Plan y fuentes:
+     ANMAR_TRAINING/FUENTES_JUGADAS_PLAYBOOK.md (diagramas 100% propios). */
+  var PIZ_CATS=[['contraataque','Contraataque'],['ataque_individual','Ataque a individual'],['ataque_zonal','Ataque a zonal'],['salida_presion','Salida de presión'],['situaciones_especiales','Situaciones especiales'],['fuera_banda','Fuera de banda']];
+  var PIZ_TOOLS=[['mover','&#10021; Mover'],['mov','&#8594; Movimiento'],['pase','&#8674; Pase'],['bote','&#8767; Bote'],['bloqueo','&#8868; Bloqueo'],['borrar','&#10005; Borrar']];
+  window.__piz=null;
+  function pizPasoNuevo(base){
+    if(base){ return { fichas:(base.fichas||[]).map(function(f){ return {id:f.id,num:f.num,x:f.x,y:f.y}; }), flechas:[], balon:base.balon?{x:base.balon.x,y:base.balon.y}:null, texto:'' }; }
+    return { fichas:[], flechas:[], balon:null, texto:'' };
+  }
+  function pizPt(svg,ev){ try{ var pt=svg.createSVGPoint(); pt.x=ev.clientX; pt.y=ev.clientY; var p=pt.matrixTransform(svg.getScreenCTM().inverse()); return {x:Math.max(4,Math.min(296,p.x)), y:Math.max(4,Math.min(278,p.y))}; }catch(e){ return null; } }
+  function pizZig(a,b){ var dx=b.x-a.x, dy=b.y-a.y, L=Math.sqrt(dx*dx+dy*dy); if(L<16) return 'M'+a.x+' '+a.y+' L'+b.x+' '+b.y;
+    var ux=dx/L, uy=dy/L, px=-uy, py=ux, seg=9, n=Math.max(2,Math.floor((L-8)/seg)), d='M'+a.x+' '+a.y, s=1;
+    for(var i=1;i<=n;i++){ var t=i*seg, amp=(i===n?0:4.2*s); d+=' L'+(a.x+ux*t+px*amp).toFixed(1)+' '+(a.y+uy*t+py*amp).toFixed(1); s=-s; }
+    return d+' L'+b.x+' '+b.y; }
+  function pizFlechaSVG(f,i){
+    var p=f.puntos||[], a=p[0], b=p[p.length-1]; if(!a||!b) return '';
+    var d=(f.tipo==='bote')?pizZig(a,b):('M'+a.x+' '+a.y+' L'+b.x+' '+b.y);
+    var mk=(f.tipo==='bloqueo')?'marker-end="url(#piz-tope)"':'marker-end="url(#piz-ah)"';
+    var dash=(f.tipo==='pase')?' stroke-dasharray="6 5"':'';
+    return '<g class="piz-fl" data-ai="'+i+'" style="cursor:pointer"><path d="'+d+'" stroke="rgba(0,0,0,0)" stroke-width="14" fill="none"></path><path d="'+d+'" stroke="#eaf2fb" stroke-width="2.2" fill="none"'+dash+' '+mk+'></path></g>';
+  }
+  function pizFichaSVG(f,selId){
+    var atk=(f.id.charAt(0)==='O'), fill=atk?'#22d3ee':'#e05252', tc=atk?'#062a33':'#fff';
+    var st=(selId===f.id)?'stroke="#f2a33c" stroke-width="3"':'stroke="#04070d" stroke-width="1.6"';
+    return '<g class="piz-fi" data-fid="'+f.id+'" style="cursor:grab"><circle cx="'+f.x+'" cy="'+f.y+'" r="11" fill="'+fill+'" '+st+'></circle><text x="'+f.x+'" y="'+(f.y+3.8)+'" text-anchor="middle" font-size="10.5" font-weight="800" fill="'+tc+'" style="pointer-events:none">'+esc(f.num||'')+'</text></g>';
+  }
+  function pizCourtSVG(paso,selId){
+    var inner=(paso.flechas||[]).map(pizFlechaSVG).join('')+(paso.fichas||[]).map(function(f){ return pizFichaSVG(f,selId); }).join('');
+    if(paso.balon) inner+='<g class="piz-ba" style="cursor:grab"><circle cx="'+paso.balon.x+'" cy="'+paso.balon.y+'" r="6.5" fill="#f2a33c" stroke="#5a2d00" stroke-width="1.6"></circle></g>';
+    return '<svg id="piz-cancha" viewBox="0 0 300 282" style="display:block;width:100%;max-width:560px;height:auto;margin:0 auto;background:#0a1526;border:1px solid rgba(255,255,255,.10);border-radius:12px;touch-action:none">'+
+      '<defs><marker id="piz-ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#eaf2fb"></path></marker>'+
+      '<marker id="piz-tope" viewBox="0 0 12 12" refX="6" refY="6" markerWidth="8" markerHeight="8" orient="auto"><path d="M6 0 L6 12" stroke="#eaf2fb" stroke-width="2.6" fill="none"></path></marker></defs>'+
+      '<path d="M18 0 L18 59.8 A135 135 0 0 0 282 59.8 L282 0 Z" fill="rgba(96,130,182,.14)"></path>'+
+      '<rect x="101" y="0" width="98" height="116" fill="rgba(34,211,238,.10)" stroke="#dfe8f2" stroke-width="1.6"></rect>'+
+      '<path d="M114 116 A36 36 0 0 0 186 116" fill="none" stroke="#dfe8f2" stroke-width="1.6"></path>'+
+      '<path d="M114 116 A36 36 0 0 1 186 116" fill="none" stroke="#dfe8f2" stroke-width="1.6" stroke-dasharray="7 6"></path>'+
+      '<path d="M18 0 L18 59.8 A135 135 0 0 0 282 59.8 L282 0" fill="none" stroke="#dfe8f2" stroke-width="1.9"></path>'+
+      '<line x1="126" y1="24" x2="174" y2="24" stroke="#dfe8f2" stroke-width="2.4"></line>'+
+      '<circle cx="150" cy="31.5" r="9" fill="none" stroke="#f2a33c" stroke-width="2.2"></circle>'+
+      '<path d="M114 282 A36 36 0 0 1 186 282" fill="none" stroke="#dfe8f2" stroke-width="1.6"></path>'+
+      '<rect x="0" y="0" width="300" height="282" fill="none" stroke="#dfe8f2" stroke-width="2"></rect>'+
+      inner+'</svg>';
+  }
+  function pizDraw(){
+    var p=window.__piz; if(!p) return;
+    var l=document.getElementById('piz-lienzo'); if(!l) return;
+    l.innerHTML=pizCourtSVG(p.pasos[p.pi], p.sel);
+    pizBindSVG();
+    pizSelRow();
+  }
+  function pizSelRow(){
+    var p=window.__piz, row=document.getElementById('piz-sel'); if(!p||!row) return;
+    var paso=p.pasos[p.pi], f=(paso.fichas||[]).filter(function(x){return x.id===p.sel;})[0];
+    if(!f){ row.style.display='none'; row.innerHTML=''; return; }
+    row.style.display='';
+    row.innerHTML='<div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:9px 12px">'+
+      '<b style="font-size:13px">Ficha '+esc(f.id)+' ('+(f.id.charAt(0)==='O'?'ataque':'defensa')+')</b>'+
+      '<label style="font-size:12.5px;color:var(--muted2);display:flex;align-items:center;gap:6px">N&ordm; <input id="piz-num" class="field" style="width:64px;margin:0;padding:7px 8px;text-align:center" maxlength="3" value="'+esc(f.num||'')+'"></label>'+
+      '<button class="btn btn-ghost" id="piz-quitarficha" style="margin:0;padding:8px 12px;font-size:12.5px;flex:none;width:auto">Quitar ficha</button></div>';
+    var ni=document.getElementById('piz-num');
+    ni.addEventListener('input',function(){ f.num=ni.value.trim(); var t=document.querySelector('#piz-cancha .piz-fi[data-fid="'+f.id+'"] text'); if(t) t.textContent=f.num; });
+    document.getElementById('piz-quitarficha').addEventListener('click',function(){ paso.fichas=paso.fichas.filter(function(x){return x.id!==f.id;}); p.sel=null; pizDraw(); });
+  }
+  function pizBindSVG(){
+    var p=window.__piz, svg=document.getElementById('piz-cancha'); if(!p||!svg) return;
+    var drag=null, arrow=null;
+    function tempPath(){ var t=svg.querySelector('#piz-temp'); if(!t){ t=document.createElementNS('http://www.w3.org/2000/svg','path'); t.setAttribute('id','piz-temp'); t.setAttribute('stroke','#f2a33c'); t.setAttribute('stroke-width','2.2'); t.setAttribute('fill','none'); svg.appendChild(t); } return t; }
+    svg.addEventListener('pointerdown',function(ev){
+      ev.preventDefault();
+      var pt=pizPt(svg,ev); if(!pt) return;
+      var paso=p.pasos[p.pi];
+      var gf=ev.target.closest?ev.target.closest('.piz-fi'):null;
+      var gb=ev.target.closest?ev.target.closest('.piz-ba'):null;
+      var ga=ev.target.closest?ev.target.closest('.piz-fl'):null;
+      if(p.tool==='borrar'){
+        if(gf){ var fid=gf.getAttribute('data-fid'); paso.fichas=paso.fichas.filter(function(f){return f.id!==fid;}); if(p.sel===fid) p.sel=null; pizDraw(); }
+        else if(gb){ paso.balon=null; pizDraw(); }
+        else if(ga){ paso.flechas.splice(parseInt(ga.getAttribute('data-ai'),10),1); pizDraw(); }
+        return;
+      }
+      if(p.tool==='mover'){
+        if(gf){ drag={type:'ficha', id:gf.getAttribute('data-fid'), moved:false}; try{svg.setPointerCapture(ev.pointerId);}catch(e){} }
+        else if(gb){ drag={type:'balon', moved:false}; try{svg.setPointerCapture(ev.pointerId);}catch(e){} }
+        else if(p.sel){ p.sel=null; pizDraw(); }
+        return;
+      }
+      arrow={a:pt, b:null}; try{svg.setPointerCapture(ev.pointerId);}catch(e){}
+    });
+    svg.addEventListener('pointermove',function(ev){
+      var pt=pizPt(svg,ev); if(!pt) return;
+      var paso=p.pasos[p.pi];
+      if(drag){ drag.moved=true;
+        if(drag.type==='ficha'){ var f=(paso.fichas||[]).filter(function(x){return x.id===drag.id;})[0]; if(!f) return; f.x=+pt.x.toFixed(1); f.y=+pt.y.toFixed(1);
+          var g=svg.querySelector('.piz-fi[data-fid="'+drag.id+'"]'); if(g){ var c=g.querySelector('circle'), t=g.querySelector('text'); c.setAttribute('cx',f.x); c.setAttribute('cy',f.y); t.setAttribute('x',f.x); t.setAttribute('y',f.y+3.8); } }
+        else if(paso.balon){ paso.balon.x=+pt.x.toFixed(1); paso.balon.y=+pt.y.toFixed(1); var gb2=svg.querySelector('.piz-ba circle'); if(gb2){ gb2.setAttribute('cx',paso.balon.x); gb2.setAttribute('cy',paso.balon.y); } }
+      } else if(arrow){
+        arrow.b=pt; var t2=tempPath();
+        t2.setAttribute('d',(p.tool==='bote')?pizZig(arrow.a,pt):('M'+arrow.a.x+' '+arrow.a.y+' L'+pt.x+' '+pt.y));
+        if(p.tool==='pase') t2.setAttribute('stroke-dasharray','6 5'); else t2.removeAttribute('stroke-dasharray');
+      }
+    });
+    function fin(){
+      var paso=p.pasos[p.pi];
+      if(drag){ if(drag.type==='ficha'&&!drag.moved){ p.sel=(p.sel===drag.id?null:drag.id); } drag=null; pizDraw(); return; }
+      if(arrow){ var a=arrow.a, b=arrow.b;
+        if(b){ var dx=b.x-a.x, dy=b.y-a.y; if(dx*dx+dy*dy>=110){ paso.flechas.push({tipo:p.tool, puntos:[{x:+a.x.toFixed(1),y:+a.y.toFixed(1)},{x:+b.x.toFixed(1),y:+b.y.toFixed(1)}]}); } }
+        arrow=null; pizDraw(); }
+    }
+    svg.addEventListener('pointerup',fin);
+    svg.addEventListener('pointercancel',function(){ drag=null; arrow=null; pizDraw(); });
+  }
+  function pizAddFicha(tipo){
+    var p=window.__piz, paso=p.pasos[p.pi], pref=(tipo==='A'?'O':'X');
+    var mias=(paso.fichas||[]).filter(function(f){return f.id.charAt(0)===pref;});
+    if(mias.length>=5){ pizMsg('Ya hay 5 fichas de '+(tipo==='A'?'ataque':'defensa')+' en este gr&aacute;fico.','#ffb454'); return; }
+    var n=1, usados={}; mias.forEach(function(f){ usados[f.id]=1; });
+    while(usados[pref+n]) n++;
+    var i=mias.length;
+    paso.fichas.push({id:pref+n, num:String(n), x:60+i*45, y:(tipo==='A'?205:165)});
+    p.sel=pref+n; pizDraw();
+  }
+  function pizMsg(t,c){ var m=document.getElementById('piz-msg'); if(m){ m.style.color=c||'var(--muted2)'; m.innerHTML=t||''; } }
+  function pizRender(){
+    var p=window.__piz; if(!p) return;
+    var v=document.getElementById('eq-vista'); if(!v) return;
+    var paso=p.pasos[p.pi];
+    var catOpts='<option value="">— Elige categor&iacute;a —</option>'+PIZ_CATS.map(function(c){ return '<option value="'+c[0]+'"'+(p.categoria===c[0]?' selected':'')+'>'+c[1]+'</option>'; }).join('');
+    var tools=PIZ_TOOLS.map(function(t){ var on=(p.tool===t[0]); return '<button type="button" class="piz-tool" data-t="'+t[0]+'" style="flex:none;border-radius:999px;padding:8px 13px;font-size:12.5px;font-weight:700;font-family:var(--font);cursor:pointer;background:'+(on?'rgba(242,121,43,.18)':'rgba(255,255,255,.04)')+';border:1px solid '+(on?'#f2792b':'rgba(255,255,255,.14)')+';color:'+(on?'#f2a03b':'#cdd8e8')+'">'+t[1]+'</button>'; }).join('');
+    v.innerHTML='<div class="card pr-panel">'+
+      '<div class="section-t">Pizarra de jugadas</div>'+
+      '<div style="font-size:12px;color:var(--muted2);margin:-2px 2px 10px;line-height:1.5">Dibuja la jugada por gr&aacute;ficos, como en un cuaderno t&eacute;cnico: fichas de ataque (azul cian) y defensa (rojo), flechas y bal&oacute;n. Elige una herramienta y arrastra sobre la cancha.</div>'+
+      '<div style="display:flex;align-items:center;gap:7px;margin-bottom:9px;flex-wrap:wrap">'+
+        '<button class="btn btn-ghost" id="piz-prev" style="margin:0;width:44px;padding:9px 0;flex:none"'+(p.pi===0?' disabled':'')+'>&lsaquo;</button>'+
+        '<div id="piz-plabel" style="font-weight:800;font-size:14px;flex:none">Gr&aacute;fico '+(p.pi+1)+' / '+p.pasos.length+'</div>'+
+        '<button class="btn btn-ghost" id="piz-next" style="margin:0;width:44px;padding:9px 0;flex:none"'+(p.pi>=p.pasos.length-1?' disabled':'')+'>&rsaquo;</button>'+
+        '<button class="btn btn-ghost" id="piz-addpaso" style="margin:0;padding:9px 13px;font-size:12.5px;flex:none;width:auto">+ Gr&aacute;fico</button>'+
+        '<button class="btn btn-ghost" id="piz-delpaso" style="margin:0;padding:9px 13px;font-size:12.5px;flex:none;width:auto"'+(p.pasos.length<2?' disabled':'')+'>Quitar gr&aacute;fico</button>'+
+      '</div>'+
+      '<div id="piz-lienzo"></div>'+
+      '<div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px">'+tools+'</div>'+
+      '<div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:9px">'+
+        '<button class="btn btn-ghost" id="piz-addA" style="margin:0;padding:9px 13px;font-size:12.5px;flex:none;width:auto;border-color:rgba(34,211,238,.5);color:#7fe3f2">+ Ataque</button>'+
+        '<button class="btn btn-ghost" id="piz-addD" style="margin:0;padding:9px 13px;font-size:12.5px;flex:none;width:auto;border-color:rgba(224,82,82,.55);color:#e08d8b">+ Defensa</button>'+
+        '<button class="btn btn-ghost" id="piz-balon" style="margin:0;padding:9px 13px;font-size:12.5px;flex:none;width:auto;border-color:rgba(242,163,60,.55);color:#f2a33c">&#9679; Bal&oacute;n</button>'+
+      '</div>'+
+      '<div id="piz-sel" style="margin-top:9px;display:none"></div>'+
+      '<div class="flab">Texto del gr&aacute;fico '+(p.pi+1)+'</div>'+
+      '<textarea class="field" id="piz-texto" rows="2" placeholder="Ej.: 1 pasa a 2 y corta al aro por el centro">'+esc(paso.texto||'')+'</textarea>'+
+      '<div class="flab" style="margin-top:12px">Datos de la jugada</div>'+
+      '<input class="field" id="piz-nombre" placeholder="Nombre de la jugada (ej.: Contraataque en 3 carriles)" value="'+esc(p.nombre||'')+'">'+
+      '<select class="field" id="piz-cat">'+catOpts+'</select>'+
+      '<input class="field" id="piz-desc" placeholder="Descripci&oacute;n breve (opcional)" value="'+esc(p.descripcion||'')+'">'+
+      '<button class="btn btn-primary" id="piz-guardar" style="margin-top:12px">Guardar jugada</button>'+
+      '<button class="btn btn-ghost" id="piz-lista" style="margin-top:10px">Jugadas guardadas</button>'+
+      '<div id="piz-msg" style="text-align:center;font-size:12px;margin-top:10px;min-height:16px"></div>'+
+      '</div>';
+    pizDraw();
+    v.querySelectorAll('.piz-tool').forEach(function(b){ b.addEventListener('click',function(){ p.tool=b.getAttribute('data-t'); p.sel=null; pizRender(); }); });
+    document.getElementById('piz-prev').addEventListener('click',function(){ if(p.pi>0){ p.pi--; p.sel=null; pizRender(); } });
+    document.getElementById('piz-next').addEventListener('click',function(){ if(p.pi<p.pasos.length-1){ p.pi++; p.sel=null; pizRender(); } });
+    document.getElementById('piz-addpaso').addEventListener('click',function(){ p.pasos.splice(p.pi+1,0,pizPasoNuevo(p.pasos[p.pi])); p.pi++; p.sel=null; pizRender(); });
+    document.getElementById('piz-delpaso').addEventListener('click',function(){ if(p.pasos.length<2) return; p.pasos.splice(p.pi,1); if(p.pi>=p.pasos.length) p.pi=p.pasos.length-1; p.sel=null; pizRender(); });
+    document.getElementById('piz-texto').addEventListener('input',function(ev){ p.pasos[p.pi].texto=ev.target.value; });
+    document.getElementById('piz-nombre').addEventListener('input',function(ev){ p.nombre=ev.target.value; });
+    document.getElementById('piz-desc').addEventListener('input',function(ev){ p.descripcion=ev.target.value; });
+    document.getElementById('piz-cat').addEventListener('change',function(ev){ p.categoria=ev.target.value; });
+    document.getElementById('piz-addA').addEventListener('click',function(){ pizAddFicha('A'); });
+    document.getElementById('piz-addD').addEventListener('click',function(){ pizAddFicha('D'); });
+    document.getElementById('piz-balon').addEventListener('click',function(){
+      var paso2=p.pasos[p.pi];
+      if(paso2.balon){ pizMsg('El bal&oacute;n ya est&aacute; en la cancha: mu&eacute;velo con Mover o qu&iacute;talo con Borrar.','#ffb454'); return; }
+      paso2.balon={x:150,y:150}; pizDraw();
+    });
+    document.getElementById('piz-guardar').addEventListener('click',pizGuardar);
+    document.getElementById('piz-lista').addEventListener('click',pizLista);
+  }
+  async function pizGuardar(){
+    var p=window.__piz; if(!p) return;
+    if(!(p.nombre||'').trim()){ pizMsg('Ponle un nombre a la jugada antes de guardar.','#ff6b6b'); return; }
+    if(!p.categoria){ pizMsg('Elige una categor&iacute;a antes de guardar.','#ff6b6b'); return; }
+    pizMsg('Guardando&hellip;');
+    try{
+      var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null;
+      if(!uid){ pizMsg('No hay sesi&oacute;n iniciada.','#ff6b6b'); return; }
+      var obj={ equipo_id:p.equipoId, autor_id:uid, nombre:p.nombre.trim(), categoria:p.categoria, descripcion:(p.descripcion||'').trim()||null, pasos:p.pasos, fuente:'propia' };
+      if(p.jugadaId) obj.id=p.jugadaId;
+      var r=await sb.from('jugadas').upsert(obj).select('id').single();
+      if(r&&r.error) throw r.error;
+      if(r&&r.data&&r.data.id) p.jugadaId=r.data.id;
+      pizMsg('Jugada guardada ('+p.pasos.length+' gr&aacute;fico'+(p.pasos.length===1?'':'s')+').','#7ee29a');
+    }catch(e){ pizMsg('No se pudo guardar. Revisa la conexi&oacute;n e int&eacute;ntalo de nuevo.','#ff6b6b'); }
+  }
+  async function pizLista(){
+    var p=window.__piz; if(!p) return;
+    setTitulo('Jugadas · '+(p.equipoNombre||'Equipo'));
+    volverBtn(true, function(){ pizarraUI(p.equipoId, p.equipoNombre, true); });
+    var v=document.getElementById('eq-vista');
+    v.innerHTML='<div class="card pr-panel"><div style="color:var(--muted);font-size:13px">Cargando&hellip;</div></div>';
+    var rows=[];
+    try{ var r=await sb.from('jugadas').select('id,nombre,categoria,descripcion,pasos,created_at').eq('equipo_id',p.equipoId).order('created_at',{ascending:false}); if(r&&!r.error) rows=r.data||[]; }catch(e){}
+    var porCat={}; rows.forEach(function(j){ (porCat[j.categoria||'otras']=porCat[j.categoria||'otras']||[]).push(j); });
+    var noms={}; PIZ_CATS.forEach(function(c){ noms[c[0]]=c[1]; });
+    var html='<div class="card pr-panel"><div class="section-t">Jugadas guardadas</div>';
+    if(!rows.length) html+='<div style="color:var(--muted);font-size:13px">Todav&iacute;a no hay jugadas guardadas de este equipo. Vuelve a la pizarra, dibuja una y pulsa Guardar.</div>';
+    Object.keys(porCat).forEach(function(cat){
+      html+='<div class="flab">'+esc(noms[cat]||cat)+'</div>';
+      porCat[cat].forEach(function(j){
+        var np=(j.pasos||[]).length;
+        html+='<div style="display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:11px 13px;margin-bottom:8px">'+
+          '<div style="flex:1;min-width:0"><b style="font-size:14px">'+esc(j.nombre)+'</b><div style="font-size:11.5px;color:var(--muted2)">'+np+' gr&aacute;fico'+(np===1?'':'s')+(j.descripcion?(' &middot; '+esc(j.descripcion)):'')+'</div></div>'+
+          '<button class="btn btn-ghost piz-abrir" data-id="'+j.id+'" style="margin:0;padding:8px 12px;font-size:12.5px;flex:none;width:auto">Abrir</button>'+
+          '<button class="btn btn-ghost piz-borrar" data-id="'+j.id+'" style="margin:0;padding:8px 12px;font-size:12.5px;flex:none;width:auto;border-color:rgba(224,82,82,.5);color:#e08d8b">Borrar</button>'+
+        '</div>';
+      });
+    });
+    html+='<div id="piz-msg" style="text-align:center;font-size:12px;margin-top:8px;min-height:16px"></div></div>';
+    v.innerHTML=html;
+    v.querySelectorAll('.piz-abrir').forEach(function(b){ b.addEventListener('click',function(){
+      var j=rows.filter(function(x){return x.id===b.getAttribute('data-id');})[0]; if(!j) return;
+      window.__piz={ equipoId:p.equipoId, equipoNombre:p.equipoNombre, jugadaId:j.id, nombre:j.nombre||'', categoria:j.categoria||'', descripcion:j.descripcion||'',
+        pasos:(j.pasos&&j.pasos.length?j.pasos:[pizPasoNuevo(null)]), pi:0, tool:'mover', sel:null };
+      setTitulo('Pizarra · '+(p.equipoNombre||'Equipo'));
+      volverBtn(true, function(){ abrirEquipo(window.__eq.id, window.__eq.nombre, window.__eq.categoria); });
+      pizRender();
+    }); });
+    v.querySelectorAll('.piz-borrar').forEach(function(b){ b.addEventListener('click',async function(){
+      if(b.getAttribute('data-conf')!=='1'){ b.setAttribute('data-conf','1'); b.textContent='¿Seguro?'; return; }
+      try{ var r2=await sb.from('jugadas').delete().eq('id',b.getAttribute('data-id')); if(r2&&r2.error) throw r2.error; pizLista(); }
+      catch(e){ pizMsg('No se pudo borrar la jugada.','#ff6b6b'); }
+    }); });
+  }
+  async function pizarraUI(id, nombre, mantener){
+    setTitulo('Pizarra · '+(nombre||'Equipo'));
+    volverBtn(true, function(){ abrirEquipo(window.__eq.id, window.__eq.nombre, window.__eq.categoria); });
+    msg('');
+    if(!(mantener&&window.__piz&&window.__piz.equipoId===id)){
+      window.__piz={ equipoId:id, equipoNombre:nombre||'', jugadaId:null, nombre:'', categoria:'', descripcion:'', pasos:[pizPasoNuevo(null)], pi:0, tool:'mover', sel:null };
+    }
+    window.__piz.equipoNombre=nombre||window.__piz.equipoNombre||'';
+    pizRender();
+  }
+  window.pizarraUI=pizarraUI;
 
   /* ====== GUÍA DE TEMPORADA (generada desde la estrategia; fuentes citadas) ====== */
   function guiaTemporadaUI(est, id, nombre){
