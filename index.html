@@ -1153,7 +1153,7 @@ const SUPABASE_URL="https://kbrvaawngeuuewplcwyn.supabase.co";
 const SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticnZhYXduZ2V1dWV3cGxjd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTA0MjIsImV4cCI6MjA5Nzg2NjQyMn0.9ys4m2OicbMq3cFyf0a2IA_eh3VspPJ3pYgjNkMO6WA";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON,{auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:true}});
 const screens={login:'s-login',entrevista:'s-entrevista',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil',libre:'s-libre',dirigido:'s-dirigido',admin:'s-admin',entrenador:'s-entrenador',modo:'s-modo',club:'s-club',admEquipos:'s-adm-equipos',admJugadores:'s-adm-jugadores',admActividad:'s-adm-actividad',admAjustes:'s-adm-ajustes',admCompeticiones:'s-adm-competiciones'};
-const APP_VERSION='v2.8 · 21/07/2026';
+const APP_VERSION='v2.9 · 21/07/2026';
 document.querySelectorAll('#app-version,#app-version-2,#app-version-3').forEach(function(el){ el.textContent='ANMAR TRAINING '+APP_VERSION; });
 window.APP_VERSION=APP_VERSION;
 function go(name,isBack){
@@ -4772,7 +4772,7 @@ window.verJugador=verJugador;
         if(vr&&!vr.error){ var acc={}; (vr.data||[]).forEach(function(g){ if(!g.jugador_id) return; var a=acc[g.jugador_id]||(acc[g.jugador_id]={s:0,n:0}); a.s+=valoracionDe(g); a.n++; });
           Object.keys(acc).forEach(function(k){ valMap[k]={v:acc[k].s/acc[k].n, n:acc[k].n}; }); }
       }catch(e){}
-      window.__np={equipoId:equipoId, nombreEq:nombreEq, tipo:'temporada', lugar:'casa', categoria:categoria, valMap:valMap, mis:(jr.data||[]), adhoc:[], players:[], activeKey:null, log:[], rival:'', fecha:'', numPeriodos:4};
+      window.__np={equipoId:equipoId, nombreEq:nombreEq, tipo:'temporada', lugar:'casa', categoria:categoria, valMap:valMap, mis:(jr.data||[]), adhoc:[], players:[], activeKey:null, log:[], rival:'', fecha:'', numPeriodos:4, rivalModo:'puntos'};
       renderNPSetup(ov);
     }catch(e){ ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding:24px 4px"><div style="color:#ff6b6b">No se pudo abrir el partido.</div><button class="btn btn-ghost" id="np-x" style="margin-top:14px">Cerrar</button></div>'; var x=document.getElementById('np-x'); if(x)x.addEventListener('click',function(){ov.style.display='none';}); }
   }
@@ -4809,6 +4809,11 @@ window.verJugador=verJugador;
         : ('<div class="flab">Formato del partido</div><div style="display:flex;gap:8px">'+
           [[4,'4 cuartos'],[6,'6 periodos (minibasket)']].map(function(fv){ var on=(np.numPeriodos||4)===fv[0]; return '<button type="button" class="np-fmt" data-f="'+fv[0]+'" style="flex:1;background:'+(on?'rgba(242,121,43,.18)':'rgba(255,255,255,.03)')+';border:1px solid '+(on?'#f2792b':'rgba(255,255,255,.1)')+';border-radius:10px;padding:9px 12px;cursor:pointer;color:inherit;font-weight:700">'+fv[1]+'</button>'; }).join('')+
         '</div>'))+
+      (np.tipo==='temporada'
+        ? ('<div class="flab">¿Cómo quieres seguir al rival?</div><div style="display:flex;gap:8px">'+
+            [['puntos','Solo puntos','Rápido: solo su marcador'],['faltas','Dorsales + faltas','Además, quién hace las faltas']].map(function(rm){ var on=(np.rivalModo||'puntos')===rm[0]; return '<button type="button" class="np-rvm" data-m="'+rm[0]+'" style="flex:1;text-align:left;background:'+(on?'rgba(242,121,43,.18)':'rgba(255,255,255,.03)')+';border:1px solid '+(on?'#f2792b':'rgba(255,255,255,.1)')+';border-radius:10px;padding:9px 12px;cursor:pointer;color:inherit"><div style="font-weight:700;font-size:13.5px">'+rm[1]+'</div><div style="font-size:11px;color:var(--muted2);margin-top:2px">'+rm[2]+'</div></button>'; }).join('')+
+          '</div>'+((np.rivalModo==='faltas')?'<div style="font-size:11px;color:var(--muted2);margin-top:5px;line-height:1.45">Durante el partido, cuando el rival haga una falta podrás tocar su dorsal (y añadir dorsales nuevos sobre la marcha).</div>':''))
+        : '')+
       pArea+
       '<button class="btn btn-primary" id="np-empezar" style="margin-top:16px">Empezar a anotar</button>'+
       '<div id="np-msg" style="font-size:12px;color:#ff6b6b;margin-top:8px;min-height:14px"></div>'+
@@ -4818,6 +4823,7 @@ window.verJugador=verJugador;
     [].slice.call(ov.querySelectorAll('.np-tipo')).forEach(function(b){ b.addEventListener('click',function(){ keep(); np.tipo=b.getAttribute('data-t'); renderNPSetup(ov); }); });
     [].slice.call(ov.querySelectorAll('.np-lug')).forEach(function(b){ b.addEventListener('click',function(){ keep(); np.lugar=b.getAttribute('data-l'); renderNPSetup(ov); }); });
     [].slice.call(ov.querySelectorAll('.np-fmt')).forEach(function(b){ b.addEventListener('click',function(){ keep(); np.numPeriodos=parseInt(b.getAttribute('data-f'),10)||4; renderNPSetup(ov); }); });
+    [].slice.call(ov.querySelectorAll('.np-rvm')).forEach(function(b){ b.addEventListener('click',function(){ keep(); np.rivalModo=b.getAttribute('data-m'); renderNPSetup(ov); }); });
     var addb=document.getElementById('np-ad-add'); if(addb) addb.addEventListener('click',function(){ keep(); var nom=(document.getElementById('np-ad-nombre').value||'').trim(), dor=(document.getElementById('np-ad-dorsal').value||'').trim(); if(!nom&&!dor)return; np.adhoc.push({nombre:nom||('Jugador '+(np.adhoc.length+1)), dorsal:dor}); renderNPSetup(ov); });
     document.getElementById('np-empezar').addEventListener('click',function(){ npEmpezar(ov); });
   }
@@ -4832,6 +4838,7 @@ window.verJugador=verJugador;
     else { np.adhoc.forEach(function(a,i){ players.push({key:'a'+i, nombre:a.nombre, dorsal:a.dorsal, jugador_id:null, lado:'rival', onCourt:false, secs:0, st:zerosSt()}); }); if(!players.length){ if(msg)msg.textContent='Añade al menos un jugador del rival.'; return; } }
     np.players=players; np.activeKey=null; np.log=[];
     np.rivalScore=0; np.periodo=1; np.perPts={}; np.clockSec=0; np.clockRun=false; np.clockTimer=null; np.prompt=null; np.rosterOpen=false; np.rosterSel=null;
+    np.rivalFaltasDorsal={}; np.rivalDorsales=[]; if(np.tipo!=='temporada') np.rivalModo='puntos';
     np.reglas=(np.tipo==='temporada'&&np.categoria&&REGLAS_CAT[np.categoria])?REGLAS_CAT[np.categoria]:null;
     if(np.reglas){
       players.forEach(function(p){ p.cJug=0; p.cDesc=0; p.fueraDef=false; p.qExcArr=[]; p.qJugForzado=[]; });
@@ -4855,6 +4862,11 @@ window.verJugador=verJugador;
   /* ===== Cancha FIBA interactiva (media pista, 20px/m, viewBox 300x282) ===== */
   function foulsQ(np,lado){ var m=(lado==='riv'?np.rivalFoulsQ:np.foulsQ)||{}; return m[np.periodo]||0; }
   function foulsQAdd(np,lado,d){ var k=(lado==='riv'?'rivalFoulsQ':'foulsQ'); if(!np[k]) np[k]={}; np[k][np.periodo]=Math.max(0,(np[k][np.periodo]||0)+d); }
+  /* Fase C — rival 'dorsales + faltas': una falta del rival se atribuye a un dorsal (o "solo equipo" si d==null).
+     Cuenta también en las faltas de equipo del cuarto (bonus) y queda en el log para poder Deshacer. */
+  function rivalFaltaAdd(np,d){ if(d!=null){ d=String(d); if(!np.rivalFaltasDorsal) np.rivalFaltasDorsal={}; np.rivalFaltasDorsal[d]=(np.rivalFaltasDorsal[d]||0)+1; if(!np.rivalDorsales) np.rivalDorsales=[]; if(np.rivalDorsales.indexOf(d)<0) np.rivalDorsales.push(d); } foulsQAdd(np,'riv',1); np.log.push({rival:true, dorsal:(d!=null?String(d):null), fq:np.periodo}); }
+  function rivalFaltaSub(np,d){ if(d!=null){ d=String(d); if(np.rivalFaltasDorsal&&np.rivalFaltasDorsal[d]>0) np.rivalFaltasDorsal[d]--; } foulsQAdd(np,'riv',-1); }
+  function rivalDorsalesOrden(np){ var arr=(np.rivalDorsales||[]).slice(); arr.sort(function(a,b){ var na=parseInt(a,10), nb=parseInt(b,10); if(isNaN(na)||isNaN(nb)) return (''+a).localeCompare(''+b); return na-nb; }); return arr; }
   function zonaDeTiro(x,y){ var dx=x-150, dy=y-31.5, dist=Math.sqrt(dx*dx+dy*dy);
     var tri=(y<=59.8)?(x<18||x>282):(dist>135);
     if(tri) return (y<=59.8)?(x<18?'triple esquina izq.':'triple esquina dcha.'):'triple';
@@ -5006,6 +5018,14 @@ window.verJugador=verJugador;
       var bGhost=function(id,t){ return '<button class="btn btn-ghost" id="'+id+'" style="margin:0;padding:10px 6px;font-size:13px">'+t+'</button>'; };
       if(enZona){ acc=hint((np.prompt.idx===0||np.prompt.idx===2?'&#9989;':'&#10060;')+' Tiro de '+(np.prompt.idx<2?'2':'3')+'.<br><b>Toca la zona</b> de la cancha desde donde se lanz\u00f3')+bGhost('cap-zona-no','Sin zona')+bGhost('cap-zona-cancel','Cancelar'); }
       else if(np.prompt&&np.prompt.type==='falta'){ acc=hint('&#9888; Falta de <b>'+esc2f((court.filter(function(p){return p.key===np.activeKey;})[0]||{}).nombre||'')+'</b>')+'<button class="btn" id="cap-f-tiro" style="margin:0;background:#8a3030;color:#fff;border:none;padding:13px 6px;font-weight:700">Falta de tiro</button><button class="btn" id="cap-f-normal" style="margin:0;background:#6a4a22;color:#fff;border:none;padding:13px 6px;font-weight:700">Falta normal (defensiva)</button><button class="btn" id="cap-f-of" style="margin:0;background:#33506e;color:#fff;border:none;padding:13px 6px;font-weight:700">Falta ofensiva (en ataque)</button>'+bGhost('cap-f-cancel','Cancelar'); }
+      else if(np.prompt&&np.prompt.type==='rivalfalta'){
+        var rvSub=np.prompt.op==='sub';
+        var rvDors=rivalDorsalesOrden(np).filter(function(d){ return rvSub?((np.rivalFaltasDorsal[d]||0)>0):true; });
+        var rvChips=rvDors.map(function(d){ var f=(np.rivalFaltasDorsal[d]||0); return '<button type="button" class="'+(rvSub?'cap-rvd-sub':'cap-rvd')+'" data-d="'+esc2f(d)+'" style="background:'+(rvSub?'rgba(160,58,58,.28)':'rgba(51,80,110,.5)')+';border:1px solid '+(rvSub?'#a03a3a':'#5fb0e6')+';color:inherit;border-radius:10px;padding:11px 4px;font-size:16px;font-weight:800;cursor:pointer;text-align:center">#'+esc2f(d)+'<div style="font-size:10px;font-weight:600;color:var(--muted2);margin-top:2px">'+f+' F</div></button>'; }).join('');
+        var rvGrid='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">'+(rvChips||'<div style="grid-column:1/-1;color:var(--muted2);font-size:12.5px;text-align:center;padding:8px">'+(rvSub?'No hay faltas que corregir.':'Aún no hay dorsales. Añade el primero abajo.')+'</div>')+'</div>';
+        if(rvSub){ acc=hint('&#9888; Corregir falta del rival.<br><b>Toca el dorsal</b> al que quitar una falta')+rvGrid+bGhost('cap-rvd-teamsub','Quitar 1 al equipo (sin dorsal)')+bGhost('cap-rvd-cancel','Cancelar'); }
+        else { acc=hint('&#9888; Falta del rival.<br><b>Toca el dorsal</b> que la cometió')+rvGrid+'<div style="display:flex;gap:8px;margin-top:2px"><input class="field" id="cap-rvd-new" inputmode="numeric" placeholder="Dorsal nuevo" style="max-width:130px;margin:0"><button class="btn btn-ghost" id="cap-rvd-addnew" style="margin:0;flex:1">Añadir dorsal</button></div>'+bGhost('cap-rvd-team','No sé el dorsal (solo equipo)')+bGhost('cap-rvd-cancel','Cancelar'); }
+      }
       else if(pickAsist){ acc=hint('&#9989; Canasta.<br>&iquest;Asistencia? <b>Toca al pasador</b> en la lista de jugadores')+bGhost('cap-ast-no','Sin asistencia'); }
       else if(pickReb){ var lb=function(l,lab){ var on2=np.prompt.lado===l; return '<button type="button" class="cap-reb-lado" data-l="'+l+'" style="flex:1;background:'+(on2?'rgba(51,80,110,.6)':'rgba(255,255,255,.05)')+';border:1px solid '+(on2?'#5fb0e6':'rgba(255,255,255,.12)')+';color:inherit;border-radius:8px;padding:8px 4px;font-size:12.5px;font-weight:600;cursor:pointer">'+lab+'</button>'; };
         acc=hint('&#10060; Fallo.<br>&iquest;Rebote? Elige lado y <b>toca qui\u00e9n lo cogi\u00f3</b>')+'<div style="display:flex;gap:6px">'+lb('def','Defensivo')+lb('of','Ofensivo')+'</div>'+bGhost('cap-reb-no','Sin rebote / rival'); }
@@ -5102,6 +5122,13 @@ window.verJugador=verJugador;
     var an=document.getElementById('cap-ast-no'); if(an) an.addEventListener('click',function(){ np.prompt=null; renderCaptura(ov); });
     [].slice.call(ov.querySelectorAll('.cap-reb-lado')).forEach(function(b){ b.addEventListener('click',function(){ np.prompt.lado=b.getAttribute('data-l'); renderCaptura(ov); }); });
     var rn=document.getElementById('cap-reb-no'); if(rn) rn.addEventListener('click',function(){ np.prompt=null; renderCaptura(ov); });
+    /* Fase C — panel de faltas del rival por dorsal */
+    [].slice.call(ov.querySelectorAll('.cap-rvd')).forEach(function(b){ b.addEventListener('click',function(){ rivalFaltaAdd(np,b.getAttribute('data-d')); np.prompt=null; renderCaptura(ov); }); });
+    var rvdAdd=document.getElementById('cap-rvd-addnew'); if(rvdAdd) rvdAdd.addEventListener('click',function(){ var nn=document.getElementById('cap-rvd-new'); var v=((nn||{}).value||'').replace(/[^0-9]/g,''); if(!v){ if(nn) nn.focus(); return; } rivalFaltaAdd(np,v); np.prompt=null; renderCaptura(ov); });
+    var rvdTeam=document.getElementById('cap-rvd-team'); if(rvdTeam) rvdTeam.addEventListener('click',function(){ rivalFaltaAdd(np,null); np.prompt=null; renderCaptura(ov); });
+    [].slice.call(ov.querySelectorAll('.cap-rvd-sub')).forEach(function(b){ b.addEventListener('click',function(){ rivalFaltaSub(np,b.getAttribute('data-d')); np.prompt=null; renderCaptura(ov); }); });
+    var rvdTeamS=document.getElementById('cap-rvd-teamsub'); if(rvdTeamS) rvdTeamS.addEventListener('click',function(){ rivalFaltaSub(np,null); np.prompt=null; renderCaptura(ov); });
+    var rvdCancel=document.getElementById('cap-rvd-cancel'); if(rvdCancel) rvdCancel.addEventListener('click',function(){ np.prompt=null; renderCaptura(ov); });
     [].slice.call(ov.querySelectorAll('.np-chip[data-k]')).forEach(function(c){ c.addEventListener('click',function(){ var k=c.getAttribute('data-k');
       if(np.prompt&&np.prompt.type==='asist'){ if(k===np.prompt.shooter) return; var pa=np.players.filter(function(p){return p.key===k;})[0]; if(pa){ pa.st.asistencias++; np.log.push({key:pa.key,fields:['asistencias']}); } np.prompt=null; renderCaptura(ov); return; }
       if(np.prompt&&np.prompt.type==='rebote'){ var pr2=np.players.filter(function(p){return p.key===k;})[0]; if(pr2){ var f=np.prompt.lado==='of'?'reb_of':'reb_def'; pr2.st[f]++; np.log.push({key:pr2.key,fields:[f]}); } np.prompt=null; renderCaptura(ov); return; }
@@ -5113,11 +5140,11 @@ window.verJugador=verJugador;
         if(idx===12){ np.prompt={type:'falta'}; renderCaptura(ov); return; }
         bd.f.forEach(function(f){ active.st[f]++; }); var pd=(idx===4?1:0); perAdd(np,'loc',pd); np.log.push({key:active.key, fields:bd.f.slice(), pts:pd, periodo:np.periodo}); if(idx===5){ np.prompt={type:'rebote',lado:'def'}; } renderCaptura(ov); }); });
       [].slice.call(ov.querySelectorAll('.cap-shot')).forEach(function(g){ g.addEventListener('click',function(){ quitarTiro(np,parseInt(g.getAttribute('data-si'),10)); renderCaptura(ov); }); });
-      [].slice.call(ov.querySelectorAll('.cap-rvfc')).forEach(function(rf){ rf.addEventListener('click',function(){ foulsQAdd(np,'riv',1); renderCaptura(ov); }); });
-      [].slice.call(ov.querySelectorAll('.cap-rvfmc')).forEach(function(rf){ rf.addEventListener('click',function(){ foulsQAdd(np,'riv',-1); renderCaptura(ov); }); });
+      [].slice.call(ov.querySelectorAll('.cap-rvfc')).forEach(function(rf){ rf.addEventListener('click',function(){ if(np.rivalModo==='faltas'){ np.prompt={type:'rivalfalta',op:'add'}; } else { foulsQAdd(np,'riv',1); } renderCaptura(ov); }); });
+      [].slice.call(ov.querySelectorAll('.cap-rvfmc')).forEach(function(rf){ rf.addEventListener('click',function(){ if(np.rivalModo==='faltas'){ np.prompt={type:'rivalfalta',op:'sub'}; } else { foulsQAdd(np,'riv',-1); } renderCaptura(ov); }); });
       var mapaB=document.getElementById('cap-mapa'); if(mapaB) mapaB.addEventListener('click',function(){ np.verMapa=true; renderCaptura(ov); });
       var mapaX=document.getElementById('cap-mapa-cerrar'); if(mapaX) mapaX.addEventListener('click',function(){ np.verMapa=false; renderCaptura(ov); });
-      var doUndo=function(){ var last=np.log.pop(); if(last){ var pl=np.players.filter(function(p){return p.key===last.key;})[0]; if(pl) last.fields.forEach(function(f){ if(pl.st[f]>0) pl.st[f]--; }); if(last.pts&&np.perPts&&np.perPts[last.periodo]){ var pp=np.perPts[last.periodo]; pp.loc=Math.max(0,pp.loc-last.pts); } if(last.fq){ var m=np.foulsQ||{}; m[last.fq]=Math.max(0,(m[last.fq]||0)-1); } if(last.shot){ var ix=(np.shots||[]).indexOf(last.shot); if(ix>=0) np.shots.splice(ix,1); } } renderCaptura(ov); };
+      var doUndo=function(){ var last=np.log.pop(); if(last){ if(last.rival){ if(last.dorsal!=null&&np.rivalFaltasDorsal&&np.rivalFaltasDorsal[last.dorsal]>0) np.rivalFaltasDorsal[last.dorsal]--; if(last.fq){ var mr=np.rivalFoulsQ||{}; mr[last.fq]=Math.max(0,(mr[last.fq]||0)-1); } renderCaptura(ov); return; } var pl=np.players.filter(function(p){return p.key===last.key;})[0]; if(pl) last.fields.forEach(function(f){ if(pl.st[f]>0) pl.st[f]--; }); if(last.pts&&np.perPts&&np.perPts[last.periodo]){ var pp=np.perPts[last.periodo]; pp.loc=Math.max(0,pp.loc-last.pts); } if(last.fq){ var m=np.foulsQ||{}; m[last.fq]=Math.max(0,(m[last.fq]||0)-1); } if(last.shot){ var ix=(np.shots||[]).indexOf(last.shot); if(ix>=0) np.shots.splice(ix,1); } } renderCaptura(ov); };
       var undo=document.getElementById('cap-undo'); if(undo) undo.addEventListener('click',doUndo);
       var undo2=document.getElementById('cap-undo2'); if(undo2) undo2.addEventListener('click',doUndo);
       var camb=document.getElementById('cap-cambios'); if(camb) camb.addEventListener('click',function(){ stop(); np.rosterOpen=(regladoActivo(np)&&enVentana(np))?'excepcion':true; np.rosterSel=null; renderCaptura(ov); });
@@ -5143,6 +5170,8 @@ window.verJugador=verJugador;
       var pr=await sb.from('partidos').insert({ equipo_id:np.equipoId, nombre_local:np.nombreLocal||null, rival:np.rival||null, fecha:np.fecha, tipo:np.tipo, lugar:np.lugar||null, puntos_local:scoreLocal(np), puntos_rival:np.rivalScore||0, marcador_periodos:mp, tiros:tiros, faltas_cuartos:fq, duracion_seg:np.clockSec||0 }).select('id').single();
       if(pr&&pr.error) throw pr.error; var pid=pr.data.id;
       var rows=np.players.map(function(p){ var r={ partido_id:pid, jugador_id:p.jugador_id, jugador_nombre:p.nombre, dorsal:p.dorsal||null, lado:p.lado, minutos:Math.round((p.secs||0)/60), cuartos_jugados:(p.cJug||0), cuartos_descansados:(p.cDesc||0) }; for(var k in p.st){ r[k]=p.st[k]; } return r; });
+      /* Fase C — rival 'dorsales + faltas': una fila lado='rival' por cada dorsal con faltas (jugador_id NULL). */
+      if(np.tipo==='temporada' && np.rivalModo==='faltas' && np.rivalFaltasDorsal){ Object.keys(np.rivalFaltasDorsal).forEach(function(d){ var f=np.rivalFaltasDorsal[d]||0; if(f>0){ var z=zerosSt(); z.faltas=f; var rr={ partido_id:pid, jugador_id:null, jugador_nombre:'Rival #'+d, dorsal:String(d), lado:'rival', minutos:0, cuartos_jugados:0, cuartos_descansados:0 }; for(var zk in z){ rr[zk]=z[zk]; } rows.push(rr); } }); }
       var ir=await sb.from('partido_stats').insert(rows); if(ir&&ir.error) throw ir.error;
       var perTxt=mp?('<div style="color:var(--muted2);font-size:12px;margin-top:6px">Por periodos: '+mp.map(function(x){return 'P'+x.p+' '+x.loc+'-'+x.riv;}).join(' &middot; ')+'</div>'):'';
       var regTxt='';
@@ -5152,7 +5181,8 @@ window.verJugador=verJugador;
           ?('<div style="background:rgba(224,141,139,.12);border:1px solid rgba(224,141,139,.4);border-radius:10px;padding:8px 12px;color:#e08d8b;font-size:12px;margin-top:10px;line-height:1.5">&#9888; Mínimos de alineación NO cumplidos: '+incum.map(function(p){return esc2f(p.nombre)+' (J'+(p.cJug||0)+'/D'+(p.cDesc||0)+')';}).join(', ')+'</div>')
           :('<div style="color:#7bd88f;font-size:12px;margin-top:8px">&#10003; Mínimos de alineación de '+esc2f(np.reglas.nombre)+' cumplidos por todos.</div>');
       }
-      ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding:28px 8px;text-align:center"><div style="font-size:42px">&#9989;</div><div style="font-weight:700;margin-top:8px;font-size:18px">Partido guardado</div><div style="color:var(--muted2);font-size:13px;margin-top:4px">'+scoreLocal(np)+' - '+(np.rivalScore||0)+' &middot; '+np.players.length+' jugador'+(np.players.length===1?'':'es')+' &middot; '+(np.tipo==='temporada'?'temporada':'scouting')+'</div>'+perTxt+regTxt+'<button class="btn btn-primary" id="cap-ok" style="margin-top:20px;max-width:200px;margin-left:auto;margin-right:auto">Hecho</button></div>';
+      var rivalTxt=''; if(np.tipo==='temporada'&&np.rivalModo==='faltas'){ var nrd=Object.keys(np.rivalFaltasDorsal||{}).filter(function(d){return (np.rivalFaltasDorsal[d]||0)>0;}).length; if(nrd) rivalTxt='<div style="color:#7bd88f;font-size:12px;margin-top:8px">&#10003; Faltas del rival registradas por dorsal ('+nrd+' jugador'+(nrd===1?'':'es')+').</div>'; }
+      ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding:28px 8px;text-align:center"><div style="font-size:42px">&#9989;</div><div style="font-weight:700;margin-top:8px;font-size:18px">Partido guardado</div><div style="color:var(--muted2);font-size:13px;margin-top:4px">'+scoreLocal(np)+' - '+(np.rivalScore||0)+' &middot; '+np.players.length+' jugador'+(np.players.length===1?'':'es')+' &middot; '+(np.tipo==='temporada'?'temporada':'scouting')+'</div>'+perTxt+regTxt+rivalTxt+'<button class="btn btn-primary" id="cap-ok" style="margin-top:20px;max-width:200px;margin-left:auto;margin-right:auto">Hecho</button></div>';
       document.getElementById('cap-ok').addEventListener('click',function(){ if(fsActive()) fsExit(); ov.style.display='none'; });
     }catch(e){ if(msg){msg.style.color='#ff6b6b';msg.textContent='No se pudo guardar el partido.';} }
   }
