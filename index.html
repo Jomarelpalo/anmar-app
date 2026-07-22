@@ -1188,7 +1188,7 @@ const SUPABASE_URL="https://kbrvaawngeuuewplcwyn.supabase.co";
 const SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticnZhYXduZ2V1dWV3cGxjd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTA0MjIsImV4cCI6MjA5Nzg2NjQyMn0.9ys4m2OicbMq3cFyf0a2IA_eh3VspPJ3pYgjNkMO6WA";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON,{auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:true}});
 const screens={login:'s-login',entrevista:'s-entrevista',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil',libre:'s-libre',dirigido:'s-dirigido',admin:'s-admin',entrenador:'s-entrenador',modo:'s-modo',club:'s-club',admEquipos:'s-adm-equipos',admJugadores:'s-adm-jugadores',admActividad:'s-adm-actividad',admAjustes:'s-adm-ajustes',admCompeticiones:'s-adm-competiciones'};
-const APP_VERSION='v3.0 · 21/07/2026';
+const APP_VERSION='v3.1 · 21/07/2026';
 document.querySelectorAll('#app-version,#app-version-2,#app-version-3').forEach(function(el){ el.textContent='ANMAR TRAINING '+APP_VERSION; });
 window.APP_VERSION=APP_VERSION;
 function go(name,isBack){
@@ -4317,11 +4317,43 @@ window.verJugador=verJugador;
       var partidos=(pr.data||[]).slice().sort(function(a,b){ return (''+(b.fecha||'')).localeCompare(''+(a.fecha||'')); });
       var sr=await sb.from('partido_stats').select('*, partido:partidos!inner(id,tipo,equipo_id)').eq('partido.equipo_id',equipoId).eq('partido.tipo','temporada').eq('lado','propio');
       if(sr&&sr.error) throw sr.error;
-      renderStatsEquipo(ov, nombreEq, partidos, sr.data||[]);
+      var rivalRows=[]; try{ var rr=await sb.from('partido_stats').select('*, partido:partidos!inner(id,tipo,equipo_id,rival,fecha)').eq('partido.equipo_id',equipoId).eq('partido.tipo','temporada').eq('lado','rival'); if(rr&&!rr.error) rivalRows=rr.data||[]; }catch(e){}
+      renderStatsEquipo(ov, nombreEq, partidos, sr.data||[], rivalRows);
     }catch(e){ ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding:24px 4px"><div style="color:#ff6b6b">No se pudieron cargar las estadísticas del equipo.</div><button class="btn btn-ghost" id="stex" style="margin-top:16px">Cerrar</button></div>'; var x=document.getElementById('stex'); if(x)x.addEventListener('click',function(){ov.style.display='none';}); }
   }
   window.abrirStatsEquipo=abrirStatsEquipo;
-  function renderStatsEquipo(ov, nombreEq, partidos, rows){
+  /* Fase C+ — scouting del rival: agrupa las faltas por equipo rival y dorsal (filas lado='rival'). */
+  function agrupaFaltasRival(rivalRows){
+    var byRival={};
+    (rivalRows||[]).forEach(function(g){
+      var f=g.faltas||0; if(f<=0) return;
+      var rv=((g.partido&&g.partido.rival)||'Rival').trim()||'Rival';
+      var d=(g.dorsal!=null&&g.dorsal!=='')?(''+g.dorsal):((g.jugador_nombre||'?').replace(/[^0-9]/g,'')||'?');
+      if(!byRival[rv]) byRival[rv]={rival:rv, dorsales:{}, partidos:{}};
+      byRival[rv].dorsales[d]=(byRival[rv].dorsales[d]||0)+f;
+      if(g.partido&&g.partido.id) byRival[rv].partidos[g.partido.id]=1;
+    });
+    return Object.keys(byRival).map(function(k){ var o=byRival[k];
+      var lista=Object.keys(o.dorsales).map(function(d){return {dorsal:d,faltas:o.dorsales[d]};}).sort(function(a,b){return b.faltas-a.faltas;});
+      return {rival:o.rival, np:Object.keys(o.partidos).length, dorsales:lista};
+    }).sort(function(a,b){ return (''+a.rival).localeCompare(''+b.rival); });
+  }
+  function rivalFaltasHTMLDark(rivalRows){
+    var g=agrupaFaltasRival(rivalRows); if(!g.length) return '';
+    return '<div style="margin-top:16px"><div class="section-t">Faltas del rival por dorsal</div>'+
+      '<div style="font-size:11.5px;color:var(--muted2);margin:2px 0 10px;line-height:1.5">Scouting: quién del rival acumula más faltas (partidos anotados en modo «dorsales + faltas»).</div>'+
+      g.map(function(o){ return '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:11px 13px;margin-bottom:8px"><div style="font-weight:700;font-size:14px;margin-bottom:8px">'+esc2f(o.rival)+' <span style="font-size:11px;color:var(--muted2);font-weight:500">· '+o.np+' partido'+(o.np===1?'':'s')+'</span></div><div style="display:flex;flex-wrap:wrap;gap:7px">'+
+        o.dorsales.map(function(x){ return '<div style="display:flex;align-items:center;gap:6px;background:rgba(0,229,229,.06);border:1px solid rgba(0,229,229,.3);border-radius:9px;padding:5px 9px"><b style="font-size:15px;color:#c6fbfb">#'+esc2f(x.dorsal)+'</b><span style="font-size:12px;color:var(--muted)">'+x.faltas+' F</span></div>'; }).join('')+
+      '</div></div>'; }).join('')+'</div>';
+  }
+  function rivalFaltasHTMLLight(rivalRows){
+    var g=agrupaFaltasRival(rivalRows); if(!g.length) return '';
+    return '<div class="if-st">Scouting del rival · faltas por dorsal</div><div class="if-cap">Quién del rival acumula más faltas (partidos anotados en modo «dorsales + faltas»).</div>'+
+      g.map(function(o){ return '<div style="border:1px solid #e5e9ee;border-radius:8px;padding:9px 11px;margin-bottom:7px"><div style="font-weight:700;font-size:13px;margin-bottom:6px;color:#17222e">'+esc2f(o.rival)+' · '+o.np+' partido'+(o.np===1?'':'s')+'</div><div style="display:flex;flex-wrap:wrap;gap:6px">'+
+        o.dorsales.map(function(x){ return '<span style="font-size:12px;background:#eef4f8;border:1px solid #d6e0e8;border-radius:7px;padding:3px 8px;color:#17222e"><b>#'+esc2f(x.dorsal)+'</b> · '+x.faltas+'F</span>'; }).join('')+
+      '</div></div>'; }).join('');
+  }
+  function renderStatsEquipo(ov, nombreEq, partidos, rows, rivalRows){
     var esc2=(typeof esc==='function')?esc:function(x){return (''+(x==null?'':x));};
     var nP=partidos.length;
     var gana=0,pierde=0,empata=0,pf=0,pc=0;
@@ -4354,14 +4386,14 @@ window.verJugador=verJugador;
     ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding-bottom:32px">'+
       '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px"><h2 style="margin:0">Equipo · '+esc2(nombreEq||'Equipo')+'</h2><button class="btn btn-ghost" id="ste-cerrar" style="max-width:100px;margin:0">Cerrar</button></div>'+
       '<div class="card pr-panel">'+kpis+'</div>'+
-      destaca+tabla+
+      destaca+tabla+rivalFaltasHTMLDark(rivalRows)+
       '<div style="font-size:11px;color:var(--muted2);margin-top:12px;line-height:1.5">Solo partidos de temporada (los de scouting no cuentan aquí). «pp» = por partido.</div>'+
       (nP?'<button class="btn btn-primary" id="ste-informe" style="margin-top:14px">Informe del equipo (PDF)</button>':'')+
       '<button class="btn btn-ghost" id="ste-cerrar2" style="margin-top:10px">Cerrar</button>'+
     '</div>';
     var cerrar=function(){ ov.style.display='none'; };
     var c1=document.getElementById('ste-cerrar'), c2=document.getElementById('ste-cerrar2'); if(c1)c1.addEventListener('click',cerrar); if(c2)c2.addEventListener('click',cerrar);
-    var inf=document.getElementById('ste-informe'); if(inf) inf.addEventListener('click',function(){ informeEquipo(nombreEq, partidos, rows); });
+    var inf=document.getElementById('ste-informe'); if(inf) inf.addEventListener('click',function(){ informeEquipo(nombreEq, partidos, rows, rivalRows); });
   }
 
   // ===== INFORMES IMPRIMIBLES (PDF vía imprimir) =====
@@ -4580,7 +4612,7 @@ window.verJugador=verJugador;
   }
   window.informeJugador=informeJugador;
 
-  function informeEquipo(nombreEq, partidos, rows){
+  function informeEquipo(nombreEq, partidos, rows, rivalRows){
     var nP=partidos.length, gana=0,pierde=0,empata=0,pf=0,pc=0;
     partidos.forEach(function(p){ var l=p.puntos_local||0,r=p.puntos_rival||0; pf+=l; pc+=r; if(l>r)gana++; else if(l<r)pierde++; else empata++; });
     var T=statsTot(rows), tca=T.t2a+T.t3a, tcm=T.t2m+T.t3m;
@@ -4618,7 +4650,7 @@ window.verJugador=verJugador;
         lead('Máximo anotador',function(b){return b.pts/b.n;},' pts')+lead('Mejor valoración',function(b){return b.val/b.n;},'')+lead('Más asistencias',function(b){return b.as/b.n;},'')+lead('Más rebotes',function(b){return b.reb/b.n;},'')+lead('Mejor defensa (rob+tap)',function(b){return (b.rob+b.tap)/b.n;},'')+
         '</div><div><div class="if-st" style="margin-top:0">Puntos por partido (antiguo → reciente)</div><div class="if-cap">Tu equipo</div>'+infChart(chron.map(function(p){return p.puntos_local||0;}),'#00e5e5')+infClab(chron.map(function(p){return p.rival;}))+
         '<div class="if-cap">Rival</div>'+infChart(chron.map(function(p){return p.puntos_rival||0;}),'#8390a0')+infClab(chron.map(function(p){return p.rival;}))+'</div></div>'+
-      '<div class="if-st">Jugadores</div><table class="if-tbl"><thead><tr><th class="l">Jugador</th><th>PJ</th><th>Pts/pp</th><th>Val/pp</th><th>AS/pp</th><th>REB/pp</th></tr></thead><tbody>'+filas+'</tbody></table>'+
+      '<div class="if-st">Jugadores</div><table class="if-tbl"><thead><tr><th class="l">Jugador</th><th>PJ</th><th>Pts/pp</th><th>Val/pp</th><th>AS/pp</th><th>REB/pp</th></tr></thead><tbody>'+filas+'</tbody></table>'+rivalFaltasHTMLLight(rivalRows)+
       '<div class="if-foot"><div>Solo partidos de temporada (los de scouting no cuentan). «pp» = por partido. Datos generados automáticamente desde los partidos anotados.</div><div style="text-align:right;white-space:nowrap"><b style="color:#17222e">ANMAR TRAINING</b><br>Club · uso interno</div></div>';
     abrirInforme(inner);
   }
