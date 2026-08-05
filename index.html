@@ -1444,7 +1444,7 @@ const SUPABASE_URL="https://kbrvaawngeuuewplcwyn.supabase.co";
 const SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticnZhYXduZ2V1dWV3cGxjd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTA0MjIsImV4cCI6MjA5Nzg2NjQyMn0.9ys4m2OicbMq3cFyf0a2IA_eh3VspPJ3pYgjNkMO6WA";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON,{auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:true}});
 const screens={login:'s-login',entrevista:'s-entrevista',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil',libre:'s-libre',dirigido:'s-dirigido',admin:'s-admin',entrenador:'s-entrenador',modo:'s-modo',club:'s-club',admEquipos:'s-adm-equipos',admJugadores:'s-adm-jugadores',admActividad:'s-adm-actividad',admAjustes:'s-adm-ajustes',admCompeticiones:'s-adm-competiciones'};
-const APP_VERSION='v3.7 · 03/08/2026';
+const APP_VERSION='v3.8 · 05/08/2026';
 document.querySelectorAll('#app-version,#app-version-2,#app-version-3').forEach(function(el){ el.textContent='ANMAR TRAINING '+APP_VERSION; });
 window.APP_VERSION=APP_VERSION;
 function go(name,isBack){
@@ -3007,12 +3007,11 @@ window.pedirFechaNacimiento=pedirFechaNacimiento;
   async function recomendacionInteligente(){
     var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null; if(!uid) return;
     var hoy=new Date(); hoy.setHours(0,0,0,0);
-    var desde=new Date(hoy.getTime()-20*86400000);
     var hasta=new Date(hoy.getTime()+2*86400000);
 
     var dj={}, ses=[], evs=[];
     try{ var r1=await sb.from('datos_jugador').select('condicion_fisica,lesiones,objetivo_principal,fecha_nacimiento,atributos_objetivo,modo_entreno').eq('id',uid).maybeSingle(); dj=(r1&&r1.data)||{}; }catch(e){}
-    try{ var r2=await sb.from('sesiones').select('fecha,notas,pilares,esfuerzo').eq('jugador_id',uid).eq('estado','completada').gte('fecha',_f(desde)).order('fecha',{ascending:false}); ses=(r2&&r2.data)||[]; }catch(e){}
+    try{ var r2=await sb.from('sesiones').select('fecha,notas,pilares,esfuerzo').eq('jugador_id',uid).eq('estado','completada').order('fecha',{ascending:false}).limit(60); ses=(r2&&r2.data)||[]; }catch(e){}
     try{ var r3=await sb.from('eventos').select('tipo,titulo,fecha').eq('jugador_id',uid).gte('fecha',_f(hoy)).lte('fecha',_f(hasta)); evs=(r3&&r3.data)||[]; }catch(e){}
 
     var edad=_edad(dj.fecha_nacimiento);
@@ -3060,9 +3059,9 @@ window.pedirFechaNacimiento=pedirFechaNacimiento;
       porque='En tu ficha has indicado molestias o lesión: "'+lesion+'".';
       para='Movilidad y control, evitando impacto y saltos.';
       aviso='Consulta con tu fisioterapeuta o médico antes de volver a la carga fuerte.';
-    } else if(ultimo>=5){
+    } else if(ultDias>=5){
       tipo='funcional'; L=Math.min(L,1);
-      porque=(ultimo>=900)?'Todavía no has registrado ninguna sesión.':('Llevas '+ultimo+' días sin entrenar.');
+      porque=(ultDias>=900)?'Todavía no has registrado ninguna sesión.':('Llevas '+ultDias+' días sin entrenar.');
       para='Volver poco a poco: movilidad, core y equilibrio, sin agujetas ni riesgo de lesión.';
     } else {
       var cands=['fuerza_gym','pliometria','tecnica','funcional'];
@@ -3215,7 +3214,7 @@ window.verJugador=verJugador;
       fuente:'Cuadro resumen reglas Infantil FAB (oct. 2024, vigente 26-27): mínimo 1 cuarto jugado y 1 descansado completos en los 3 primeros.' }
   };
   function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-  function edadDe(f){ return (f&&window.edadDeFecha)?window.edadDeFecha(f):null; }
+  function edadDe(f){ var e=(f&&window.edadDeFecha)?window.edadDeFecha(f):null; return (e!=null&&e>=4&&e<=100)?e:null; }
   function msg(t,c){ var m=document.getElementById('eq-msg'); if(m){ m.style.color=c||'#9AA8A0'; m.textContent=t||''; } }
   function setTitulo(t){ var e=document.getElementById('eq-titulo'); if(e) e.textContent=t; }
   function volverBtn(show,fn){ var b=document.getElementById('eq-volver'); if(!b) return; b.style.display=show?'':'none'; b.onclick=fn||null; }
@@ -4108,7 +4107,7 @@ window.verJugador=verJugador;
       var rows=r.data||[];
       if(!rows.length){ box.innerHTML='<div style="color:var(--muted);font-size:13px">Aún no hay jugadores. Añade el primero.</div>'; return; }
       box.innerHTML=rows.map(function(j){
-        var ed=edadDe(j.fecha_nacimiento); var sub=[]; if(j.posicion)sub.push(j.posicion); if(ed!=null)sub.push(ed+' años');
+        var ed=edadDe(j.fecha_nacimiento); var sub=[]; if(j.posicion)sub.push(j.posicion); if(ed!=null)sub.push(ed+' años'); else if(j.fecha_nacimiento)sub.push('Revisar fecha');
         var les=(j.lesiones_zonas&&j.lesiones_zonas.length)?(' · ⚠ '+j.lesiones_zonas.length+' lesión'+(j.lesiones_zonas.length===1?'':'es')):'';
         return '<div class="ent-row" data-id="'+j.id+'"><div class="eq-foto" data-foto="'+esc(j.foto_url||'')+'">'+esc((j.nombre||'?').charAt(0).toUpperCase())+'</div><div style="flex:1;min-width:0"><div class="ent-n">'+esc(j.nombre)+'</div><div class="ent-s">'+esc(sub.join(' · '))+les+'</div></div><span style="color:var(--muted2);font-size:20px">›</span></div>';
       }).join('');
@@ -4719,7 +4718,7 @@ window.verJugador=verJugador;
     document.getElementById('inf-print').addEventListener('click',function(){ try{ window.print(); }catch(e){} });
     ov.scrollTop=0;
   }
-  function edadDe(fn){ if(!fn) return null; try{ var d=new Date(fn), t=new Date(); var a=t.getFullYear()-d.getFullYear(), m=t.getMonth()-d.getMonth(); if(m<0||(m===0&&t.getDate()<d.getDate())) a--; return (a>=0&&a<100)?a:null; }catch(e){ return null; } }
+  function edadDe(fn){ if(!fn) return null; try{ var d=new Date(fn), t=new Date(); var a=t.getFullYear()-d.getFullYear(), m=t.getMonth()-d.getMonth(); if(m<0||(m===0&&t.getDate()<d.getDate())) a--; return (a>=4&&a<=100)?a:null; }catch(e){ return null; } }
   function fechaHoy(){ try{ var d=new Date(), D=function(x){return (x<10?'0':'')+x;}; return D(d.getDate())+'/'+D(d.getMonth()+1)+'/'+d.getFullYear(); }catch(e){ return ''; } }
   function fechaCorta(f){ var p=(''+f).split('-'); return p.length===3?(p[2]+'/'+p[1]+'/'+p[0].slice(2)):(''+f); }
   function shortLbl(r){ if(!r) return '—'; r=''+r; return r.length>9?r.slice(0,9):r; }
@@ -5514,9 +5513,14 @@ window.verJugador=verJugador;
     var m=document.getElementById('f-msg'), b=document.getElementById('f-guardar');
     var nombre=(document.getElementById('f-nombre').value||'').trim();
     if(nombre.length<2){ if(m){m.style.color='#ff6b6b';m.textContent='Escribe el nombre.';} return; }
+    var fechaNac=(document.getElementById('f-nac').value||null);
+    if(fechaNac&&edadDe(fechaNac)==null){
+      if(m){m.style.color='#ff6b6b';m.textContent='Revisa la fecha de nacimiento: debe corresponder a una edad de entre 4 y 100 años.';}
+      document.getElementById('f-nac').focus(); return;
+    }
     var zonas=[].slice.call(document.querySelectorAll('.f-les:checked')).map(function(c){return c.value;});
     var reg={ equipo_id:window.__eq.id, nombre:nombre,
-      fecha_nacimiento:(document.getElementById('f-nac').value||null),
+      fecha_nacimiento:fechaNac,
       posicion:(document.getElementById('f-pos').value||null),
       condicion_fisica:(document.getElementById('f-cond').value||null),
       objetivo:((document.getElementById('f-obj').value||'').trim()||null),
@@ -5555,4 +5559,3 @@ window.verJugador=verJugador;
 </body>
 </html>
 <!-- build: seguridad contrasena temporal -->
-
