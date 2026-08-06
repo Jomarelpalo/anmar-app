@@ -1444,7 +1444,7 @@ const SUPABASE_URL="https://kbrvaawngeuuewplcwyn.supabase.co";
 const SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticnZhYXduZ2V1dWV3cGxjd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTA0MjIsImV4cCI6MjA5Nzg2NjQyMn0.9ys4m2OicbMq3cFyf0a2IA_eh3VspPJ3pYgjNkMO6WA";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON,{auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:true}});
 const screens={login:'s-login',entrevista:'s-entrevista',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil',libre:'s-libre',dirigido:'s-dirigido',admin:'s-admin',entrenador:'s-entrenador',modo:'s-modo',club:'s-club',admEquipos:'s-adm-equipos',admJugadores:'s-adm-jugadores',admActividad:'s-adm-actividad',admAjustes:'s-adm-ajustes',admCompeticiones:'s-adm-competiciones'};
-const APP_VERSION='v3.10 · 06/08/2026';
+const APP_VERSION='v3.10.1 · 06/08/2026';
 document.querySelectorAll('#app-version,#app-version-2,#app-version-3').forEach(function(el){ el.textContent='ANMAR TRAINING '+APP_VERSION; });
 window.APP_VERSION=APP_VERSION;
 function go(name,isBack){
@@ -5155,7 +5155,7 @@ window.verJugador=verJugador;
         if(vr&&!vr.error){ var acc={}; (vr.data||[]).forEach(function(g){ if(!g.jugador_id) return; var a=acc[g.jugador_id]||(acc[g.jugador_id]={s:0,n:0}); a.s+=valoracionDe(g); a.n++; });
           Object.keys(acc).forEach(function(k){ valMap[k]={v:acc[k].s/acc[k].n, n:acc[k].n}; }); }
       }catch(e){}
-      window.__np={equipoId:equipoId, nombreEq:nombreEq, tipo:'temporada', lugar:'casa', categoria:categoria, valMap:valMap, mis:(jr.data||[]), adhoc:[], players:[], activeKey:null, log:[], rival:'', fecha:'', numPeriodos:4, rivalModo:'puntos'};
+      window.__np={equipoId:equipoId, nombreEq:nombreEq, nombreLocal:nombreEq, tipo:'temporada', lugar:'casa', categoria:categoria, valMap:valMap, mis:(jr.data||[]), adhoc:[], players:[], activeKey:null, log:[], rival:'', scoutNombre:'', scoutRival:'', temporadaRival:'', fecha:'', numPeriodos:4, rivalModo:'puntos'};
       renderNPSetup(ov);
     }catch(e){ ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding:24px 4px"><div style="color:#ff6b6b">No se pudo abrir el partido.</div><button class="btn btn-ghost" id="np-x" style="margin-top:14px">Cerrar</button></div>'; var x=document.getElementById('np-x'); if(x)x.addEventListener('click',function(){ov.style.display='none';}); }
   }
@@ -5167,10 +5167,14 @@ window.verJugador=verJugador;
     if(np.tipo==='temporada'){
       pArea='<div class="flab" style="margin-top:12px">Convocatoria (marca a los disponibles; los 5 en pista se colocan al empezar)</div>'+ (np.mis.length? np.mis.map(function(p){return '<label style="display:flex;align-items:center;gap:8px;padding:5px 2px;font-size:14px"><input type="checkbox" class="np-mis" value="'+p.id+'" data-n="'+esc2f(p.nombre)+'" checked> '+esc2f(p.nombre)+'</label>';}).join('') : '<div style="color:var(--muted);font-size:13px">Este equipo no tiene jugadores.</div>');
     } else {
-      pArea='<div class="flab" style="margin-top:12px">Jugadores del rival a analizar</div><div id="np-adhoc">'+ (np.adhoc.length? np.adhoc.map(function(a){return '<div style="font-size:13px;padding:3px 2px">'+(a.dorsal?('#'+esc2f(a.dorsal)+' '):'')+esc2f(a.nombre)+'</div>';}).join('') : '<div style="color:var(--muted2);font-size:12px">Añade al menos un jugador.</div>')+'</div>'+
+      pArea='<div class="flab" style="margin-top:12px">Jugadores del equipo scouteado</div><div id="np-adhoc">'+ (np.adhoc.length? np.adhoc.map(function(a){return '<div style="font-size:13px;padding:3px 2px">'+(a.dorsal?('#'+esc2f(a.dorsal)+' '):'')+esc2f(a.nombre)+'</div>';}).join('') : '<div style="color:var(--muted2);font-size:12px">Añade al menos un jugador del equipo que vas a analizar.</div>')+'</div>'+
         '<div style="display:flex;gap:8px;margin-top:6px"><input class="field" id="np-ad-dorsal" placeholder="Dorsal" style="max-width:80px"><input class="field" id="np-ad-nombre" placeholder="Nombre"><button class="btn btn-ghost" id="np-ad-add" style="max-width:110px;margin:0">Añadir</button></div>';
     }
     var regInfo='';
+    var localLab=np.tipo==='temporada'?'Tu equipo':'Equipo scouteado';
+    var rivalLab=np.tipo==='temporada'?'Rival':'Contrario';
+    var localPh=np.tipo==='temporada'?'Nombre de tu equipo':'Nombre del equipo que vas a analizar';
+    var rivalPh=np.tipo==='temporada'?'Nombre del rival':'Nombre del equipo contrario (opcional)';
     if(np.tipo==='temporada'&&np.categoria&&REGLAS_CAT[np.categoria]){
       var RG=REGLAS_CAT[np.categoria];
       regInfo='<div style="background:rgba(51,80,110,.22);border:1px solid rgba(95,176,230,.35);border-radius:10px;padding:9px 12px;font-size:12px;color:#cfe0ef;margin-top:10px;line-height:1.5"><b>'+RG.nombre+' · reglas de alineación activas.</b> '+esc2f(RG.fuente)+' El sistema te sugerirá la alineación por cuartos y avisará para que nunca haya alineación indebida.</div>';
@@ -5179,10 +5183,10 @@ window.verJugador=verJugador;
     }
     ov.innerHTML='<div style="max-width:560px;margin:0 auto;padding-bottom:32px">'+
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h2 style="margin:0">Nuevo partido</h2><button class="btn btn-ghost" id="np-cerrar" style="max-width:90px;margin:0">Cerrar</button></div>'+
-      '<div style="display:flex;gap:8px">'+tipoBtn('temporada','Oficial · temporada','Cuenta para tu equipo')+tipoBtn('puntual','Puntual · scouting','Otro equipo; no afecta a tu temporada')+'</div>'+
+      '<div style="display:flex;gap:8px">'+tipoBtn('temporada','Oficial · temporada','Cuenta para tu equipo')+tipoBtn('puntual','Puntual · scouting','Analiza otro equipo; no afecta a tu temporada')+'</div>'+
       regInfo+
-      '<div class="flab" style="margin-top:12px">Tu equipo</div><input class="field" id="np-local" value="'+esc2f(np.nombreEq||'')+'">'+
-      '<div class="flab">Rival</div><input class="field" id="np-rival" placeholder="Nombre del rival" value="'+esc2f(np.rival||'')+'">'+
+      '<div class="flab" style="margin-top:12px">'+localLab+'</div><input class="field" id="np-local" placeholder="'+localPh+'" value="'+esc2f(np.nombreLocal!=null?np.nombreLocal:(np.tipo==='temporada'?(np.nombreEq||''):'') )+'">'+
+      '<div class="flab">'+rivalLab+'</div><input class="field" id="np-rival" placeholder="'+rivalPh+'" value="'+esc2f(np.rival||'')+'">'+
       '<div class="flab">Fecha</div><input class="field" id="np-fecha" type="date" value="'+(np.fecha||hoy)+'">'+
       '<div class="flab">¿Dónde se juega?</div><div style="display:flex;gap:8px">'+
         ['casa','fuera'].map(function(v){ var on=np.lugar===v; return '<button type="button" class="np-lug" data-l="'+v+'" style="flex:1;background:'+(on?'rgba(0,229,229,.18)':'rgba(255,255,255,.03)')+';border:1px solid '+(on?'#00e5e5':'rgba(255,255,255,.1)')+';border-radius:10px;padding:9px 12px;cursor:pointer;color:inherit;font-weight:700">'+(v==='casa'?'En casa':'Fuera')+'</button>'; }).join('')+
@@ -5202,8 +5206,15 @@ window.verJugador=verJugador;
       '<div id="np-msg" style="font-size:12px;color:#ff6b6b;margin-top:8px;min-height:14px"></div>'+
     '</div>';
     document.getElementById('np-cerrar').addEventListener('click',function(){ ov.style.display='none'; });
-    var keep=function(){ np.rival=(document.getElementById('np-rival')||{}).value||''; np.fecha=(document.getElementById('np-fecha')||{}).value||''; };
-    [].slice.call(ov.querySelectorAll('.np-tipo')).forEach(function(b){ b.addEventListener('click',function(){ keep(); np.tipo=b.getAttribute('data-t'); renderNPSetup(ov); }); });
+    var keep=function(){ np.nombreLocal=(document.getElementById('np-local')||{}).value||''; np.rival=(document.getElementById('np-rival')||{}).value||''; np.fecha=(document.getElementById('np-fecha')||{}).value||''; };
+    [].slice.call(ov.querySelectorAll('.np-tipo')).forEach(function(b){ b.addEventListener('click',function(){
+      keep(); var nt=b.getAttribute('data-t');
+      if(nt!==np.tipo){
+        if(nt==='puntual'){ np.temporadaRival=np.rival||''; np.nombreLocal=np.scoutNombre||''; np.rival=np.scoutRival||''; }
+        else { np.scoutNombre=np.nombreLocal||''; np.scoutRival=np.rival||''; np.nombreLocal=np.nombreEq||''; np.rival=np.temporadaRival||''; }
+      }
+      np.tipo=nt; renderNPSetup(ov);
+    }); });
     [].slice.call(ov.querySelectorAll('.np-lug')).forEach(function(b){ b.addEventListener('click',function(){ keep(); np.lugar=b.getAttribute('data-l'); renderNPSetup(ov); }); });
     [].slice.call(ov.querySelectorAll('.np-fmt')).forEach(function(b){ b.addEventListener('click',function(){ keep(); np.numPeriodos=parseInt(b.getAttribute('data-f'),10)||4; renderNPSetup(ov); }); });
     [].slice.call(ov.querySelectorAll('.np-rvm')).forEach(function(b){ b.addEventListener('click',function(){ keep(); np.rivalModo=b.getAttribute('data-m'); renderNPSetup(ov); }); });
@@ -5216,9 +5227,10 @@ window.verJugador=verJugador;
     np.fecha=document.getElementById('np-fecha').value||null;
     np.nombreLocal=(document.getElementById('np-local').value||'').trim();
     if(!np.fecha){ if(msg)msg.textContent='Pon la fecha del partido.'; return; }
+    if(np.tipo==='puntual'&&!np.nombreLocal){ if(msg)msg.textContent='Escribe el nombre del equipo que vas a analizar.'; return; }
     var players=[];
     if(np.tipo==='temporada'){ [].slice.call(ov.querySelectorAll('.np-mis:checked')).forEach(function(c,i){ var fila=(np.mis||[]).filter(function(x){return x.id===c.value;})[0]||{}; players.push({key:'p'+i, nombre:c.getAttribute('data-n'), dorsal:'', jugador_id:c.value, foto_url:fila.foto_url||null, lado:'propio', onCourt:false, secs:0, st:zerosSt()}); }); if(!players.length){ if(msg)msg.textContent='Marca al menos un jugador.'; return; } }
-    else { np.adhoc.forEach(function(a,i){ players.push({key:'a'+i, nombre:a.nombre, dorsal:a.dorsal, jugador_id:null, lado:'rival', onCourt:false, secs:0, st:zerosSt()}); }); if(!players.length){ if(msg)msg.textContent='Añade al menos un jugador del rival.'; return; } }
+    else { np.adhoc.forEach(function(a,i){ players.push({key:'a'+i, nombre:a.nombre, dorsal:a.dorsal, jugador_id:null, lado:'rival', onCourt:false, secs:0, st:zerosSt()}); }); if(!players.length){ if(msg)msg.textContent='Añade al menos un jugador del equipo que vas a analizar.'; return; } }
     np.players=players; np.activeKey=null; np.log=[]; np.foulEvents=[]; np.expulsionPendiente=null;
     np.rivalScore=0; np.periodo=1; np.perPts={}; np.clockSec=0; np.clockRun=false; np.clockTimer=null; np.prompt=null; np.rosterOpen=false; np.rosterSel=null;
     np.rivalFaltasDorsal={}; np.rivalDorsales=[]; if(np.tipo!=='temporada') np.rivalModo='puntos';
@@ -5343,8 +5355,8 @@ window.verJugador=verJugador;
     var court=onCourtPlayers(np);
     var active=court.filter(function(p){return p.key===np.activeKey;})[0]||court[0]||null;
     if(active) np.activeKey=active.key;
-    var capLabel=np.tipo==='temporada'?(np.nombreLocal||'Tu equipo'):(np.rival||'Equipo scouteado');
-    var rivalLabel=np.tipo==='temporada'?(np.rival||'Rival'):'Otro';
+    var capLabel=np.tipo==='temporada'?(np.nombreLocal||'Tu equipo'):(np.nombreLocal||'Equipo scouteado');
+    var rivalLabel=np.tipo==='temporada'?(np.rival||'Rival'):(np.rival||'Otro equipo');
     var rv=function(v,l){ return '<button class="cap-rv" data-v="'+v+'" style="background:rgba(255,255,255,.06);border:none;color:inherit;border-radius:6px;padding:2px 7px;font-size:12px;cursor:pointer">'+l+'</button>'; };
     var marcador='<div class="cap-mk" style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px;margin-bottom:8px">'+
       '<div style="flex:1;text-align:center;min-width:0"><div style="font-size:10.5px;color:var(--muted2);text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc2f(capLabel)+'</div><div class="cap-sc" style="font-size:26px;font-weight:800;line-height:1">'+scoreLocal(np)+'</div><div style="margin-top:3px" title="Faltas de equipo en este cuarto">'+pipsFaltas(foulsQ(np,'loc'))+(foulsQ(np,'loc')>=5?'<span style="font-size:10px;font-weight:800;color:#e05252;margin-left:4px">BONUS</span>':'')+'</div></div>'+
