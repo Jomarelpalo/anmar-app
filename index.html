@@ -1444,7 +1444,7 @@ const SUPABASE_URL="https://kbrvaawngeuuewplcwyn.supabase.co";
 const SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticnZhYXduZ2V1dWV3cGxjd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTA0MjIsImV4cCI6MjA5Nzg2NjQyMn0.9ys4m2OicbMq3cFyf0a2IA_eh3VspPJ3pYgjNkMO6WA";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON,{auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:true}});
 const screens={login:'s-login',entrevista:'s-entrevista',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil',libre:'s-libre',dirigido:'s-dirigido',admin:'s-admin',entrenador:'s-entrenador',modo:'s-modo',club:'s-club',admEquipos:'s-adm-equipos',admJugadores:'s-adm-jugadores',admActividad:'s-adm-actividad',admAjustes:'s-adm-ajustes',admCompeticiones:'s-adm-competiciones'};
-const APP_VERSION='v3.10.1 · 06/08/2026';
+const APP_VERSION='v3.10.2 · 06/08/2026';
 document.querySelectorAll('#app-version,#app-version-2,#app-version-3').forEach(function(el){ el.textContent='ANMAR TRAINING '+APP_VERSION; });
 window.APP_VERSION=APP_VERSION;
 function go(name,isBack){
@@ -5203,7 +5203,7 @@ window.verJugador=verJugador;
         : '')+
       pArea+
       '<button class="btn btn-primary" id="np-empezar" style="margin-top:16px">Empezar a anotar</button>'+
-      '<div id="np-msg" style="font-size:12px;color:#ff6b6b;margin-top:8px;min-height:14px"></div>'+
+      '<div id="partido-msg" style="font-size:12px;color:#ff6b6b;margin-top:8px;min-height:14px"></div>'+
     '</div>';
     document.getElementById('np-cerrar').addEventListener('click',function(){ ov.style.display='none'; });
     var keep=function(){ np.nombreLocal=(document.getElementById('np-local')||{}).value||''; np.rival=(document.getElementById('np-rival')||{}).value||''; np.fecha=(document.getElementById('np-fecha')||{}).value||''; };
@@ -5222,7 +5222,7 @@ window.verJugador=verJugador;
     document.getElementById('np-empezar').addEventListener('click',function(){ npEmpezar(ov); });
   }
   function npEmpezar(ov){
-    var np=window.__np, msg=document.getElementById('np-msg');
+    var np=window.__np, msg=document.getElementById('partido-msg');
     np.rival=(document.getElementById('np-rival').value||'').trim();
     np.fecha=document.getElementById('np-fecha').value||null;
     np.nombreLocal=(document.getElementById('np-local').value||'').trim();
