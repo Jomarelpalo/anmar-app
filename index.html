@@ -549,11 +549,12 @@ body{
 #s-entrenador .kv{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid rgba(234,234,234,.07);font-size:13px}
 #s-entrenador .kv:last-child{border:none}
 #s-entrenador .kv span:first-child{color:var(--muted)}
-#s-admin .admin-u{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:12px;border-radius:12px;background:#2A2C33;border:1px solid #3A3D46;margin-bottom:10px}
-#s-admin .admin-u-n{font-weight:700;font-size:14px;color:var(--text)}
-#s-admin .admin-u-e{font-size:12px;color:var(--muted);margin-top:2px}
-#s-admin .admin-rol{background:#1c2027;color:var(--text);border:1px solid #3A3D46;border-radius:8px;padding:8px 10px;font-family:var(--font);font-size:13px;cursor:pointer;flex:none}
-#s-admin .admin-rol:disabled{opacity:.5;cursor:default}
+#s-admin .admin-u{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:12px;border-radius:12px;background:var(--anmar-card);border:1px solid var(--anmar-border);color:var(--anmar-ink);box-shadow:0 4px 12px rgba(25,42,60,.06);margin-bottom:10px}
+#s-admin .admin-u-n{font-weight:700;font-size:14px;color:var(--anmar-ink)}
+#s-admin .admin-u-e{font-size:12px;color:var(--anmar-muted);margin-top:2px}
+#s-admin .admin-rol{min-height:44px;background:var(--anmar-card-soft);color:var(--anmar-ink);border:1px solid var(--anmar-border);border-radius:8px;padding:8px 10px;font-family:var(--font);font-size:13px;cursor:pointer;flex:none}
+#s-admin .admin-rol:focus-visible{outline:3px solid color-mix(in srgb,var(--anmar-accent) 30%,transparent);outline-offset:2px}
+#s-admin .admin-rol:disabled{opacity:.72;cursor:default}
 .admin-volver{background:none!important;border:none!important;color:var(--orange)!important;cursor:pointer;font-size:14px;font-family:var(--font)}
 @media(min-width:1024px){ #s-admin .pad{max-width:640px;margin:0 auto;padding-top:150px!important} }
 @media(max-width:1023px){ #s-admin .pad{padding-top:60px} }
@@ -1820,7 +1821,7 @@ const SUPABASE_URL="https://kbrvaawngeuuewplcwyn.supabase.co";
 const SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticnZhYXduZ2V1dWV3cGxjd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTA0MjIsImV4cCI6MjA5Nzg2NjQyMn0.9ys4m2OicbMq3cFyf0a2IA_eh3VspPJ3pYgjNkMO6WA";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON,{auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:true}});
 const screens={login:'s-login',entrevista:'s-entrevista',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil',libre:'s-libre',dirigido:'s-dirigido',admin:'s-admin',entrenador:'s-entrenador',modo:'s-modo',club:'s-club',admEquipos:'s-adm-equipos',admJugadores:'s-adm-jugadores',admActividad:'s-adm-actividad',admAjustes:'s-adm-ajustes',admCompeticiones:'s-adm-competiciones'};
-const APP_VERSION='v3.11.5 · 14/08/2026';
+const APP_VERSION='v3.11.6 · 17/08/2026';
 document.querySelectorAll('#app-version,#app-version-2,#app-version-3').forEach(function(el){ el.textContent='ANMAR TRAINING '+APP_VERSION; });
 window.APP_VERSION=APP_VERSION;
 function go(name,isBack){
