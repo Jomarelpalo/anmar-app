@@ -1712,20 +1712,12 @@ body{
           <div class="section-t" style="margin-top:20px">Usuarios bajo tu administraci&oacute;n</div>
           <div id="admin-msg" style="font-size:13px;margin:0 2px 10px;min-height:16px"></div>
           <div class="card pr-panel" id="admin-users"><div style="color:var(--muted);font-size:13px">Cargando&hellip;</div></div>
-          <details class="card pr-panel admin-create-box" id="admin-crear" style="margin-top:14px"><summary>Crear una cuenta</summary><div class="admin-create-body">
-              <div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:10px">Crea usuarios independientes o el administrador responsable de un club. Los demás miembros del club los gestionar&aacute; su administrador.</div>
-              <input class="field" id="nu-nombre" placeholder="Nombre">
-              <input class="field" id="nu-email" type="email" placeholder="Correo electr&oacute;nico" autocomplete="off">
-              <select class="field" id="nu-rol"><option value="jugador">Jugador independiente</option><option value="entrenador">Entrenador independiente</option><option value="admin_club">Administrador de club</option><option value="admin">Administrador general</option></select>
-              <select class="field" id="nu-club" style="display:none"><option value="">Elige el club&hellip;</option></select>
-              <button class="btn btn-primary" id="nu-crear" style="margin-top:4px">Crear usuario</button>
-              <div id="nu-msg" style="font-size:13px;margin-top:12px;line-height:1.5"></div>
-          </div></details>
-          <details class="card pr-panel admin-create-box" id="admin-invitar" style="margin-top:14px"><summary>Invitar mediante un enlace seguro</summary><div class="admin-create-body">
-            <div style="font-size:12px;color:var(--muted2);margin:-2px 2px 10px;line-height:1.5">El jugador crea su propia contrase&ntilde;a. T&uacute; no llegas a conocerla. El enlace caduca en 7 d&iacute;as y solo sirve una vez.</div>
+          <details class="card pr-panel admin-create-box" id="admin-invitar" style="margin-top:14px"><summary>Invitar a una persona</summary><div class="admin-create-body">
+            <div style="font-size:12px;color:var(--muted2);margin:-2px 2px 10px;line-height:1.5">La persona crea su propia contrase&ntilde;a y t&uacute; no llegas a conocerla. El enlace caduca en 7 d&iacute;as y solo sirve una vez.</div>
             <input class="field" id="iv-nombre2" placeholder="Nombre (opcional)">
             <input class="field" id="iv-email2" type="email" placeholder="Correo electr&oacute;nico" autocomplete="off">
-            <select class="field" id="iv-rol2"><option value="jugador">Jugador</option><option value="entrenador">Entrenador</option><option value="admin">Administrador</option></select>
+            <select class="field" id="iv-rol2"><option value="jugador">Jugador independiente</option><option value="entrenador">Entrenador</option><option value="admin_club">Administrador de club</option><option value="admin">Administrador general</option></select>
+            <select class="field" id="iv-club2" style="display:none"><option value="">Sin club (independiente)</option></select>
             <button class="btn btn-primary" id="iv-crear2" style="margin-top:4px">Generar enlace</button>
             <div id="iv-enlace" style="display:none;margin-top:12px">
               <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Copia este enlace y m&aacute;ndaselo:</div>
@@ -1803,7 +1795,7 @@ body{
 </div></div><div class="ovl" id="ov-pass"><div style="width:100%;max-width:340px">
   <div style="font-size:18px;font-weight:700;margin-bottom:6px;color:#e7eef7">Crea tu contraseña</div>
   <div style="font-size:13px;color:#9AA8A0;margin-bottom:14px;line-height:1.5">Estás usando una contraseña temporal que conoce quien creó tu cuenta. Elige una tuya para continuar.</div>
-  <input id="np-pass" class="field" type="password" placeholder="Nueva contraseña (mín. 8, letras y números)" autocomplete="new-password">
+  <input id="np-pass" class="field" type="password" placeholder="Nueva contraseña (mín. 12, letras y números)" autocomplete="new-password">
   <input id="np-pass2" class="field" type="password" placeholder="Repite la contraseña" autocomplete="new-password">
   <button id="np-guardar" class="btn btn-primary" style="width:100%">Guardar y continuar</button>
   <p id="np-msg" style="font-size:12px;text-align:center;margin-top:10px;min-height:16px"></p>
@@ -1821,7 +1813,7 @@ const SUPABASE_URL="https://kbrvaawngeuuewplcwyn.supabase.co";
 const SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticnZhYXduZ2V1dWV3cGxjd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTA0MjIsImV4cCI6MjA5Nzg2NjQyMn0.9ys4m2OicbMq3cFyf0a2IA_eh3VspPJ3pYgjNkMO6WA";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON,{auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:true}});
 const screens={login:'s-login',entrevista:'s-entrevista',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil',libre:'s-libre',dirigido:'s-dirigido',admin:'s-admin',entrenador:'s-entrenador',modo:'s-modo',club:'s-club',admEquipos:'s-adm-equipos',admJugadores:'s-adm-jugadores',admActividad:'s-adm-actividad',admAjustes:'s-adm-ajustes',admCompeticiones:'s-adm-competiciones'};
-const APP_VERSION='v3.11.6 · 17/08/2026';
+const APP_VERSION='v3.11.7 · 18/08/2026';
 document.querySelectorAll('#app-version,#app-version-2,#app-version-3').forEach(function(el){ el.textContent='ANMAR TRAINING '+APP_VERSION; });
 window.APP_VERSION=APP_VERSION;
 function go(name,isBack){
@@ -2842,10 +2834,12 @@ async function clubPanelUI(){
       '<div class="card pr-panel"><div class="section-t">Cuerpo técnico</div>'+
       '<div id="ct-lista">'+(tecnicos.length? tecnicos.map(function(t){ return '<div style="padding:7px 0;border-top:1px solid rgba(255,255,255,.07)"><b>'+escC(t.nombre)+'</b> <span style="font-size:12px;color:var(--muted2)">· entrenador</span></div>'; }).join('') : '<div style="color:var(--muted);font-size:13px">Aún no hay cuerpo técnico. Da de alta al primero.</div>')+'</div>'+
       '<div style="height:1px;background:rgba(255,255,255,.09);margin:12px 0"></div>'+
-      '<div style="font-size:13px;font-weight:700;margin-bottom:8px">Dar de alta (entrenador / cuerpo técnico)</div>'+
+      '<div style="font-size:13px;font-weight:700;margin-bottom:8px">Invitar entrenador / cuerpo técnico</div>'+
+      '<div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:8px">La persona elegirá su contraseña. El enlace solo permitirá entrar como entrenador de este club.</div>'+
       '<input class="field" id="ct-nombre" placeholder="Nombre">'+
       '<input class="field" id="ct-email" type="email" placeholder="Correo electrónico" autocomplete="off">'+
-      '<button class="btn btn-primary" id="ct-crear" style="margin-top:4px">Crear cuenta con clave temporal</button>'+
+      '<button class="btn btn-primary" id="ct-crear" style="margin-top:4px">Generar invitación segura</button>'+
+      '<div id="ct-enlace" style="display:none;margin-top:10px"><textarea id="ct-url" readonly rows="3" class="field" style="resize:none;font-size:12px;line-height:1.4"></textarea><button class="btn btn-ghost" id="ct-copiar" style="margin-top:4px">Copiar enlace</button></div>'+
       '<div id="ct-msg" style="font-size:13px;margin-top:10px;line-height:1.5;min-height:16px"></div></div>'+
       '<div class="card pr-panel" style="margin-top:14px"><div class="section-t">Equipos del club</div>'+
       '<div id="ce-lista">'+(equipos.length? equipos.map(function(e){ return '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid rgba(255,255,255,.07)"><div style="flex:1;min-width:0"><b>'+escC(e.nombre)+'</b> <span style="font-size:12px;color:var(--muted2)">· '+escC(catNomC(e.categoria))+' · '+escC(nomTec[e.entrenador_id]||'sin entrenador')+'</span></div><button class="btn" data-arch="'+e.id+'" style="width:auto;padding:7px 10px;font-size:12px;background:#7a2323;color:#fff;border:1px solid #a34040">Archivar</button></div>'; }).join('') : '<div style="color:var(--muted);font-size:13px">Aún no hay equipos.</div>')+'</div>'+
@@ -2856,25 +2850,33 @@ async function clubPanelUI(){
       '<select class="field" id="ce-ent"><option value="">Entrenador principal…</option>'+tecnicos.map(function(t){return '<option value="'+t.id+'">'+escC(t.nombre)+'</option>';}).join('')+'</select>'+
       '<button class="btn btn-primary" id="ce-crear" style="margin-top:4px">Crear equipo</button>'+
       '<div id="ce-msg" style="font-size:13px;margin-top:10px;line-height:1.5;min-height:16px"></div></div>';
-    // alta cuerpo técnico (la función del servidor fuerza rol entrenador y club del que llama)
+    // Invitación de cuerpo técnico: el servidor fuerza rol entrenador y el club del administrador.
     document.getElementById('ct-crear').addEventListener('click', async function(){
       var m=document.getElementById('ct-msg'), b=this;
       var nom=(document.getElementById('ct-nombre').value||'').trim();
       var em=(document.getElementById('ct-email').value||'').trim();
       if(!em||em.indexOf('@')<0){ m.style.color='#ff6b6b'; m.textContent='Escribe un correo válido.'; return; }
-      b.disabled=true; m.style.color='#9AA8A0'; m.textContent='Creando…';
+      b.disabled=true; m.style.color='#9AA8A0'; m.textContent='Generando invitación…';
       try{
-        var r=await sb.functions.invoke('admin-crear-usuario',{ body:{nombre:nom,email:em} });
+        var r=await sb.functions.invoke('admin-crear-invitacion',{ body:{nombre:nom,email:em,rol:'entrenador',club_id:clubId} });
         var err=null;
         if(r.error){ err=r.error.message||'error'; try{ if(r.error.context&&r.error.context.json){ var jd=await r.error.context.json(); if(jd&&jd.error) err=jd.error; } }catch(_e){}
-          if(err&&err.indexOf('non-2xx')>=0) err='No se pudo crear. Lo más habitual: ese correo ya está registrado.'; }
+          if(err&&err.indexOf('non-2xx')>=0) err='No se pudo generar la invitación.'; }
         else if(r.data&&r.data.error) err=r.data.error;
         if(err){ m.style.color='#ff6b6b'; m.textContent=err; b.disabled=false; return; }
+        var enlace=location.origin+location.pathname+'?inv='+encodeURIComponent(r.data.token)+'&e='+encodeURIComponent(r.data.email);
+        document.getElementById('ct-url').value=enlace;
+        document.getElementById('ct-enlace').style.display='block';
         m.style.color='#2ECC71';
-        m.innerHTML='Cuenta creada. Clave temporal:<br><b style="color:#FFD54A;font-size:16px;letter-spacing:.5px">'+escC(r.data.password)+'</b><br><span style="color:#9AA8A0">Compártela con '+escC(r.data.email)+'. Deberá cambiarla al entrar.</span>';
+        m.textContent='Invitación creada. Compártela únicamente con '+r.data.email+'.';
         document.getElementById('ct-nombre').value=''; document.getElementById('ct-email').value='';
-      }catch(e){ m.style.color='#ff6b6b'; m.textContent='Error al crear la cuenta.'; }
+      }catch(e){ m.style.color='#ff6b6b'; m.textContent='Error al generar la invitación.'; }
       b.disabled=false;
+    });
+    document.getElementById('ct-copiar').addEventListener('click',async function(){
+      var t=document.getElementById('ct-url'), bt=this;
+      try{ await navigator.clipboard.writeText(t.value); bt.textContent='¡Copiado!'; setTimeout(function(){ bt.textContent='Copiar enlace'; },1800); }
+      catch(e){ t.select(); }
     });
     // crear equipo con control de licencias
     document.getElementById('ce-crear').addEventListener('click', async function(){
@@ -2928,9 +2930,9 @@ async function cargarClubes(adminsClub){
     }
     var adminsPorClub={}; admins.forEach(function(a){ if(!a.club_id)return; (adminsPorClub[a.club_id]=adminsPorClub[a.club_id]||[]).push(a.nombre||'Administrador sin nombre'); });
     window.__clubes=rows;
-    // rellenar selector de club del alta de usuarios
-    var selc=document.getElementById('nu-club');
-    if(selc) selc.innerHTML='<option value="">Elige el club\u2026</option>'+rows.map(function(c){return '<option value="'+c.id+'">'+String(c.nombre).replace(/</g,'&lt;')+'</option>';}).join('');
+    // Rellenar el ámbito de club de la invitación. Un entrenador puede ser independiente.
+    var selc=document.getElementById('iv-club2');
+    if(selc) selc.innerHTML='<option value="">Sin club (independiente)</option>'+rows.map(function(c){return '<option value="'+c.id+'">'+String(c.nombre).replace(/</g,'&lt;')+'</option>';}).join('');
     if(!rows.length){ box.innerHTML='<div style="font-size:13px;color:var(--muted)">A\u00fan no hay clubes dados de alta.</div>'; return; }
     var pub=function(p){ try{ return sb.storage.from('clubes').getPublicUrl(p).data.publicUrl; }catch(e){ return null; } };
     box.innerHTML=rows.map(function(c){
@@ -2964,63 +2966,33 @@ async function crearClub(){
       else { await sb.from('clubes').update({logo_url:logoPath}).eq('id',ins.data.id); }
     }
     document.getElementById('cl-nombre').value=''; document.getElementById('cl-logo').value=''; document.getElementById('cl-lic').value='10';
-    m.style.color='#2ECC71'; m.textContent='Club "'+nombre+'" creado con '+lic+' licencias. Ahora crea su administrador en "Crear usuario" (rol Administrador de club).';
+    m.style.color='#2ECC71'; m.textContent='Club "'+nombre+'" creado con '+lic+' licencias. Ahora invítalo desde "Invitar a una persona", eligiendo Administrador de club.';
     cargarClubes();
   }catch(e){ m.style.color='#ff6b6b'; m.textContent='No se pudo crear el club.'; }
   b.disabled=false;
 }
 (function(){ var b=document.getElementById('cl-crear'); if(b) b.addEventListener('click',crearClub); })();
-(function(){ var s=document.getElementById('nu-rol'); if(s) s.addEventListener('change',function(){ var c=document.getElementById('nu-club'); if(c) c.style.display=(s.value==='admin_club')?'block':'none'; }); })();
-
-async function crearUsuario(){
-  var msg=document.getElementById('nu-msg'), btn=document.getElementById('nu-crear');
-  var nombre=(document.getElementById('nu-nombre').value||'').trim();
-  var email=(document.getElementById('nu-email').value||'').trim();
-  var rol=document.getElementById('nu-rol').value;
-  var clubSel=document.getElementById('nu-club');
-  var club_id=(rol==='admin_club'&&clubSel)?(clubSel.value||''):'';
-  if(!email){ msg.style.color='#ff6b6b'; msg.textContent='Escribe el correo.'; return; }
-  if(rol==='admin_club'&&!club_id){ msg.style.color='#ff6b6b'; msg.textContent='Elige de qu\u00e9 club ser\u00e1 administrador.'; return; }
-  btn.disabled=true; msg.style.color='#9AA8A0'; msg.textContent='Creando\u2026';
-  try{
-    var r=await sb.functions.invoke('admin-crear-usuario',{ body:{nombre:nombre,email:email,rol:rol,club_id:club_id||null} });
-    var err=null;
-    if(r.error){
-      err=r.error.message||'error';
-      try{ if(r.error.context&&r.error.context.json){ var jd=await r.error.context.json(); if(jd&&jd.error) err=jd.error; } }catch(_e){}
-      if(err&&err.indexOf('non-2xx')>=0) err='No se pudo crear el usuario. Lo más habitual: ese correo ya está registrado (cada usuario necesita un correo único).';
-    } else if(r.data&&r.data.error) err=r.data.error;
-    if(err){ msg.style.color='#ff6b6b'; msg.textContent=err; btn.disabled=false; return; }
-    var d=r.data;
-    msg.style.color='#2ECC71';
-    msg.innerHTML='Usuario creado. Contrase\u00f1a temporal:<br><b style="color:#FFD54A;font-size:16px;letter-spacing:.5px">'+d.password+'</b><br><span style="color:#9AA8A0">Comp\u00e1rtela con '+d.email+'. Deber\u00e1 cambiarla al entrar.</span>';
-    document.getElementById('nu-nombre').value=''; document.getElementById('nu-email').value='';
-    if(typeof cargarAdmin==='function') cargarAdmin();
-  }catch(e){ msg.style.color='#ff6b6b'; msg.textContent='Error: '+(e&&e.message||e); }
-  btn.disabled=false;
-}
-(function(){ var b=document.getElementById('nu-crear'); if(b) b.addEventListener('click',crearUsuario); })();
-
 /* INVITACIONES POR ENLACE */
-async function _sha256hex(s){
-  var buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
-  return Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
-}
 async function crearInvitacion(){
   var m=document.getElementById('iv-msg2'), b=document.getElementById('iv-crear2');
   var nombre=(document.getElementById('iv-nombre2').value||'').trim();
   var email=(document.getElementById('iv-email2').value||'').trim().toLowerCase();
   var rol=document.getElementById('iv-rol2').value;
+  var clubSel=document.getElementById('iv-club2');
+  var club_id=((rol==='admin_club'||rol==='entrenador')&&clubSel)?(clubSel.value||''):'';
   if(!email || email.indexOf('@')<0){ m.style.color='#ff6b6b'; m.textContent='Escribe un correo válido.'; return; }
+  if(rol==='admin_club'&&!club_id){ m.style.color='#ff6b6b'; m.textContent='Elige el club que administrará.'; return; }
   b.disabled=true; m.style.color='#9AA8A0'; m.textContent='Generando…';
   try{
-    var bytes=new Uint8Array(32); crypto.getRandomValues(bytes);
-    var token=Array.from(bytes).map(function(x){ return x.toString(16).padStart(2,'0'); }).join('');
-    var hash=await _sha256hex(token);
-    var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null;
-    var r=await sb.from('invitaciones').insert({token_hash:hash, email:email, nombre:nombre||null, rol:rol, creada_por:uid});
-    if(r&&r.error){ m.style.color='#ff6b6b'; m.textContent='No se pudo crear la invitación (¿eres administrador?).'; b.disabled=false; return; }
-    var enlace=location.origin+location.pathname+'?inv='+token+'&e='+encodeURIComponent(email);
+    var r=await sb.functions.invoke('admin-crear-invitacion',{ body:{nombre:nombre,email:email,rol:rol,club_id:club_id||null} });
+    var err=null;
+    if(r.error){
+      err=r.error.message||'No se pudo crear la invitación.';
+      try{ if(r.error.context&&r.error.context.json){ var jd=await r.error.context.json(); if(jd&&jd.error) err=jd.error; } }catch(_e){}
+      if(err&&err.indexOf('non-2xx')>=0) err='No se pudo crear la invitación.';
+    } else if(r.data&&r.data.error) err=r.data.error;
+    if(err){ m.style.color='#ff6b6b'; m.textContent=err; b.disabled=false; return; }
+    var enlace=location.origin+location.pathname+'?inv='+encodeURIComponent(r.data.token)+'&e='+encodeURIComponent(r.data.email);
     document.getElementById('iv-url').value=enlace;
     document.getElementById('iv-enlace').style.display='block';
     m.style.color='#2ECC71'; m.textContent='Enlace creado. Caduca en 7 días y solo sirve una vez.';
@@ -3033,7 +3005,7 @@ function _fechaCorta(s){ return s? String(s).slice(0,10) : ''; }
 async function cargarInvitaciones(){
   var box=document.getElementById('iv-lista'); if(!box) return;
   try{
-    var r=await sb.from('invitaciones').select('id,email,rol,expira_en,usada_en,created_at').order('created_at',{ascending:false}).limit(30);
+    var r=await sb.from('invitaciones').select('id,email,rol,club_id,expira_en,usada_en,created_at').order('created_at',{ascending:false}).limit(30);
     if(r&&r.error){ box.innerHTML=''; return; }
     var rows=r.data||[];
     if(!rows.length){ box.innerHTML='<div style="font-size:12px;color:var(--muted2);padding:4px 2px">No hay invitaciones generadas.</div>'; return; }
@@ -3066,7 +3038,7 @@ async function aceptarInvitacion(){
   var p1=(document.getElementById('inv-pass')||{}).value||'';
   var p2=(document.getElementById('inv-pass2')||{}).value||'';
   if(nombre.length<2){ m.style.color='#ff6b6b'; m.textContent='Escribe tu nombre.'; return; }
-  if(p1.length<8 || !/[a-zA-Z]/.test(p1) || !/[0-9]/.test(p1)){ m.style.color='#ff6b6b'; m.textContent='Mínimo 8 caracteres, con letras y números.'; return; }
+  if(p1.length<12 || !/[a-zA-Z]/.test(p1) || !/[0-9]/.test(p1)){ m.style.color='#ff6b6b'; m.textContent='Mínimo 12 caracteres, con letras y números.'; return; }
   if(p1!==p2){ m.style.color='#ff6b6b'; m.textContent='Las dos contraseñas no coinciden.'; return; }
   b.disabled=true; m.style.color='#9AA8A0'; m.textContent='Creando tu cuenta…';
   try{
@@ -3103,6 +3075,12 @@ async function aceptarInvitacion(){
 })();
 (function(){
   var c=document.getElementById('iv-crear2'); if(c) c.addEventListener('click',crearInvitacion);
+  var rs=document.getElementById('iv-rol2');
+  if(rs) rs.addEventListener('change',function(){
+    var club=document.getElementById('iv-club2'); if(!club) return;
+    club.style.display=(rs.value==='admin_club'||rs.value==='entrenador')?'block':'none';
+    if(rs.value!=='admin_club'&&rs.value!=='entrenador') club.value='';
+  });
   var a=document.getElementById('inv-aceptar'); if(a) a.addEventListener('click',aceptarInvitacion);
   var cp=document.getElementById('iv-copiar');
   if(cp) cp.addEventListener('click',async function(){
@@ -3419,16 +3397,15 @@ window.pedirNuevaPassword=pedirNuevaPassword;
     var m=document.getElementById('np-msg');
     var p1=(document.getElementById('np-pass')||{}).value||'';
     var p2=(document.getElementById('np-pass2')||{}).value||'';
-    if(p1.length<8 || !/[a-zA-Z]/.test(p1) || !/[0-9]/.test(p1)){ m.style.color='#ff6b6b'; m.textContent='Mínimo 8 caracteres, con letras y números.'; return; }
+    if(p1.length<12 || !/[a-zA-Z]/.test(p1) || !/[0-9]/.test(p1)){ m.style.color='#ff6b6b'; m.textContent='Mínimo 12 caracteres, con letras y números.'; return; }
     if(p1!==p2){ m.style.color='#ff6b6b'; m.textContent='Las dos contraseñas no coinciden.'; return; }
     b.disabled=true; m.style.color='#9AA8A0'; m.textContent='Guardando…';
     try{
-      var u=await sb.auth.getUser(); var uid=u.data&&u.data.user?u.data.user.id:null;
-      if(!uid){ m.style.color='#ff6b6b'; m.textContent='Tu sesión ha caducado.'; b.disabled=false; return; }
-      var ru=await sb.auth.updateUser({password:p1});
-      if(ru&&ru.error){ m.style.color='#ff6b6b'; m.textContent='No se pudo cambiar la contraseña.'; b.disabled=false; return; }
-      var rp=await sb.from('profiles').update({debe_cambiar_password:false}).eq('id',uid);
-      if(rp&&rp.error){ m.style.color='#ff6b6b'; m.textContent='Contraseña cambiada, pero no se pudo guardar el estado.'; b.disabled=false; return; }
+      var r=await sb.functions.invoke('cambiar-password-inicial',{body:{password:p1}});
+      var err=null;
+      if(r&&r.error){ err='No se pudo cambiar la contraseña.'; try{ if(r.error.context&&r.error.context.json){ var j=await r.error.context.json(); if(j&&j.error) err=j.error; } }catch(_e){} }
+      else if(r&&r.data&&r.data.error) err=r.data.error;
+      if(err){ m.style.color='#ff6b6b'; m.textContent=err; b.disabled=false; return; }
       var ov=document.getElementById('ov-pass'); if(ov) ov.classList.remove('open');
       document.getElementById('np-pass').value=''; document.getElementById('np-pass2').value='';
       m.textContent=''; b.disabled=false;
