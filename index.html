@@ -1695,8 +1695,27 @@ body{
             <h2>Administraci&oacute;n</h2>
             <button class="admin-volver" data-go="perfil">&lsaquo; Volver</button>
           </div>
-          <div class="admin-scope-note"><b>Administraci&oacute;n general</b><br>Esta portada muestra los clubes autorizados, sus administradores y las cuentas independientes. Los usuarios internos de cada club solo aparecer&aacute;n cuando entres expresamente a supervisar ese club.</div>
-          <div class="section-t">Clubes autorizados</div>
+           <div class="admin-scope-note"><b>Administraci&oacute;n general</b><br>Esta portada muestra los clubes autorizados, sus administradores y las cuentas independientes. Los usuarios internos de cada club solo aparecer&aacute;n cuando entres expresamente a supervisar ese club.</div>
+           <div class="section-t">Seguridad administrativa</div>
+           <div class="card pr-panel" id="admin-mfa-panel">
+             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+               <div><div style="font-weight:800;color:var(--anmar-ink)">Segundo factor</div><div id="admin-mfa-status" style="font-size:12px;color:var(--anmar-muted);line-height:1.5;margin-top:4px">Comprobando&hellip;</div></div>
+               <span id="admin-mfa-badge" class="admin-role-badge">Pendiente</span>
+             </div>
+             <div id="admin-mfa-actions" style="margin-top:12px"></div>
+             <div id="admin-mfa-setup" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--anmar-border)">
+               <div id="admin-mfa-qr-wrap" style="display:none;text-align:center">
+                 <img id="admin-mfa-qr" alt="C&oacute;digo QR para configurar el segundo factor" style="width:190px;max-width:70%;background:#fff;border-radius:12px;padding:10px">
+                 <div style="font-size:11px;color:var(--anmar-muted);line-height:1.5;margin:8px 0">Escan&eacute;alo con una aplicaci&oacute;n de autenticaci&oacute;n. No compartas el c&oacute;digo ni la clave.</div>
+                 <div id="admin-mfa-secret" style="font-family:monospace;font-size:11px;overflow-wrap:anywhere;color:var(--anmar-ink);background:var(--anmar-card-soft);border:1px solid var(--anmar-border);border-radius:8px;padding:8px"></div>
+               </div>
+               <input class="field" id="admin-mfa-code" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="C&oacute;digo de 6 cifras">
+               <button class="btn btn-primary" id="admin-mfa-verify" type="button">Verificar segundo factor</button>
+               <button class="btn btn-ghost" id="admin-mfa-cancel" type="button" style="margin-top:8px">Cancelar</button>
+               <div id="admin-mfa-msg" style="font-size:12px;line-height:1.5;min-height:18px;margin-top:9px"></div>
+             </div>
+           </div>
+           <div class="section-t">Clubes autorizados</div>
           <div class="card pr-panel" id="admin-clubes">
             <div id="cl-lista"><div style="color:var(--muted);font-size:13px">Cargando&hellip;</div></div>
             <details class="admin-create-box"><summary>Autorizar un nuevo club</summary><div class="admin-create-body">
@@ -1813,7 +1832,7 @@ const SUPABASE_URL="https://kbrvaawngeuuewplcwyn.supabase.co";
 const SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticnZhYXduZ2V1dWV3cGxjd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTA0MjIsImV4cCI6MjA5Nzg2NjQyMn0.9ys4m2OicbMq3cFyf0a2IA_eh3VspPJ3pYgjNkMO6WA";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON,{auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:true}});
 const screens={login:'s-login',entrevista:'s-entrevista',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil',libre:'s-libre',dirigido:'s-dirigido',admin:'s-admin',entrenador:'s-entrenador',modo:'s-modo',club:'s-club',admEquipos:'s-adm-equipos',admJugadores:'s-adm-jugadores',admActividad:'s-adm-actividad',admAjustes:'s-adm-ajustes',admCompeticiones:'s-adm-competiciones'};
-const APP_VERSION='v3.11.7 · 18/08/2026';
+const APP_VERSION='v3.11.9 · 18/08/2026';
 document.querySelectorAll('#app-version,#app-version-2,#app-version-3').forEach(function(el){ el.textContent='ANMAR TRAINING '+APP_VERSION; });
 window.APP_VERSION=APP_VERSION;
 function go(name,isBack){
@@ -2511,7 +2530,111 @@ if(n)n.onclick=function(){window.__calOffset=(window.__calOffset||0)+1;cargarCal
 })();
 </script>
 <script>
+var adminMfaState={factorId:null,enrolling:false};
+
+function adminMfaMessage(text,ok){
+  var el=document.getElementById('admin-mfa-msg');
+  if(el){ el.style.color=ok?'#2ECC71':'#ff8f8f'; el.textContent=text||''; }
+}
+
+function adminMfaOpen(factorId,enrolling,qr,secret){
+  adminMfaState.factorId=factorId||null;
+  adminMfaState.enrolling=!!enrolling;
+  var setup=document.getElementById('admin-mfa-setup'); if(setup) setup.style.display='block';
+  var wrap=document.getElementById('admin-mfa-qr-wrap'); if(wrap) wrap.style.display=enrolling?'block':'none';
+  var img=document.getElementById('admin-mfa-qr'); if(img&&qr) img.src=qr;
+  var sec=document.getElementById('admin-mfa-secret'); if(sec) sec.textContent=secret||'';
+  var code=document.getElementById('admin-mfa-code'); if(code){ code.value=''; code.focus(); }
+  adminMfaMessage('',false);
+}
+
+function adminMfaClose(){
+  adminMfaState={factorId:null,enrolling:false};
+  var setup=document.getElementById('admin-mfa-setup'); if(setup) setup.style.display='none';
+  var img=document.getElementById('admin-mfa-qr'); if(img) img.removeAttribute('src');
+  var sec=document.getElementById('admin-mfa-secret'); if(sec) sec.textContent='';
+  var code=document.getElementById('admin-mfa-code'); if(code) code.value='';
+  adminMfaMessage('',false);
+}
+
+async function adminMfaRender(){
+  var status=document.getElementById('admin-mfa-status'), badge=document.getElementById('admin-mfa-badge'), actions=document.getElementById('admin-mfa-actions');
+  if(!status||!badge||!actions||typeof sb==='undefined'||!sb.auth.mfa) return;
+  status.textContent='Comprobando el nivel de seguridad de esta sesión…'; actions.innerHTML='';
+  try{
+    var al=await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+    var lf=await sb.auth.mfa.listFactors();
+    if(al.error) throw al.error; if(lf.error) throw lf.error;
+    var current=al.data&&al.data.currentLevel;
+    var verified=((lf.data&&lf.data.totp)||[]).filter(function(f){return f.status==='verified';});
+    if(current==='aal2'){
+      badge.textContent='Protegida';
+      status.textContent='Sesión reforzada. Puedes realizar operaciones administrativas sensibles.';
+      actions.innerHTML='<button class="btn btn-ghost" type="button" data-mfa-refresh>Actualizar estado</button>';
+    }else if(verified.length){
+      badge.textContent='Verificar';
+      status.textContent='Tienes el segundo factor configurado, pero debes verificarlo en esta sesión antes de cambiar roles o borrar cuentas.';
+      actions.innerHTML='<button class="btn btn-primary" type="button" data-mfa-challenge>Verificar ahora</button>';
+      actions.querySelector('[data-mfa-challenge]').addEventListener('click',function(){adminMfaOpen(verified[0].id,false);});
+    }else{
+      badge.textContent='Sin configurar';
+      status.textContent='Configura una aplicación de autenticación para proteger cambios de rol, club y borrados.';
+      actions.innerHTML='<button class="btn btn-primary" type="button" data-mfa-enroll>Configurar segundo factor</button>';
+      actions.querySelector('[data-mfa-enroll]').addEventListener('click',adminMfaEnroll);
+    }
+    var ref=actions.querySelector('[data-mfa-refresh]'); if(ref) ref.addEventListener('click',adminMfaRender);
+  }catch(e){
+    badge.textContent='No disponible';
+    status.textContent='No se pudo comprobar el segundo factor. No realices operaciones sensibles hasta recuperar esta comprobación.';
+  }
+}
+
+async function adminMfaEnroll(){
+  adminMfaMessage('',false);
+  try{
+    var r=await sb.auth.mfa.enroll({factorType:'totp',friendlyName:'ANMAR administración'});
+    if(r.error) throw r.error;
+    var d=r.data||{}, t=d.totp||{};
+    adminMfaOpen(d.id,true,t.qr_code||'',t.secret||'');
+  }catch(e){ adminMfaMessage('No se pudo iniciar la configuración del segundo factor.',false); }
+}
+
+async function adminMfaVerify(){
+  var code=((document.getElementById('admin-mfa-code')||{}).value||'').trim();
+  var factorId=adminMfaState.factorId;
+  if(!factorId||!/^[0-9]{6,8}$/.test(code)){ adminMfaMessage('Introduce el código de la aplicación de autenticación.',false); return; }
+  var btn=document.getElementById('admin-mfa-verify'); if(btn) btn.disabled=true;
+  adminMfaMessage('Verificando…',true);
+  try{
+    var ch=await sb.auth.mfa.challenge({factorId:factorId}); if(ch.error) throw ch.error;
+    var vr=await sb.auth.mfa.verify({factorId:factorId,challengeId:ch.data.id,code:code}); if(vr.error) throw vr.error;
+    try{await sb.auth.refreshSession();}catch(_){ }
+    adminMfaMessage('Segundo factor verificado.',true);
+    setTimeout(function(){adminMfaClose();adminMfaRender();},700);
+  }catch(e){ adminMfaMessage('El código no es válido o ha caducado.',false); }
+  if(btn) btn.disabled=false;
+}
+
+async function adminRequireAal2(){
+  try{
+    var r=await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+    if(!r.error&&r.data&&r.data.currentLevel==='aal2') return true;
+  }catch(_){ }
+  var panel=document.getElementById('admin-mfa-panel'); if(panel) panel.scrollIntoView({behavior:'smooth',block:'center'});
+  adminMfaMessage('Verifica el segundo factor antes de continuar.',false);
+  await adminMfaRender();
+  return false;
+}
+
+(function(){
+  var verify=document.getElementById('admin-mfa-verify'); if(verify) verify.addEventListener('click',adminMfaVerify);
+  var cancel=document.getElementById('admin-mfa-cancel'); if(cancel) cancel.addEventListener('click',adminMfaClose);
+})();
+window.adminMfaRender=adminMfaRender;
+window.adminRequireAal2=adminRequireAal2;
+
 async function cargarAdmin(){
+  if(window.adminMfaRender) adminMfaRender();
   window.__adminClubScope=null;
   var cont=document.getElementById('admin-users'); if(!cont) return; cont.innerHTML='Cargando\u2026';
   try{
@@ -2551,6 +2674,7 @@ async function cargarAdmin(){
   }catch(e){ cont.innerHTML='<div style="color:#ff6b6b;font-size:13px">Error al cargar.</div>'; }
 }
 async function guardarRol(uid, rol, sel){
+  if(!(await adminRequireAal2())){ if(sel) sel.disabled=false; return; }
   if(sel){ sel.disabled=true; }
   var m=document.getElementById('admin-msg');
   var cambio={role:rol};
@@ -2566,7 +2690,7 @@ async function guardarRol(uid, rol, sel){
       cambio.club_id=cls[idx].id;
     }
   }
-  var r=await sb.from('profiles').update(cambio).eq('id',uid);
+  var r=await sb.rpc('admin_change_user_access',{p_target_id:uid,p_new_role:rol,p_new_club_id:cambio.club_id||null});
   if(r&&r.error){
     if(m){ m.style.color='#ff6b6b'; m.textContent=(String(r.error.message||'').indexOf('administrador')>=0)?'Debe existir al menos un administrador.':'No se pudo cambiar el rol.'; }
     if(typeof cargarAdmin==='function') cargarAdmin();
@@ -2579,6 +2703,7 @@ async function borrarUsuario(uid, nombre, bt){
   var m=document.getElementById('admin-msg');
   var ok=window.confirm('¿Seguro que quieres borrar a '+(nombre||'este usuario')+'?\n\nSe eliminarán su cuenta, sus sesiones, sus mediciones y sus eventos. No se puede deshacer.');
   if(!ok) return;
+  if(!(await adminRequireAal2())) return;
   if(bt) bt.disabled=true;
   if(m){ m.style.color='#9AA8A0'; m.textContent='Borrando…'; }
   try{
@@ -3244,9 +3369,11 @@ async function borrarMiCuenta(){
 <script>
 function renderAvatar(url){
   window.__avatarUrl=url||null;
-  document.querySelectorAll('#u-ini,#u-ini2').forEach(function(el){
+  var nombreEl=document.getElementById('u-nombre')||document.getElementById('mode-user-name');
+  var inicial=((nombreEl&&nombreEl.textContent)||'?').trim().charAt(0).toUpperCase()||'?';
+  document.querySelectorAll('#u-ini,#u-ini2,#mode-user-initial').forEach(function(el){
     if(url){ el.textContent=''; el.style.backgroundImage='url("'+url+'")'; el.style.backgroundSize='cover'; el.style.backgroundPosition='center'; el.style.backgroundRepeat='no-repeat'; }
-    else { el.style.backgroundImage=''; }
+    else { el.textContent=inicial; el.style.backgroundImage=''; el.style.backgroundSize=''; el.style.backgroundPosition=''; el.style.backgroundRepeat=''; }
   });
 }
 window.renderAvatar=renderAvatar;
@@ -3265,8 +3392,9 @@ async function subirAvatar(file){
     if(up.error){ if(m){m.style.color='#ff6b6b';m.textContent='No se pudo subir la foto.';} return; }
     var pub=sb.storage.from('avatares').getPublicUrl(path);
     var url=(pub&&pub.data&&pub.data.publicUrl)? (pub.data.publicUrl+'?v='+Date.now()) : null;
-    var r=await sb.from('profiles').update({avatar_url:url}).eq('id',user.id);
-    if(r&&r.error){ if(m){m.style.color='#ff6b6b';m.textContent='Foto subida, pero no se pudo guardar.';} return; }
+    if(!url){ if(m){m.style.color='#ff6b6b';m.textContent='Foto subida, pero no se pudo obtener su dirección.';} return; }
+    var r=await sb.from('profiles').update({avatar_url:url}).eq('id',user.id).select('avatar_url').single();
+    if(!r||r.error||!r.data||r.data.avatar_url!==url){ if(m){m.style.color='#ff6b6b';m.textContent='Foto subida, pero no se pudo confirmar que quedara guardada.';} return; }
     renderAvatar(url);
     if(m){ m.style.color='#2ECC71'; m.textContent='Foto actualizada.'; setTimeout(function(){ if(m&&m.textContent==='Foto actualizada.')m.textContent=''; },2500); }
   }catch(e){ if(m){m.style.color='#ff6b6b';m.textContent='Error al subir la foto.'; } }
