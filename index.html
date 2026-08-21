@@ -1332,6 +1332,7 @@ body{
 #s-entrenador #eq-lista .ent-s{color:var(--anmar-muted)!important;font-size:12px}
 #s-entrenador #eq-lista .ent-ic{background:linear-gradient(135deg,#173a60,#2c6597)!important;color:#fff!important}
 </style>
+<link rel="stylesheet" href="src/ui/unified-forms.css">
 </head>
 <body>
 <div class="appwrap">
@@ -1840,7 +1841,7 @@ const SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON,{auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:true}});
 window.anmarSupabase=sb;
 const screens={login:'s-login',entrevista:'s-entrevista',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil',libre:'s-libre',dirigido:'s-dirigido',admin:'s-admin',entrenador:'s-entrenador',modo:'s-modo',club:'s-club',admEquipos:'s-adm-equipos',admJugadores:'s-adm-jugadores',admActividad:'s-adm-actividad',admAjustes:'s-adm-ajustes',admCompeticiones:'s-adm-competiciones',comunicaciones:'s-comunicaciones'};
-const APP_VERSION='v3.12.1 · 21/08/2026';
+const APP_VERSION='v3.12.2 · 21/08/2026';
 document.querySelectorAll('#app-version,#app-version-2,#app-version-3').forEach(function(el){ el.textContent='ANMAR TRAINING '+APP_VERSION; });
 window.APP_VERSION=APP_VERSION;
 function go(name,isBack){
@@ -6437,11 +6438,16 @@ window.verJugador=verJugador;
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ window.renderIdentidadAnmar(null); });
   else window.renderIdentidadAnmar(null);
 })();
-window.anmarCompetitionsReady=import('./src/competitions/competition-management.mjs').catch(function(error){
+window.anmarCompetitionsReady=import('./src/competitions/competition-management.mjs?v=3.12.2').catch(function(error){
   console.error('No se pudo cargar Campeonatos',error);
 });
-window.anmarCommunicationsReady=import('./src/communications/communication-integration.mjs').catch(function(error){
+window.anmarCommunicationsReady=import('./src/communications/communication-integration.mjs?v=3.12.2').catch(function(error){
   console.error('No se pudo cargar Chat Seguro',error);
+});
+window.anmarUnifiedFormsReady=import('./src/ui/unified-forms.mjs?v=3.12.2').then(function(mod){
+  return mod.mountUnifiedForms(document);
+}).catch(function(error){
+  console.error('No se pudo cargar el sistema unificado de formularios.', error);
 });
 </script>
 </body>

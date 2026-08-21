@@ -111,70 +111,82 @@ export async function mountCompetitionManager(container, options = {}) {
   function renderHome() {
     container.innerHTML = `
       <style>
-        .cmp-grid{display:grid;grid-template-columns:minmax(250px,340px) 1fr;gap:16px;align-items:start}
-        .cmp-list{display:grid;gap:9px}.cmp-item{width:100%;text-align:left;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px;background:rgba(255,255,255,.04);color:var(--text);cursor:pointer}
-        .cmp-item b{display:block}.cmp-item small{color:var(--muted2)}.cmp-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.cmp-full{grid-column:1/-1}
-        .cmp-form label{display:block;font-size:12px;font-weight:700;margin:8px 0 4px}.cmp-form textarea,.cmp-form input,.cmp-form select{width:100%;min-height:42px}.cmp-form textarea{min-height:82px}
-        .cmp-builder{border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px;margin-top:8px}.cmp-builder-row{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end}.cmp-builder-row .btn{min-height:42px;margin:0;width:auto}.cmp-builder-list{display:grid;gap:6px;margin-top:9px}.cmp-builder-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:9px;background:rgba(255,255,255,.05);font-size:12px}.cmp-builder-item button{border:0;background:none;color:#ff9b91;cursor:pointer;font-weight:800}
-        .cmp-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.cmp-actions .btn{margin:0}.cmp-note{font-size:12px;color:var(--muted2);line-height:1.55}
-        .cmp-table{overflow:auto}.cmp-table table{width:100%;border-collapse:collapse;min-width:720px}.cmp-table th,.cmp-table td{padding:9px;border-bottom:1px solid rgba(255,255,255,.1);text-align:left}.cmp-table input,.cmp-table select{min-height:38px;padding:6px}
-        @media(max-width:800px){.cmp-grid{grid-template-columns:1fr}.cmp-form-grid{grid-template-columns:1fr}.cmp-full{grid-column:auto}.cmp-builder-row{grid-template-columns:1fr}.cmp-builder-row .btn{width:100%}}
+        .cmp-grid{display:grid;gap:16px}.cmp-library{padding:17px 18px}.cmp-library-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:12px}
+        .cmp-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:9px}.cmp-item{width:100%;text-align:left;border:1px solid var(--anmar-form-border);border-radius:10px;padding:12px;background:var(--anmar-form-soft);color:var(--anmar-form-ink);cursor:pointer}
+        .cmp-item:hover{border-color:var(--anmar-form-accent);background:var(--anmar-form-bg)}.cmp-item b{display:block}.cmp-item small{color:var(--anmar-form-muted)}
+        .cmp-editor-card{padding:18px}.cmp-editor-head{margin-bottom:16px}.cmp-editor-head h3{margin:0;color:var(--anmar-form-ink);font-size:22px}.cmp-editor-head p{margin:6px 0 0;color:var(--anmar-form-muted);font-size:13px}
+        .cmp-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.cmp-full{grid-column:1/-1}.cmp-form label{display:block;margin:0}.cmp-form textarea{min-height:94px}
+        .cmp-builder-group+.cmp-builder-group{margin-top:18px;padding-top:18px;border-top:1px solid var(--anmar-form-border)}.cmp-builder-title{margin:0 0 10px;color:var(--anmar-form-ink);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.07em}
+        .cmp-builder-row{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}.cmp-builder-row .btn{min-height:44px;margin:0;width:auto}.cmp-builder-row-wide{grid-template-columns:2fr auto}.cmp-builder-list{display:grid;gap:6px;margin-top:9px}.cmp-builder-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 11px;border:1px solid var(--anmar-form-border);border-radius:9px;background:var(--anmar-form-soft);color:var(--anmar-form-ink);font-size:12px}.cmp-builder-item button{border:0;background:none;color:var(--anmar-form-danger);cursor:pointer;font-weight:800}
+        .cmp-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.cmp-actions .btn{margin:0}.cmp-note{font-size:12px;color:var(--anmar-form-muted);line-height:1.55}.cmp-summary-state{display:inline-flex;padding:4px 8px;border-radius:999px;background:#fff0d5;color:#a96300;font-size:10px;text-transform:uppercase;letter-spacing:.05em}
+        .cmp-table{overflow:auto}.cmp-table table{width:100%;border-collapse:collapse;min-width:720px}.cmp-table th,.cmp-table td{padding:9px;border-bottom:1px solid var(--anmar-form-border);text-align:left}.cmp-table input,.cmp-table select{min-height:38px;padding:6px}
+        @media(max-width:800px){.cmp-library-head{display:block}.cmp-form-grid{grid-template-columns:1fr}.cmp-full{grid-column:auto}.cmp-builder-row,.cmp-builder-row-wide{grid-template-columns:1fr}.cmp-builder-row .btn{width:100%}.cmp-editor-card{padding:13px}}
       </style>
       <div class="cmp-grid">
-        <div class="card pr-panel">
-          <div class="section-t">Campeonatos autorizados</div>
+        <div class="card pr-panel cmp-library">
+          <div class="cmp-library-head"><div><div class="section-t">Campeonatos autorizados</div>
           <p class="cmp-note">RLS muestra únicamente los campeonatos que puedes gestionar. No se cargan jugadores, fotografías ni datos privados.</p>
+          </div></div>
           <div class="cmp-list">${state.rows.length ? state.rows.map((row) => `
             <button class="cmp-item" type="button" data-cmp-id="${esc(row.id)}"><b>${esc(row.name)}</b><small>${esc(row.state)} · /${esc(row.public_slug)}</small></button>
           `).join('') : '<div class="cmp-note">Todavía no hay campeonatos visibles para esta identidad.</div>'}</div>
         </div>
-        <div class="card pr-panel">
-          <div class="section-t">Crear calendario</div>
-          <form id="cmp-create" class="cmp-form">
-            <div class="cmp-form-grid">
-              <label class="cmp-full">Nombre público<input name="name" required minlength="3" maxlength="120" placeholder="Copa Costa del Sol"></label>
-              <label class="cmp-full">Dirección pública<input name="slug" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="Se completa desde el nombre"></label>
-              <label class="cmp-full">Categoría<select name="category">${Object.entries(COMPETITION_RULE_PRESETS).map(([value, rule]) => `<option value="${value}" ${value === 'mini' ? 'selected' : ''}>${esc(rule.label)}</option>`).join('')}</select></label>
-              <label>Número de periodos<input name="period_count" type="number" min="1" max="12" value="6" required></label>
-              <label>Minutos por periodo<input name="period_minutes" type="number" min="1" max="30" value="8" required></label>
-              <label>Tiempo reservado en pista<input name="court_minutes" type="number" min="1" max="300" value="60" required></label>
-              <label>Descanso mínimo<input name="rest" type="number" min="0" max="1440" value="60" required></label>
-              <label>Puntos por victoria<input name="win" type="number" step="0.01" value="2" required></label>
-              <label>Puntos por derrota<input name="loss" type="number" step="0.01" value="1" required></label>
-              <label class="cmp-full">Equipos · uno por línea<textarea name="teams" required placeholder="Halcones\nLinces\nBúhos\nOsos"></textarea></label>
-              <div class="cmp-full cmp-builder">
-                <div class="section-t">1. Pabellones</div>
-                <div class="cmp-builder-row"><label style="grid-column:1/3">Nombre del pabellón<input id="cmp-venue-name" placeholder="Pabellón Municipal"></label><button class="btn btn-ghost" id="cmp-add-venue" type="button">Añadir pabellón</button></div>
-                <div class="cmp-builder-list" id="cmp-venue-list"></div>
+        <div class="card pr-panel cmp-editor-card">
+          <div class="cmp-editor-head"><h3>Crear campeonato del club</h3><p>Completa la información por secciones y revisa el resumen antes de guardar.</p></div>
+          <form id="cmp-create" class="cmp-form" data-anmar-form-kind="complex">
+            <div class="anmar-form-shell">
+              <div class="anmar-form-main">
+                <details class="anmar-form-section" open><summary data-step="1">Datos básicos</summary><div class="anmar-form-section-body cmp-form-grid">
+                  <label class="cmp-full">Nombre público<input name="name" required minlength="3" maxlength="120" placeholder="Copa Costa del Sol"></label>
+                  <label>Dirección pública<input name="slug" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="Se completa desde el nombre"></label>
+                  <label>Categoría<select name="category">${Object.entries(COMPETITION_RULE_PRESETS).map(([value, rule]) => `<option value="${value}" ${value === 'mini' ? 'selected' : ''}>${esc(rule.label)}</option>`).join('')}</select></label>
+                </div></details>
+                <details class="anmar-form-section"><summary data-step="2">Reglas del partido</summary><div class="anmar-form-section-body cmp-form-grid">
+                  <label>Número de periodos<input name="period_count" type="number" min="1" max="12" value="6" required></label>
+                  <label>Minutos por periodo<input name="period_minutes" type="number" min="1" max="30" value="8" required></label>
+                  <label>Tiempo reservado en pista<input name="court_minutes" type="number" min="1" max="300" value="60" required></label>
+                  <label>Descanso mínimo<input name="rest" type="number" min="0" max="1440" value="60" required></label>
+                  <label>Puntos por victoria<input name="win" type="number" step="0.01" value="2" required></label>
+                  <label>Puntos por derrota<input name="loss" type="number" step="0.01" value="1" required></label>
+                  <p class="cmp-note cmp-full" id="cmp-rule-note">Sugerencia Minibasket: 6 periodos × 8 min. Puedes editarla porque las bases específicas del torneo o delegación prevalecen. El tiempo reservado en pista incluye paradas y es el que evita solapes.</p>
+                </div></details>
+                <details class="anmar-form-section" open><summary data-step="3">Pabellones, pistas y fechas</summary><div class="anmar-form-section-body">
+                  <div class="cmp-builder-group"><h4 class="cmp-builder-title">Pabellones</h4><div class="cmp-builder-row cmp-builder-row-wide"><label>Nombre del pabellón<input id="cmp-venue-name" placeholder="Pabellón Municipal"></label><button class="btn btn-ghost" id="cmp-add-venue" type="button">Añadir pabellón</button></div><div class="cmp-builder-list" id="cmp-venue-list"></div></div>
+                  <div class="cmp-builder-group"><h4 class="cmp-builder-title">Pistas</h4><div class="cmp-builder-row"><label>Pabellón<select id="cmp-court-venue"></select></label><label>Nombre de la pista<input id="cmp-court-name" placeholder="Pista central"></label><button class="btn btn-ghost" id="cmp-add-court" type="button">Añadir pista</button></div><div class="cmp-builder-list" id="cmp-court-list"></div></div>
+                  <div class="cmp-builder-group"><h4 class="cmp-builder-title">Fechas del campeonato</h4><div class="cmp-builder-row cmp-builder-row-wide"><label>Selecciona una fecha<input id="cmp-date-value" type="date"></label><button class="btn btn-ghost" id="cmp-add-date" type="button">Añadir fecha</button></div><div class="cmp-builder-list" id="cmp-date-list"></div></div>
+                  <div class="cmp-builder-group"><h4 class="cmp-builder-title">Disponibilidad de cada pista</h4><div class="cmp-builder-row"><label>Pista<select id="cmp-slot-court"></select></label><label>Fecha<select id="cmp-slot-date"></select></label><label>Hora<select id="cmp-slot-time">${timeOptions().map((time) => `<option value="${time}">${time}</option>`).join('')}</select></label><button class="btn btn-ghost" id="cmp-add-slot" type="button">Añadir horario</button></div><div class="cmp-builder-list" id="cmp-slot-list"></div></div>
+                </div></details>
+                <details class="anmar-form-section"><summary data-step="4">Equipos participantes</summary><div class="anmar-form-section-body">
+                  <label>Equipos · uno por línea<textarea name="teams" required placeholder="Halcones\nLinces\nBúhos\nOsos"></textarea></label>
+                </div></details>
+                <details class="anmar-form-section"><summary data-step="5">Revisión y guardado</summary><div class="anmar-form-section-body">
+                  <p class="cmp-note">Formato inicial: liga a una vuelta. El calendario se valida antes de guardarse. Si una red inestable interrumpe el proceso, el mismo botón reintenta con los mismos identificadores.</p>
+                </div></details>
+                <input type="hidden" name="courts_data" value="[]"><input type="hidden" name="slots_data" value="[]">
               </div>
-              <div class="cmp-full cmp-builder">
-                <div class="section-t">2. Pistas</div>
-                <div class="cmp-builder-row"><label>Pabellón<select id="cmp-court-venue"></select></label><label>Nombre de la pista<input id="cmp-court-name" placeholder="Pista central"></label><button class="btn btn-ghost" id="cmp-add-court" type="button">Añadir pista</button></div>
-                <div class="cmp-builder-list" id="cmp-court-list"></div>
-              </div>
-              <div class="cmp-full cmp-builder">
-                <div class="section-t">3. Fechas del campeonato</div>
-                <div class="cmp-builder-row"><label style="grid-column:1/3">Selecciona una fecha<input id="cmp-date-value" type="date"></label><button class="btn btn-ghost" id="cmp-add-date" type="button">Añadir fecha</button></div>
-                <div class="cmp-builder-list" id="cmp-date-list"></div>
-              </div>
-              <div class="cmp-full cmp-builder">
-                <div class="section-t">4. Disponibilidad de cada pista</div>
-                <div class="cmp-builder-row"><label>Pista<select id="cmp-slot-court"></select></label><label>Fecha<select id="cmp-slot-date"></select></label><label>Hora<select id="cmp-slot-time">${timeOptions().map((time) => `<option value="${time}">${time}</option>`).join('')}</select></label><button class="btn btn-ghost" id="cmp-add-slot" type="button">Añadir horario</button></div>
-                <div class="cmp-builder-list" id="cmp-slot-list"></div>
-              </div>
-              <input type="hidden" name="courts_data" value="[]"><input type="hidden" name="slots_data" value="[]">
+              <aside class="anmar-form-summary" aria-label="Resumen del campeonato"><h3>Resumen del campeonato</h3><dl>
+                <div><dt>Nombre</dt><dd id="cmp-summary-name">Sin nombre</dd></div><div><dt>Categoría</dt><dd id="cmp-summary-category">Minibasket</dd></div>
+                <div><dt>Equipos</dt><dd id="cmp-summary-teams">0 equipos</dd></div><div><dt>Pistas</dt><dd id="cmp-summary-courts">0 pistas</dd></div>
+                <div><dt>Fechas y horarios</dt><dd id="cmp-summary-slots">0 fechas · 0 franjas</dd></div><div><dt>Estado</dt><dd><span class="cmp-summary-state">Borrador</span></dd></div>
+              </dl><div class="cmp-actions"><button class="btn btn-primary" type="submit">Generar y guardar borrador</button></div><div id="cmp-status" class="anmar-form-status" role="status"></div></aside>
             </div>
-            <p class="cmp-note" id="cmp-rule-note">Sugerencia Minibasket: 6 periodos × 8 min. Puedes editarla porque las bases específicas del torneo o delegación prevalecen. El tiempo reservado en pista incluye paradas y es el que evita solapes.</p>
-            <p class="cmp-note">Formato inicial: liga a una vuelta. El calendario se valida antes de guardarse. Si una red inestable interrumpe el proceso, el mismo botón reintenta con los mismos identificadores.</p>
-            <div class="cmp-actions"><button class="btn btn-primary" type="submit">Generar y guardar borrador</button></div>
           </form>
-          <div id="cmp-status" role="status" style="min-height:18px;margin-top:10px;font-size:12px"></div>
         </div>
       </div>`;
     container.querySelectorAll('[data-cmp-id]').forEach((button) => button.addEventListener('click', () => openCompetition(button.dataset.cmpId)));
     const createForm = container.querySelector('#cmp-create');
     const builder = { venues: [], courts: [], dates: [], slots: [], nextCourt: 1 };
     const builderStatus = (message) => setStatus(message);
+    const updateSummary = () => {
+      const set = (selector, value) => { const node = container.querySelector(selector); if (node) node.textContent = value; };
+      const teamCount = lines(createForm.elements.teams.value).length;
+      const selectedCategory = createForm.elements.category.selectedOptions?.[0]?.textContent || 'Personalizada';
+      set('#cmp-summary-name', createForm.elements.name.value.trim() || 'Sin nombre');
+      set('#cmp-summary-category', selectedCategory);
+      set('#cmp-summary-teams', `${teamCount} ${teamCount === 1 ? 'equipo' : 'equipos'}`);
+      set('#cmp-summary-courts', `${builder.courts.length} ${builder.courts.length === 1 ? 'pista' : 'pistas'}`);
+      set('#cmp-summary-slots', `${builder.dates.length} ${builder.dates.length === 1 ? 'fecha' : 'fechas'} · ${builder.slots.length} ${builder.slots.length === 1 ? 'franja' : 'franjas'}`);
+    };
     const renderBuilders = () => {
       const previousVenue = container.querySelector('#cmp-court-venue')?.value;
       const previousCourt = container.querySelector('#cmp-slot-court')?.value;
@@ -198,6 +210,7 @@ export async function mountCompetitionManager(container, options = {}) {
       container.querySelectorAll('[data-remove-court]').forEach((button) => button.addEventListener('click', () => { const key = button.dataset.removeCourt; builder.courts = builder.courts.filter((court) => court.key !== key); builder.slots = builder.slots.filter((slot) => slot.courtKey !== key); renderBuilders(); }));
       container.querySelectorAll('[data-remove-date]').forEach((button) => button.addEventListener('click', () => { const date = button.dataset.removeDate; builder.dates = builder.dates.filter((item) => item !== date); builder.slots = builder.slots.filter((slot) => slot.date !== date); renderBuilders(); }));
       container.querySelectorAll('[data-remove-slot]').forEach((button) => button.addEventListener('click', () => { builder.slots.splice(Number(button.dataset.removeSlot), 1); renderBuilders(); }));
+      updateSummary();
     };
     container.querySelector('#cmp-add-venue').addEventListener('click', () => { const input = container.querySelector('#cmp-venue-name'); const venue = input.value.trim(); if (!venue) return builderStatus('Escribe el nombre del pabellón.'); if (builder.venues.some((item) => item.toLowerCase() === venue.toLowerCase())) return builderStatus('Ese pabellón ya está añadido.'); builder.venues.push(venue); input.value = ''; renderBuilders(); container.querySelector('#cmp-court-venue').value = venue; builderStatus(''); });
     container.querySelector('#cmp-add-court').addEventListener('click', () => { const venue = container.querySelector('#cmp-court-venue').value; const input = container.querySelector('#cmp-court-name'); const name = input.value.trim(); if (!venue) return builderStatus('Añade primero un pabellón.'); if (!name) return builderStatus('Escribe el nombre de la pista.'); if (builder.courts.some((court) => court.venue === venue && court.name.toLowerCase() === name.toLowerCase())) return builderStatus('Esa pista ya está añadida en el pabellón.'); const key = `court-choice-${builder.nextCourt++}`; builder.courts.push({ key, name, venue }); input.value = ''; renderBuilders(); container.querySelector('#cmp-slot-court').value = key; builderStatus(''); });
@@ -211,7 +224,10 @@ export async function mountCompetitionManager(container, options = {}) {
       createForm.elements.period_minutes.value = String(rule.periodMinutes);
       createForm.elements.court_minutes.value = String(rule.courtMinutes);
       container.querySelector('#cmp-rule-note').textContent = `Sugerencia ${rule.label}: ${competitionRuleSummary(createForm.elements.category.value, rule.periodCount, rule.periodMinutes)}. Puedes editarla porque las bases específicas del torneo o delegación prevalecen. El tiempo reservado en pista incluye paradas y es el que evita solapes.`;
+      updateSummary();
     });
+    createForm.elements.name.addEventListener('input', updateSummary);
+    createForm.elements.teams.addEventListener('input', updateSummary);
   }
 
   async function createDraft(event) {

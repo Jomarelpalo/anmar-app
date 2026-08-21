@@ -22,6 +22,12 @@ function button(label, action, className = 'comm-btn') {
   return node;
 }
 
+function labelledControl(label, control) {
+  const wrapper = el('label', 'comm-field');
+  wrapper.append(el('span', 'comm-field-label', label), control);
+  return wrapper;
+}
+
 function setStatus(root, message, type = 'ok') {
   const status = root.querySelector('#comm-status');
   if (!status) return;
@@ -163,7 +169,7 @@ export async function mountCommunicationManager(root, options) {
     });
     body.append(messageList);
 
-    const compose = el('form', 'comm-compose'); compose.id = 'comm-compose';
+    const compose = el('form', 'comm-compose'); compose.id = 'comm-compose'; compose.dataset.anmarFormKind = 'compact';
     const textarea = el('textarea'); textarea.name = 'message'; textarea.maxLength = 2000; textarea.rows = 2;
     textarea.placeholder = capabilities.canPost ? 'Escribe un mensaje para el grupo…' : capabilities.readOnlyReason;
     textarea.disabled = !capabilities.canPost;
@@ -186,7 +192,7 @@ export async function mountCommunicationManager(root, options) {
     channelBox.append(el('h3', '', 'Estado del canal'), el('p', '', 'Bloquear impide mensajes nuevos, pero mantiene la lectura autorizada.'));
     channelBox.append(button(space.state === 'locked' ? 'Reabrir canal' : 'Bloquear canal', 'toggle-lock', 'comm-btn'));
 
-    const inviteForm = el('form', 'comm-panel-box'); inviteForm.id = 'comm-invite-form';
+    const inviteForm = el('form', 'comm-panel-box'); inviteForm.id = 'comm-invite-form'; inviteForm.dataset.anmarFormKind = 'standard';
     inviteForm.append(el('h3', '', 'Invitar participante'));
     const idInput = el('input'); idInput.name = 'user_id'; idInput.placeholder = 'Identificador del usuario'; idInput.required = true;
     const postLabel = el('label', 'comm-check'); const post = el('input'); post.type = 'checkbox'; post.name = 'can_post'; postLabel.append(post, document.createTextNode(' Puede escribir'));
@@ -195,7 +201,7 @@ export async function mountCommunicationManager(root, options) {
     const role = el('select'); role.name = 'member_role';
     [['member', 'Participante'], ['moderator', 'Moderador adulto']].forEach(([value, label]) => { const option = el('option', '', label); option.value = value; role.append(option); });
     const submit = el('button', 'comm-btn comm-primary', 'Enviar invitación'); submit.type = 'submit';
-    inviteForm.append(idInput, role, postLabel, minorLabel, consentLabel, submit);
+    inviteForm.append(labelledControl('Identificador del usuario', idInput), labelledControl('Función en el canal', role), postLabel, minorLabel, consentLabel, submit);
 
     const membersBox = el('div', 'comm-panel-box');
     membersBox.append(el('h3', '', `Participantes (${memberships.length})`));
@@ -223,7 +229,7 @@ export async function mountCommunicationManager(root, options) {
 
   function showCreateForm() {
     main.innerHTML = '';
-    const form = el('form', 'comm-create-card'); form.id = 'comm-create-form';
+    const form = el('form', 'comm-create-card'); form.id = 'comm-create-form'; form.dataset.anmarFormKind = 'standard';
     form.append(el('div', 'comm-eyebrow', 'NUEVO ESPACIO PRIVADO'), el('h2', '', 'Crear canal'));
     const name = el('input'); name.name = 'name'; name.placeholder = 'Nombre del canal'; name.required = true; name.maxLength = 80;
     const description = el('textarea'); description.name = 'description'; description.placeholder = 'Finalidad del canal'; description.maxLength = 300;
@@ -233,7 +239,7 @@ export async function mountCommunicationManager(root, options) {
     const clubOption = el('option', '', 'Todo el club'); clubOption.value = ''; team.append(clubOption);
     teams.forEach((item) => { const option = el('option', '', item.name); option.value = item.id; team.append(option); });
     const actions = el('div', 'comm-actions'); const create = el('button', 'comm-btn comm-primary', 'Crear canal'); create.type = 'submit'; actions.append(create, button('Cancelar', 'cancel-create'));
-    form.append(name, description, type, team, actions);
+    form.append(labelledControl('Nombre del canal', name), labelledControl('Finalidad del canal', description), labelledControl('Tipo de canal', type), labelledControl('Ámbito', team), actions);
     main.append(form, statusNode());
   }
 

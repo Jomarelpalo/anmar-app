@@ -1,0 +1,319 @@
+:root {
+  --anmar-form-bg: var(--anmar-card, #fff);
+  --anmar-form-soft: var(--anmar-card-soft, #f5f8fb);
+  --anmar-form-border: var(--anmar-border, #d4dde8);
+  --anmar-form-ink: var(--anmar-ink, #142033);
+  --anmar-form-muted: var(--anmar-muted, #617086);
+  --anmar-form-accent: var(--anmar-accent, #df5b24);
+  --anmar-form-accent-dark: var(--anmar-accent-dark, #b84016);
+  --anmar-form-danger: #c43b44;
+  --anmar-form-ok: #239665;
+  --anmar-form-warning: #b87508;
+  --anmar-form-focus: rgba(223, 91, 36, .18);
+  --anmar-form-radius: 10px;
+  --anmar-form-section-radius: 14px;
+  --anmar-form-control-height: 44px;
+  --anmar-form-gap: 14px;
+  --anmar-form-shadow: 0 10px 26px rgba(25, 39, 58, .08);
+}
+
+.anmar-form {
+  color: var(--anmar-form-ink);
+  font-family: var(--font, 'Inter', system-ui, sans-serif);
+}
+
+/* Campos heredados: la aplicación histórica crea muchos formularios como bloques
+   dinámicos sin etiqueta <form>. Estos selectores los incorporan al mismo sistema. */
+.appwrap .screen:not(#s-login) input:not([type='hidden']):not([type='checkbox']):not([type='radio']):not([type='range']),
+.appwrap .screen:not(#s-login) select,
+.appwrap .screen:not(#s-login) textarea,
+.appwrap .ovl input:not([type='hidden']):not([type='checkbox']):not([type='radio']):not([type='range']),
+.appwrap .ovl select,
+.appwrap .ovl textarea,
+.appwrap button.field {
+  width: 100%;
+  min-height: var(--anmar-form-control-height);
+  padding: 10px 12px !important;
+  border: 1px solid var(--anmar-form-border) !important;
+  border-radius: var(--anmar-form-radius) !important;
+  background: var(--anmar-form-soft) !important;
+  color: var(--anmar-form-ink) !important;
+  font-family: var(--font, 'Inter', system-ui, sans-serif) !important;
+  font-size: 14px !important;
+  line-height: 1.35;
+  outline: none;
+}
+.appwrap .screen:not(#s-login) textarea,
+.appwrap .ovl textarea { min-height: 92px; resize: vertical; }
+.appwrap .screen:not(#s-login) input:focus,
+.appwrap .screen:not(#s-login) select:focus,
+.appwrap .screen:not(#s-login) textarea:focus,
+.appwrap .ovl input:focus,
+.appwrap .ovl select:focus,
+.appwrap .ovl textarea:focus,
+.appwrap button.field:focus {
+  border-color: var(--anmar-form-accent) !important;
+  box-shadow: 0 0 0 3px var(--anmar-form-focus) !important;
+  outline: none !important;
+}
+.appwrap .screen:not(#s-login) .flab,
+.appwrap .ovl .flab {
+  margin: 11px 2px 6px !important;
+  color: var(--anmar-form-ink) !important;
+  font-size: 12px !important;
+  font-weight: 750 !important;
+  line-height: 1.35;
+}
+.appwrap .screen:not(#s-login) .btn-primary,
+.appwrap .ovl .btn-primary,
+.appwrap .screen:not(#s-login) #pr-add {
+  min-height: 44px;
+  border: 1px solid var(--anmar-form-accent-dark) !important;
+  border-radius: 9px !important;
+  background: var(--anmar-form-accent) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  text-transform: none !important;
+}
+.appwrap .screen:not(#s-login) .btn-primary:hover,
+.appwrap .ovl .btn-primary:hover { background: var(--anmar-form-accent-dark) !important; }
+.appwrap .screen:not(#s-login) .btn-ghost,
+.appwrap .ovl .btn-ghost,
+.appwrap .screen:not(#s-login) .admin-volver {
+  min-height: 42px;
+  border: 1px solid var(--anmar-form-border) !important;
+  border-radius: 9px !important;
+  background: var(--anmar-form-bg) !important;
+  color: var(--anmar-form-ink) !important;
+  box-shadow: none !important;
+  text-transform: none !important;
+}
+
+.appwrap details.admin-create-box {
+  overflow: hidden;
+  padding: 0 !important;
+  border: 1px solid var(--anmar-form-border) !important;
+  border-radius: var(--anmar-form-section-radius) !important;
+  background: var(--anmar-form-bg) !important;
+  box-shadow: var(--anmar-form-shadow) !important;
+}
+.appwrap details.admin-create-box > summary {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  padding: 13px 16px;
+  color: var(--anmar-form-ink) !important;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 800;
+  list-style: none;
+}
+.appwrap details.admin-create-box > summary::-webkit-details-marker { display: none; }
+.appwrap details.admin-create-box[open] > summary { border-bottom: 1px solid var(--anmar-form-border); }
+.appwrap details.admin-create-box .admin-create-body { padding: 16px !important; }
+
+.anmar-form .anmar-form-label,
+.anmar-form label {
+  color: var(--anmar-form-ink);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.anmar-form .anmar-form-control,
+.anmar-form input:not([type='hidden']):not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']),
+.anmar-form select,
+.anmar-form textarea {
+  width: 100%;
+  min-height: var(--anmar-form-control-height);
+  margin-top: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--anmar-form-border);
+  border-radius: var(--anmar-form-radius);
+  background: var(--anmar-form-soft);
+  color: var(--anmar-form-ink);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.35;
+  outline: none;
+  transition: border-color .16s ease, box-shadow .16s ease, background-color .16s ease;
+}
+
+.anmar-form textarea { min-height: 92px; resize: vertical; }
+.anmar-form input[type='file'] {
+  width: 100%;
+  min-height: var(--anmar-form-control-height);
+  margin-top: 6px;
+  padding: 9px 10px;
+  border: 1px dashed var(--anmar-form-border);
+  border-radius: var(--anmar-form-radius);
+  background: var(--anmar-form-soft);
+  color: var(--anmar-form-muted);
+}
+.anmar-form input[type='checkbox'], .anmar-form input[type='radio'] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--anmar-form-accent);
+}
+
+.anmar-form .anmar-form-control:focus,
+.anmar-form input:focus,
+.anmar-form select:focus,
+.anmar-form textarea:focus {
+  border-color: var(--anmar-form-accent);
+  background: var(--anmar-form-bg);
+  box-shadow: 0 0 0 3px var(--anmar-form-focus);
+}
+
+.anmar-form [aria-invalid='true'],
+.anmar-form .is-invalid {
+  border-color: var(--anmar-form-danger) !important;
+  box-shadow: 0 0 0 3px rgba(196, 59, 68, .13) !important;
+}
+.anmar-form :disabled {
+  cursor: not-allowed;
+  opacity: .62;
+}
+.anmar-form ::placeholder { color: color-mix(in srgb, var(--anmar-form-muted) 78%, transparent); }
+
+.anmar-form .btn,
+.anmar-form button[type='submit'],
+.anmar-form .anmar-form-primary-action {
+  min-height: 44px;
+  border-radius: 9px !important;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.anmar-form .btn-primary,
+.anmar-form button[type='submit'].anmar-form-primary-action {
+  border: 1px solid var(--anmar-form-accent) !important;
+  background: var(--anmar-form-accent) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+.anmar-form .btn-primary:hover,
+.anmar-form button[type='submit'].anmar-form-primary-action:hover {
+  border-color: var(--anmar-form-accent-dark) !important;
+  background: var(--anmar-form-accent-dark) !important;
+}
+.anmar-form .btn-ghost {
+  border: 1px solid var(--anmar-form-border) !important;
+  background: var(--anmar-form-bg) !important;
+  color: var(--anmar-form-ink) !important;
+  box-shadow: none !important;
+}
+
+.anmar-form--compact { display: grid; gap: 10px; }
+.anmar-form--compact .anmar-form-control,
+.anmar-form--compact input,
+.anmar-form--compact select,
+.anmar-form--compact textarea { margin-top: 0; }
+
+.anmar-form--standard { display: grid; gap: var(--anmar-form-gap); }
+.anmar-form--complex { display: grid; gap: 16px; }
+
+.anmar-form-section {
+  overflow: hidden;
+  border: 1px solid var(--anmar-form-border);
+  border-radius: var(--anmar-form-section-radius);
+  background: var(--anmar-form-bg);
+  box-shadow: 0 4px 15px rgba(25, 39, 58, .045);
+}
+.anmar-form-section + .anmar-form-section { margin-top: 10px; }
+.anmar-form-section > summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 58px;
+  padding: 13px 16px;
+  color: var(--anmar-form-ink);
+  cursor: pointer;
+  list-style: none;
+  font-size: 14px;
+  font-weight: 800;
+}
+.anmar-form-section > summary::-webkit-details-marker { display: none; }
+.anmar-form-section > summary::before {
+  content: attr(data-step);
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  border: 2px solid var(--anmar-form-accent);
+  border-radius: 50%;
+  color: var(--anmar-form-accent);
+  font-size: 12px;
+}
+.anmar-form-section[open] > summary { border-bottom: 1px solid var(--anmar-form-border); }
+.anmar-form-section-body { padding: 16px; }
+.anmar-form-section-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--anmar-form-gap); }
+.anmar-form-full { grid-column: 1 / -1; }
+
+.anmar-form-shell { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 18px; align-items: start; }
+.anmar-form-summary {
+  position: sticky;
+  top: 18px;
+  padding: 18px;
+  border: 1px solid var(--anmar-form-border);
+  border-radius: var(--anmar-form-section-radius);
+  background: var(--anmar-form-bg);
+  box-shadow: var(--anmar-form-shadow);
+}
+.anmar-form-summary h3 { margin: 0 0 16px; color: var(--anmar-form-ink); font-size: 17px; }
+.anmar-form-summary dl { display: grid; gap: 14px; margin: 0; }
+.anmar-form-summary dt { color: var(--anmar-form-muted); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.anmar-form-summary dd { margin: 4px 0 0; color: var(--anmar-form-ink); font-size: 13px; font-weight: 700; }
+.anmar-form-summary .cmp-actions { display: grid; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--anmar-form-border); }
+.anmar-form-summary .cmp-actions .btn { width: 100%; }
+
+.anmar-form-help,
+.anmar-form-status {
+  color: var(--anmar-form-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.anmar-form-status { min-height: 18px; }
+.anmar-form-error { color: var(--anmar-form-danger); }
+.anmar-form-success { color: var(--anmar-form-ok); }
+
+html[data-anmar-theme='dark'] .anmar-form,
+html[data-anmar-theme='dark'] .anmar-form-section,
+html[data-anmar-theme='dark'] .anmar-form-summary {
+  --anmar-form-bg: #17263a;
+  --anmar-form-soft: #1e3047;
+  --anmar-form-border: #344a64;
+  --anmar-form-ink: #eef4fb;
+  --anmar-form-muted: #a1b2c6;
+}
+
+#s-login .anmar-form {
+  --anmar-form-bg: rgba(19, 32, 50, .92);
+  --anmar-form-soft: rgba(14, 26, 43, .92);
+  --anmar-form-border: #3c506b;
+  --anmar-form-ink: #f2f6fb;
+  --anmar-form-muted: #acbbcd;
+}
+#s-login .anmar-form input { color: #f2f6fb !important; background: rgba(13, 25, 42, .9) !important; }
+
+@media (max-width: 900px) {
+  .anmar-form-shell { grid-template-columns: 1fr; }
+  .anmar-form-summary { position: static; order: -1; }
+}
+
+@media (max-width: 620px) {
+  :root { --anmar-form-control-height: 46px; --anmar-form-gap: 12px; }
+  .anmar-form-section-grid { grid-template-columns: 1fr; }
+  .anmar-form-full { grid-column: auto; }
+  .anmar-form-section > summary { min-height: 56px; padding: 12px 13px; }
+  .anmar-form-section-body { padding: 14px; }
+  .anmar-form-summary { padding: 15px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anmar-form *, .anmar-form *::before, .anmar-form *::after { transition: none !important; }
+}
