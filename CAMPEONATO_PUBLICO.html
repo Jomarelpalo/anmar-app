@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="index,follow">
+  <title>ANMAR TRAINING · Campeonato</title>
+  <style>
+    :root{--navy:#071a2d;--blue:#0b5da8;--paper:#f3f6f9;--ink:#152334;--muted:#64748b;--line:#d9e2ec;--ok:#147d52}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+    .wrap{max-width:980px;margin:auto;padding:0 18px}.hero{background:linear-gradient(135deg,var(--navy),#123a62);color:#fff;padding:28px 0}.hero h1{font-size:clamp(28px,5vw,46px);line-height:1.08;margin:6px 0}.eyebrow{color:#a9c8e6;font-size:12px;font-weight:900;letter-spacing:.13em}.hero-status{margin:0;color:#d6e6f4}
+    main.wrap{padding-top:20px;padding-bottom:48px}.card{background:#fff;border:1px solid var(--line);border-radius:15px;box-shadow:0 7px 20px rgba(7,26,45,.06)}
+    .filters{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px}.filters label{font-size:12px;font-weight:800}.filters select{display:block;width:100%;min-height:44px;margin-top:5px;border:1px solid #b9c7d5;border-radius:10px;background:#fff;padding:8px;color:var(--ink)}
+    h2{margin:26px 0 10px}.match{display:grid;grid-template-columns:210px minmax(220px,1fr) 110px;gap:14px;align-items:center;padding:14px;margin:9px 0}.match-time{display:block;font-weight:800;color:#184e7e}.match-place{display:block;font-size:13px;color:var(--muted)}.match-score{text-align:right;font-size:20px;font-weight:900}.match-score.validated{color:var(--ok)}
+    .table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;min-width:700px}th,td{text-align:left;padding:10px;border-bottom:1px solid var(--line)}th{font-size:12px;text-transform:uppercase;background:#f7f9fb}.updated{color:var(--muted);font-size:13px}.empty,.public-message{padding:28px;text-align:center}.public-message{max-width:620px;margin:15vh auto;background:#fff;border:1px solid var(--line);border-radius:15px}
+    @media(max-width:680px){.filters{grid-template-columns:1fr}.match{grid-template-columns:1fr}.match-score{text-align:left}}
+  </style>
+</head>
+<body>
+  <div id="public-root"><div class="public-message">Cargando campeonato…</div></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.1"></script>
+  <script type="module">
+    import { bootPublicCompetitionPage } from './src/competitions/competition-public.mjs';
+    const client = window.supabase.createClient(
+      'https://kbrvaawngeuuewplcwyn.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticnZhYXduZ2V1dWV3cGxjd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTA0MjIsImV4cCI6MjA5Nzg2NjQyMn0.9ys4m2OicbMq3cFyf0a2IA_eh3VspPJ3pYgjNkMO6WA',
+      { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } },
+    );
+    const slug = new URLSearchParams(window.location.search).get('slug') || '';
+    bootPublicCompetitionPage({ root: document.getElementById('public-root'), client, slug });
+  </script>
+</body>
+</html>

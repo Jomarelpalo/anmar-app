@@ -1408,9 +1408,9 @@ body{
       </button>
       <div class="mode-other-label">Otros accesos</div>
       <div class="mode-other">
-        <button type="button" class="mode-row" disabled aria-disabled="true">
+        <button type="button" class="mode-row" data-go="admCompeticiones">
           <span class="mode-row-icon"><img src="assets/ico-partido.png" alt=""></span>
-          <span><span class="mode-row-title">Campeonatos</span><span class="mode-row-sub">Próximamente</span></span>
+          <span><span class="mode-row-title">Campeonatos</span><span class="mode-row-sub">Calendarios, resultados y portal público</span></span>
           <span class="mode-arrow" aria-hidden="true">&rsaquo;</span>
         </button>
         <button type="button" class="mode-row" data-go="admin">
@@ -1826,13 +1826,14 @@ body{
   <p id="fn-msg" style="font-size:12px;text-align:center;margin-top:10px;min-height:16px"></p>
 </div></div><div class="ovl" id="ov-img"><button class="x" id="im-close" aria-label="Cerrar">&times;</button><div class="imgbox"><img id="im-big" src="" alt="Ejercicio"></div></div><div class="ovl" id="ov-rest"><button class="x" id="rt-close" aria-label="Cerrar">&times;</button><div style="font-size:11px;letter-spacing:.08em;color:#7d8da6">DESCANSO</div><div style="position:relative;width:170px;height:170px"><svg width="170" height="170" viewBox="0 0 120 120" style="transform:rotate(-90deg)"><circle cx="60" cy="60" r="52" fill="none" stroke="#16213a" stroke-width="9"></circle><circle id="rt-ring" cx="60" cy="60" r="52" fill="none" stroke="#3a86d8" stroke-width="9" stroke-linecap="round" stroke-dasharray="326.726" stroke-dashoffset="0"></circle></svg><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><div id="rt-time" style="font-size:36px;font-weight:800;color:#e7eef7">1:00</div><div id="rt-sub" style="font-size:11px;color:#7d8da6">listo</div></div></div><div class="rt-btns"><button id="rt-main">Iniciar</button><button class="sec" id="rt-reset">Reiniciar</button></div></div><div class="ovl" id="ov-dia"><button class="x" id="dia-close" aria-label="Cerrar">&times;</button><div style="width:100%;max-width:330px"><div id="dia-titulo" style="font-size:18px;font-weight:700;margin-bottom:12px;color:#e7eef7"></div><div id="dia-cont" style="margin-bottom:12px"></div><button id="dia-add" style="width:100%;background:#16213a;color:#cdd8e8;border:none;border-radius:11px;padding:11px;font-size:14px;cursor:pointer;font-family:var(--font)">+ Añadir evento</button><div id="dia-form" style="display:none;margin-top:12px"><input id="ev-titulo" class="field" placeholder="Título (ej. Partido vs CB Costa)"><select id="ev-tipo" class="field"><option value="entrenamiento">Entrenamiento</option><option value="partido">Partido</option><option value="descanso">Descanso</option><option value="otro">Otro</option></select><input id="ev-hora" class="field" type="time"><input id="ev-lugar" class="field" placeholder="Lugar (opcional)"><button id="ev-guardar" style="width:100%;background:#d6a743;color:#3a2a06;border:none;border-radius:11px;padding:12px;font-weight:700;cursor:pointer;font-family:var(--font)">Guardar evento</button><p id="ev-msg" style="font-size:12px;color:#f3c969;text-align:center;margin-top:8px"></p></div></div></div><div class="ovl" id="ov-test"><button class="x" id="test-close" aria-label="Cerrar">&times;</button><div style="width:100%;max-width:330px"><div style="font-size:18px;font-weight:700;margin-bottom:12px;color:#e7eef7">Nueva medición</div><select id="t-tipo" class="field"><option value="salto_vertical">Salto vertical (cm)</option><option value="velocidad_20m">Velocidad 20 m (s)</option><option value="agilidad">Agilidad T-test (s)</option><option value="resistencia">Resistencia (nivel)</option><option value="otro">Otro</option></select><input id="t-valor" class="field" type="number" step="0.01" placeholder="Valor (ej. 47)"><input id="t-fecha" class="field" type="date"><button id="t-guardar" style="width:100%;background:#d6a743;color:#3a2a06;border:none;border-radius:11px;padding:12px;font-weight:700;cursor:pointer;font-family:var(--font)">Guardar medición</button><p id="t-msg" style="font-size:12px;color:#f3c969;text-align:center;margin-top:8px"></p></div></div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.1"></script>
 <script>
 const SUPABASE_URL="https://kbrvaawngeuuewplcwyn.supabase.co";
 const SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticnZhYXduZ2V1dWV3cGxjd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTA0MjIsImV4cCI6MjA5Nzg2NjQyMn0.9ys4m2OicbMq3cFyf0a2IA_eh3VspPJ3pYgjNkMO6WA";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON,{auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:true}});
+window.anmarSupabase=sb;
 const screens={login:'s-login',entrevista:'s-entrevista',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil',libre:'s-libre',dirigido:'s-dirigido',admin:'s-admin',entrenador:'s-entrenador',modo:'s-modo',club:'s-club',admEquipos:'s-adm-equipos',admJugadores:'s-adm-jugadores',admActividad:'s-adm-actividad',admAjustes:'s-adm-ajustes',admCompeticiones:'s-adm-competiciones'};
-const APP_VERSION='v3.11.9 · 18/08/2026';
+const APP_VERSION='v3.12.0 · 18/08/2026';
 document.querySelectorAll('#app-version,#app-version-2,#app-version-3').forEach(function(el){ el.textContent='ANMAR TRAINING '+APP_VERSION; });
 window.APP_VERSION=APP_VERSION;
 function go(name,isBack){
@@ -1843,6 +1844,7 @@ function go(name,isBack){
   nav.classList.toggle('hidden', name==='login'||name==='sesion'||name==='entrevista'||name==='libre'||name==='dirigido'||name==='modo');
   nav.querySelectorAll('button').forEach(function(b){b.classList.toggle('on', b.dataset.go===name);});
   if(name==='admin'){ cargarAdmin(); if(window.cargarAdminLegal) cargarAdminLegal(); if(window.cargarInvitaciones) cargarInvitaciones(); }
+  if(name==='admCompeticiones'&&window.admCompeticionesUI){ window.admCompeticionesUI(); }
   if(name==='entrenador'){ if(window.cargarEquipos) cargarEquipos(); } if(name==='sesion'){ cargarSesion(); } if(name==='hoy'){ cargarSemana(); if(window._planHoy)window._planHoy(); } if(name==='dirigido'){ if(window._recDirigido)window._recDirigido(); } if(name==='libre'){ if(window._loadCond)window._loadCond(); } if(name==='calendario'){ cargarCalendario(); } if(name==='progreso'){ cargarProgreso(); } if(name==='perfil'){ cargarObjetivos(); if(window.cargarMiCuenta)cargarMiCuenta(); }
 }
 var msg=document.getElementById('msg');
@@ -2911,13 +2913,20 @@ function admAjustesUI(){
   var slot=document.getElementById('admaj-legal-slot');
   if(legal&&slot){ legal.style.display='block'; slot.appendChild(legal); if(window.cargarAdminLegal) cargarAdminLegal(); }
 }
-function admCompeticionesUI(){
+async function admCompeticionesUI(){
   var v=document.getElementById('admc-vista'); if(!v) return;
-  v.innerHTML='<div class="card pr-panel"><div class="section-t">Competiciones</div>'+
-    '<div style="font-size:13px;color:var(--muted);line-height:1.7">Módulo en construcción. Según el diseño aprobado:<br>'+
-    '· El administrador general tiene <b style="color:var(--text)">gestión TOTAL</b> de todas las competiciones, siempre.<br>'+
-    '· Los clubes podrán recibir permiso para organizar las suyas, pero nunca fuera de tu control.<br>'+
-    '· Aquí se crearán campeonatos, calendarios, grupos y clasificaciones, conectados con los partidos que ya registra la aplicación.</div></div>';
+  v.innerHTML='<div class="card pr-panel"><div class="section-t">Campeonatos</div><div style="font-size:13px;color:var(--muted)">Cargando gestión segura…</div></div>';
+  if(!window.anmarMountCompetitions&&window.anmarCompetitionsReady){ await window.anmarCompetitionsReady; }
+  if(!window.anmarMountCompetitions){
+    v.innerHTML='<div class="card pr-panel"><div style="color:#ff9b91;font-size:13px">No se pudo cargar el módulo de Campeonatos. Recarga la aplicación.</div></div>';
+    return;
+  }
+  await window.anmarMountCompetitions(v,{
+    client:sb,
+    getClubId:function(){
+      return (window.__adminClubScope&&window.__adminClubScope.id)||window.__clubId||null;
+    }
+  });
 }
 window.admCompeticionesUI=admCompeticionesUI;
 window.admEquiposUI=admEquiposUI; window.admJugadoresUI=admJugadoresUI; window.admActividadUI=admActividadUI; window.admAjustesUI=admAjustesUI;
@@ -6392,6 +6401,9 @@ window.verJugador=verJugador;
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ window.renderIdentidadAnmar(null); });
   else window.renderIdentidadAnmar(null);
 })();
+window.anmarCompetitionsReady=import('./src/competitions/competition-management.mjs').catch(function(error){
+  console.error('No se pudo cargar Campeonatos',error);
+});
 </script>
 </body>
 </html>
