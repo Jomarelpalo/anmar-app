@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>ANMAR TRAINING</title>
+<link rel="stylesheet" href="src/communications/communication-app.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
 <style>
@@ -1372,6 +1373,7 @@ body{
 <section class="screen" id="s-adm-equipos"><div class="pad pad-top"><div class="prog-head"><h2>Equipos</h2><button class="admin-volver" data-go="admin">&lsaquo; Admin</button></div><div id="adme-vista"><div style="color:var(--muted);font-size:13px">Cargando&hellip;</div></div></div></section>
 <section class="screen" id="s-adm-jugadores"><div class="pad pad-top"><div class="prog-head"><h2>Jugadores</h2><button class="admin-volver" data-go="admin">&lsaquo; Admin</button></div><div id="admj-vista"><div style="color:var(--muted);font-size:13px">Cargando&hellip;</div></div></div></section>
 <section class="screen" id="s-adm-competiciones"><div class="pad pad-top"><div class="prog-head"><h2>Competiciones</h2><button class="admin-volver" data-go="admin">&lsaquo; Admin</button></div><div id="admc-vista"></div></div></section>
+<section class="screen" id="s-comunicaciones"><div class="pad pad-top"><div class="prog-head"><h2>Chat Seguro</h2><button class="admin-volver" data-comm-back>&lsaquo; Volver</button></div><div id="comm-vista"></div></div></section>
 <section class="screen" id="s-adm-actividad"><div class="pad pad-top"><div class="prog-head"><h2>Actividad</h2><button class="admin-volver" data-go="admin">&lsaquo; Admin</button></div><div id="adma-vista"><div style="color:var(--muted);font-size:13px">Cargando&hellip;</div></div></div></section>
 <section class="screen" id="s-adm-ajustes"><div class="pad pad-top"><div class="prog-head"><h2>Ajustes</h2><button class="admin-volver" data-go="admin">&lsaquo; Admin</button></div><div id="admaj-vista"></div></div></section>
 <section class="screen" id="s-club">
@@ -1411,6 +1413,11 @@ body{
         <button type="button" class="mode-row" data-go="admCompeticiones">
           <span class="mode-row-icon"><img src="assets/ico-partido.png" alt=""></span>
           <span><span class="mode-row-title">Campeonatos</span><span class="mode-row-sub">Calendarios, resultados y portal público</span></span>
+          <span class="mode-arrow" aria-hidden="true">&rsaquo;</span>
+        </button>
+        <button type="button" class="mode-row" data-go="comunicaciones">
+          <span class="mode-row-icon"><img src="iconos/icons8/web-chat.png" alt=""></span>
+          <span><span class="mode-row-title">Chat Seguro</span><span class="mode-row-sub">Canales privados de club y equipo</span></span>
           <span class="mode-arrow" aria-hidden="true">&rsaquo;</span>
         </button>
         <button type="button" class="mode-row" data-go="admin">
@@ -1832,11 +1839,14 @@ const SUPABASE_URL="https://kbrvaawngeuuewplcwyn.supabase.co";
 const SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImticnZhYXduZ2V1dWV3cGxjd3luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTA0MjIsImV4cCI6MjA5Nzg2NjQyMn0.9ys4m2OicbMq3cFyf0a2IA_eh3VspPJ3pYgjNkMO6WA";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON,{auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:true}});
 window.anmarSupabase=sb;
-const screens={login:'s-login',entrevista:'s-entrevista',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil',libre:'s-libre',dirigido:'s-dirigido',admin:'s-admin',entrenador:'s-entrenador',modo:'s-modo',club:'s-club',admEquipos:'s-adm-equipos',admJugadores:'s-adm-jugadores',admActividad:'s-adm-actividad',admAjustes:'s-adm-ajustes',admCompeticiones:'s-adm-competiciones'};
-const APP_VERSION='v3.12.0 · 18/08/2026';
+const screens={login:'s-login',entrevista:'s-entrevista',hoy:'s-hoy',sesion:'s-sesion',progreso:'s-progreso',calendario:'s-calendario',perfil:'s-perfil',libre:'s-libre',dirigido:'s-dirigido',admin:'s-admin',entrenador:'s-entrenador',modo:'s-modo',club:'s-club',admEquipos:'s-adm-equipos',admJugadores:'s-adm-jugadores',admActividad:'s-adm-actividad',admAjustes:'s-adm-ajustes',admCompeticiones:'s-adm-competiciones',comunicaciones:'s-comunicaciones'};
+const APP_VERSION='v3.12.1 · 21/08/2026';
 document.querySelectorAll('#app-version,#app-version-2,#app-version-3').forEach(function(el){ el.textContent='ANMAR TRAINING '+APP_VERSION; });
 window.APP_VERSION=APP_VERSION;
 function go(name,isBack){
+  if(window.__cur==='comunicaciones'&&name!=='comunicaciones'&&window.__communicationManager){
+    Promise.resolve(window.__communicationManager.destroy()).catch(function(){}); window.__communicationManager=null;
+  }
   if(!isBack&&window.__cur&&window.__cur!==name){(window.__hist=window.__hist||[]).push(window.__cur);} if(name==='hoy'){window.__hist=[];} window.__cur=name;
   Object.values(screens).forEach(function(id){var el=document.getElementById(id); if(el) el.classList.remove('active');});
   var t=document.getElementById(screens[name]); if(t) t.classList.add('active');
@@ -1860,6 +1870,7 @@ async function loadProfileAndEnter(){
   var nombre=(user.email||'').split('@')[0], role='jugador';
   var p=await sb.from('profiles').select('nombre,role,avatar_url,debe_cambiar_password,club_id').eq('id',user.id).maybeSingle();
   if(p.data){ nombre=p.data.nombre||nombre; role=p.data.role||role; window.__clubId=p.data.club_id||null; }
+  window.__profile={id:user.id,nombre:nombre,role:role,club_id:window.__clubId||null};
   document.querySelectorAll('#u-nombre,#u-nombre2').forEach(function(el){el.textContent=nombre;});
   var ini=(nombre||'?').trim().charAt(0).toUpperCase();
   document.querySelectorAll('#u-ini,#u-ini2').forEach(function(el){el.textContent=ini;});
@@ -1965,7 +1976,7 @@ document.addEventListener('click', async function(e){
     var dest=t.dataset.go;
     if(dest==='login'){ try{ await sb.auth.signOut(); }catch(_){} }
     if(window.renderSide && t.closest('#s-modo')){ if(dest==='entrenador') renderSide('entrenador'); else if(dest==='admin') renderSide('admin'); }
-    go(dest); return;
+    go(dest); if(dest==='comunicaciones'&&window.admComunicacionesUI) await window.admComunicacionesUI(); return;
   }
   var chip=e.target.closest('.chip');
   if(chip){ chip.parentElement.querySelectorAll('.chip').forEach(function(c){c.classList.remove('on');}); chip.classList.add('on'); }
@@ -2730,6 +2741,7 @@ function renderMobileNav(modo){
       '<button data-go="entrenador" class="on"><span class="i">🏀</span>Equipos</button>'+
       '<button data-ent-nav="jugadores"><span class="i">👥</span>Jugadores</button>'+
       '<button data-ent-nav="scouting"><span class="i">📋</span>Scouting</button>'+
+      '<button data-go="comunicaciones"><span class="i">💬</span>Chat</button>'+
       '<button data-go="perfil"><span class="i">👤</span>Perfil</button>';
     nav.querySelectorAll('[data-ent-nav]').forEach(function(b){
       b.addEventListener('click',function(){
@@ -2750,6 +2762,7 @@ function renderMobileNav(modo){
       '<button data-admin-nav="clubes" data-go="admin" class="on"><span class="i">🏢</span>Clubes</button>'+
       '<button data-admin-nav="equipos"><span class="i">🏀</span>Equipos</button>'+
       '<button data-admin-nav="usuarios"><span class="i">👥</span>Usuarios</button>'+
+      '<button data-go="comunicaciones"><span class="i">💬</span>Chat</button>'+
       '<button data-admin-nav="ajustes"><span class="i">⚙️</span>Ajustes</button>';
     nav.querySelectorAll('[data-admin-nav]').forEach(function(b){
       b.addEventListener('click',function(){
@@ -2770,6 +2783,7 @@ function renderMobileNav(modo){
       '<button data-go="hoy" class="on"><span class="i">🏠</span>Hoy</button>'+
       '<button data-go="progreso"><span class="i">📈</span>Progreso</button>'+
       '<button data-go="calendario"><span class="i">📅</span>Calendario</button>'+
+      '<button data-go="comunicaciones"><span class="i">💬</span>Chat</button>'+
       '<button data-go="perfil"><span class="i">👤</span>Perfil</button>';
   }
 }
@@ -2792,6 +2806,7 @@ function renderSide(modo){
       '<button class="mlink" data-side="equipos"><span class="i">&#127936;</span> Equipos</button>'+
       '<button class="mlink" data-side="jugadores"><span class="i">&#128100;</span> Jugadores</button>'+
       '<button class="mlink" data-side="competiciones"><span class="i">&#127942;</span> Competiciones</button>'+
+      '<button class="mlink" data-go="comunicaciones"><span class="i">&#128172;</span> Chat Seguro</button>'+
       '<div style="font-size:10.5px;letter-spacing:.12em;color:var(--muted2);text-transform:uppercase;margin:12px 14px 4px">Sistema</div>'+
       '<button class="mlink" data-side="actividad"><span class="i">&#128220;</span> Actividad</button>'+
       '<button class="mlink" data-side="ajustes"><span class="i">&#9881;</span> Ajustes</button>'+
@@ -2800,6 +2815,7 @@ function renderSide(modo){
   } else if(modo==='entrenador'){
     html=marca+cambiar+
       '<button class="mlink" data-go="entrenador"><span class="i">&#128101;</span> Mis equipos</button>'+
+      '<button class="mlink" data-go="comunicaciones"><span class="i">&#128172;</span> Chat Seguro</button>'+
       '<button class="mlink" data-go="perfil"><span class="i">&#128100;</span> Perfil</button>';
   } else {
     html=marca+cambiar+
@@ -2807,6 +2823,7 @@ function renderSide(modo){
       '<button class="mlink" data-go="dirigido"><span class="i">&#127919;</span> Entrenar</button>'+
       '<button class="mlink" data-go="progreso"><span class="i">&#128200;</span> Progreso</button>'+
       '<button class="mlink" data-go="calendario"><span class="i">&#128197;</span> Calendario</button>'+
+      '<button class="mlink" data-go="comunicaciones"><span class="i">&#128172;</span> Chat Seguro</button>'+
       '<button class="mlink" data-go="perfil"><span class="i">&#128100;</span> Perfil</button>'+
       ((window.__role==='entrenador'||esAdmin)?'<button class="mlink" data-go="entrenador"><span class="i">&#128101;</span> Jugadores</button>':'')+
       (esAdmin?'<button class="mlink" data-go="admin"><span class="i">&#9881;</span> Admin</button>':'');
@@ -2929,6 +2946,24 @@ async function admCompeticionesUI(){
   });
 }
 window.admCompeticionesUI=admCompeticionesUI;
+async function admComunicacionesUI(){
+  var v=document.getElementById('comm-vista'); if(!v) return;
+  var back=document.querySelector('[data-comm-back]'); if(back) back.onclick=function(){ if(window.goBack) window.goBack(); else go('hoy'); };
+  v.innerHTML='<div class="card pr-panel"><div class="section-t">Chat Seguro</div><div style="font-size:13px;color:var(--muted)">Cargando tus canales autorizados…</div></div>';
+  if(!window.anmarMountCommunications&&window.anmarCommunicationsReady){ await window.anmarCommunicationsReady; }
+  if(!window.anmarMountCommunications){
+    v.innerHTML='<div class="card pr-panel"><div style="color:#ff9b91;font-size:13px">No se pudo cargar el Chat Seguro. Recarga la aplicación.</div></div>'; return;
+  }
+  try{
+    if(window.__communicationManager){ await window.__communicationManager.destroy(); window.__communicationManager=null; }
+    var scopeClub=(window.__adminClubScope&&window.__adminClubScope.id)||window.__clubId||null;
+    window.__communicationManager=await window.anmarMountCommunications(v,{client:sb,profile:window.__profile,clubId:scopeClub});
+  }catch(error){
+    console.error('No se pudo abrir el Chat Seguro',error);
+    v.innerHTML='<div class="card pr-panel"><div style="color:#ff9b91;font-size:13px">No se pudieron cargar tus canales autorizados. Comprueba la conexión y vuelve a intentarlo.</div></div>';
+  }
+}
+window.admComunicacionesUI=admComunicacionesUI;
 window.admEquiposUI=admEquiposUI; window.admJugadoresUI=admJugadoresUI; window.admActividadUI=admActividadUI; window.admAjustesUI=admAjustesUI;
 
 /* ===== PANEL DEL ADMINISTRADOR DE CLUB (capa de club F1 parte 2) ===== */
@@ -2961,7 +2996,8 @@ async function clubPanelUI(){
     var nomTec={}; tecnicos.forEach(function(t){ nomTec[t.id]=t.nombre; });
     var lg=logoClubUrl(club.logo_url);
     cab.innerHTML='<div style="width:52px;height:52px;border-radius:14px;flex:none;background:#16213a center/cover no-repeat;'+(lg?('background-image:url(&quot;'+lg+'&quot;)'):'')+';display:flex;align-items:center;justify-content:center;font-weight:800;font-size:22px">'+(lg?'':escC((club.nombre||'?').charAt(0).toUpperCase()))+'</div>'+
-      '<div><div style="font-size:20px;font-weight:800">'+escC(club.nombre||'Club')+'</div><div style="font-size:12.5px;color:var(--muted)">'+equipos.length+' de '+(club.licencias||0)+' licencias de equipo usadas</div></div>';
+      '<div><div style="font-size:20px;font-weight:800">'+escC(club.nombre||'Club')+'</div><div style="font-size:12.5px;color:var(--muted)">'+equipos.length+' de '+(club.licencias||0)+' licencias de equipo usadas</div></div>'+
+      '<button class="btn btn-ghost" data-go="comunicaciones" style="width:auto;margin-left:auto">Chat Seguro</button>';
     var CATS_C=[['premini','Premini / Babybasket'],['minibasket','Minibasket'],['infantil','Infantil'],['cadete','Cadete'],['junior','Junior'],['senior','Senior']];
     var catNomC=function(v2){ for(var i=0;i<CATS_C.length;i++){ if(CATS_C[i][0]===v2) return CATS_C[i][1]; } return v2||'—'; };
     v.innerHTML=''+
@@ -6403,6 +6439,9 @@ window.verJugador=verJugador;
 })();
 window.anmarCompetitionsReady=import('./src/competitions/competition-management.mjs').catch(function(error){
   console.error('No se pudo cargar Campeonatos',error);
+});
+window.anmarCommunicationsReady=import('./src/communications/communication-integration.mjs').catch(function(error){
+  console.error('No se pudo cargar Chat Seguro',error);
 });
 </script>
 </body>
